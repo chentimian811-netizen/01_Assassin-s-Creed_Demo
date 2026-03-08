@@ -11,37 +11,40 @@ public class PlayerController : MonoBehaviour
     Animator Animator;
     Transform cameraTransform;
     CharacterController characterController;
-    public enum E_PlayerPostrue
+
+    public enum E_PlayerPostrue//玩家姿态
     {
-        Crouch,
-        Stand,
-        MidAir
+        Crouch,//蹲下
+        Stand,//站立
+        MidAir//滞空
     }
-    public E_PlayerPostrue PlayerPostrue = E_PlayerPostrue.Stand;
-    float crouchThreshold = 0f;
+    public E_PlayerPostrue PlayerPostrue = E_PlayerPostrue.Stand;//规定玩家的初始姿态
+
+    float crouchThreshold = 0f;//姿态阈值设定
     float standThreshold = 1f;
     float midAirThreshold = 2f; 
 
-    public enum E_LocomotionState
+    public enum E_LocomotionState//玩家行动状态
     {
         Idle,
         Walk,
         Run
     }
-    public E_LocomotionState LocomotionState = E_LocomotionState.Idle;
+    public E_LocomotionState LocomotionState = E_LocomotionState.Idle;//规定玩家的初始动作
 
-    public enum E_ArmState
+    public enum E_ArmState//玩家瞄准状态
     {
         Norml,
         Aim,
     }
-    public E_ArmState ArmState = E_ArmState.Norml;
+    public E_ArmState ArmState = E_ArmState.Norml;//初始攻击
 
    public float crouchSpeed = 1.5f;
    public float walkSpeed = 3f;
    public float runSpeed = 6f;
 
-    Vector2 moveInput;
+    Vector2 moveInput;//用二维值 存贮玩家输入的前后左右的值
+
     bool isRunning;
     bool isCrouch;
     bool isAiming;
@@ -52,14 +55,14 @@ public class PlayerController : MonoBehaviour
     int turnSpeedHash;
     int jumpSpeedHash;
 
-    Vector3 playerMovement = Vector3.zero;
+    Vector3 playerMovement = Vector3.zero;//玩家移动向量为(0,0,0)
 
 
-    public float gravity = -9.8f;
+    public float gravity = -9.8f;//重力
 
-    float VerticalVelocity;
+    float VerticalVelocity;//垂直速度
 
-    public float jumpedVelocity = 5f;
+    public float jumpedVelocity = 5f;//跳跃速度
     // Start is called before the first frame update
     void Start()
     {
@@ -68,12 +71,12 @@ public class PlayerController : MonoBehaviour
         cameraTransform = Camera.main.transform;
         characterController = GetComponent<CharacterController>();
 
-        postrueHash = Animator.StringToHash("PlayerState");
+        postrueHash = Animator.StringToHash("PlayerState");//用哈希值存贮 资源占用更少
         moveSpeedHash = Animator.StringToHash("MoveSpeed");
         turnSpeedHash = Animator.StringToHash("TurnSpeed");
         jumpSpeedHash = Animator.StringToHash("JumpSpeed"); 
 
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.Locked;//隐藏玩家鼠标
     }
     // Update is called once per frame
     void Update()
@@ -114,11 +117,11 @@ public class PlayerController : MonoBehaviour
 
     void SwitchPlayerState()
     {
+        //如果不在地面则切换成滞空状态
         if(!characterController.isGrounded)
         {
             PlayerPostrue = E_PlayerPostrue.MidAir;
         }
-
        else if (isCrouch)
         {
             PlayerPostrue = E_PlayerPostrue.Crouch;
@@ -127,6 +130,7 @@ public class PlayerController : MonoBehaviour
         {
             PlayerPostrue = E_PlayerPostrue.Stand;
         }
+
 
         if (moveInput.magnitude ==0)
         {
@@ -151,21 +155,25 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    //重力
     void CaculateGravity()
     {
         if(characterController.isGrounded)
         {
+            //当在地面上时 给予一个向下的力 使得贴地面
             VerticalVelocity = gravity * Time.deltaTime;
             return;  
         }
         else
         {
+            //当不在地面上是 给予向下的力 实现自由落体
             VerticalVelocity += gravity * Time.deltaTime;
         }
     }
    
     void Jump()
     {
+        //当角色在地面并且 按下跳跃 则获得一个瞬时向上的力
         if (characterController.isGrounded && isJumping)
         { 
             VerticalVelocity = jumpedVelocity;
@@ -173,18 +181,20 @@ public class PlayerController : MonoBehaviour
     }
 
 
-    void CaculateInputDirection()
+    void CaculateInputDirection()//输入方向的计算
     {
        Vector3 cameraForward = new Vector3(cameraTransform.forward.x,0, cameraTransform.forward.z).normalized;
-       playerMovement = cameraForward * moveInput.y + cameraTransform.right * moveInput.x;
-       playerMovement = PlayerTransform.InverseTransformVector(playerMovement);
+       playerMovement = cameraForward * moveInput.y + cameraTransform.right * moveInput.x;//获得玩家输入值
+       playerMovement = PlayerTransform.InverseTransformVector(playerMovement);//将世界坐标转换为玩家的当前坐标
     }
 
-    void SetupAnimator()
+    void SetupAnimator()//动画状态更新
     {
         if(PlayerPostrue == E_PlayerPostrue.Stand)
         {
+            //0.1f(dampTime)表示:从当前值过渡到standThreshold需要0.1f,使得动画过渡更加自然
             Animator.SetFloat(postrueHash, standThreshold,0.1f,Time.deltaTime);
+
             switch (LocomotionState)
             {
                 case E_LocomotionState.Idle:
@@ -201,6 +211,7 @@ public class PlayerController : MonoBehaviour
         else if (PlayerPostrue == E_PlayerPostrue.Crouch)
         {
             Animator.SetFloat(postrueHash, crouchThreshold, 0.1f, Time.deltaTime);
+
             switch (LocomotionState)
             {
                 case E_LocomotionState.Idle:
@@ -225,10 +236,10 @@ public class PlayerController : MonoBehaviour
             PlayerTransform.Rotate(0, rad * 200 * Time.deltaTime, 0f);
         }
     }
-    private void AnimatorMove()
+    private void AnimatorMove()//动画驱动移动
     {
         Vector3 playerDelataMovement = Animator.deltaPosition;  
-        playerDelataMovement.y = VerticalVelocity * Time.deltaTime;
-        characterController.Move(playerDelataMovement);
+        playerDelataMovement.y = VerticalVelocity * Time.deltaTime;//叠加垂直移动 实现跳跃
+        characterController.Move(playerDelataMovement);//实现玩家移动
     }
 }

@@ -15,8 +15,9 @@ public class PlayerController : MonoBehaviour
     public enum E_PlayerPostrue//玩家姿态
     {
         Crouch,//蹲下
+        Falling,
         Stand,//站立
-        MidAir,//滞空
+        Jumping,//滞空
         Landing//着陆
     }
     public E_PlayerPostrue PlayerPostrue = E_PlayerPostrue.Stand;//规定玩家的初始姿态
@@ -85,6 +86,12 @@ public class PlayerController : MonoBehaviour
 
     //是否处于CD中
     bool isLanding;
+
+    //玩家是否跌落
+    bool couldFall;
+
+    //跌落的最小数值 如果低于此高度 就不会跌落
+    float fallHeight = 0.5f;
 
     //地面检测射线的偏移量
     float groundCheckOffset = 0.5f;
@@ -158,6 +165,7 @@ public class PlayerController : MonoBehaviour
         else
         {
             isGround = false;
+            couldFall = !Physics.Raycast(PlayerTransform.position, Vector3.down, fallHeight);
         }
     }
 
@@ -166,9 +174,20 @@ public class PlayerController : MonoBehaviour
         //如果不在地面则切换成滞空状态
         if(!isGround)
         {
-            PlayerPostrue = E_PlayerPostrue.MidAir;
+            if(VerticalVelocity > 0)
+            {
+                PlayerPostrue = E_PlayerPostrue.Jumping;
+            }
+            else if(PlayerPostrue != E_PlayerPostrue.Falling)
+            {
+                if (couldFall)
+                {
+                    PlayerPostrue = E_PlayerPostrue.Falling;
+                }
+            }
+            
         }
-        else if (PlayerPostrue == E_PlayerPostrue.MidAir)
+        else if (PlayerPostrue == E_PlayerPostrue.Jumping)
         {
             StartCoroutine(CoolDownJump()); 
         }
@@ -223,11 +242,17 @@ public class PlayerController : MonoBehaviour
     //重力
     void CaculateGravity()
     {
-        if(PlayerPostrue != E_PlayerPostrue.MidAir)
+        if(PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling)
         {
-            //当在地面上时 给予一个向下的力 使得贴地面
-            VerticalVelocity = gravity * Time.deltaTime;
-            return;  
+            if(!isGround)
+            {
+                VerticalVelocity += gravity * fallMultiplier * Time.deltaTime;
+            }
+            else
+            {
+                //当在地面上时 给予一个向下的力 使得贴地面
+                VerticalVelocity = gravity * Time.deltaTime;
+            }
         }
         else
         {
@@ -276,10 +301,10 @@ public class PlayerController : MonoBehaviour
 
     void SetupAnimator()//动画状态更新
     {
-        if(PlayerPostrue == E_PlayerPostrue.Stand)
+        if (PlayerPostrue == E_PlayerPostrue.Stand)
         {
             //0.1f(dampTime)表示:从当前值过渡到standThreshold需要0.1f,使得动画过渡更加自然
-            Animator.SetFloat(postrueHash, standThreshold,0.1f,Time.deltaTime);
+            Animator.SetFloat(postrueHash, standThreshold, 0.1f, Time.deltaTime);
 
             switch (LocomotionState)
             {
@@ -307,15 +332,15 @@ public class PlayerController : MonoBehaviour
                     Animator.SetFloat(moveSpeedHash, playerMovement.magnitude * crouchSpeed, 0.1f, Time.deltaTime);
                     break;
             }
-            
+
         }
-        else if(PlayerPostrue == E_PlayerPostrue.MidAir)
+        else if (PlayerPostrue == E_PlayerPostrue.Jumping)
         {
-            Animator.SetFloat(postrueHash,midAirThreshold, 0.1f, Time.deltaTime);
-            Animator.SetFloat(jumpSpeedHash,VerticalVelocity,0.1f,Time.deltaTime);
+            Animator.SetFloat(postrueHash, midAirThreshold, 0.1f, Time.deltaTime);
+            Animator.SetFloat(jumpSpeedHash, VerticalVelocity, 0.1f, Time.deltaTime);
             Animator.SetFloat("FeetTween", feetTween);
         }
-        else if(PlayerPostrue == E_PlayerPostrue.Landing)
+        else if (PlayerPostrue == E_PlayerPostrue.Landing)
         {
             Animator.SetFloat(postrueHash, LandingThreshold, 0.08f, Time.deltaTime);
 
@@ -332,7 +357,12 @@ public class PlayerController : MonoBehaviour
                     break;
             }
         }
-        
+        else if (PlayerPostrue == E_PlayerPostrue.Falling)
+        {
+            Animator.SetFloat(postrueHash, midAirThreshold, 0.1f, Time.deltaTime);
+            Animator.SetFloat(jumpSpeedHash, VerticalVelocity, 0.1f, Time.deltaTime);
+            
+        }
 
         if (ArmState == E_ArmState.Norml)
         {
@@ -358,7 +388,7 @@ public class PlayerController : MonoBehaviour
 
     private void AnimatorMove()//动画驱动移动
     {
-        if(PlayerPostrue != E_PlayerPostrue.MidAir)
+        if(PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling)
         {
             Vector3 playerDelataMovement = Animator.deltaPosition;
             playerDelataMovement.y = VerticalVelocity * Time.deltaTime;//叠加垂直移动 实现跳跃

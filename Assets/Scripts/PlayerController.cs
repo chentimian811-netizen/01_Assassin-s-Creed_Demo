@@ -15,7 +15,7 @@ public class PlayerController : MonoBehaviour
     public enum E_PlayerPostrue//玩家姿态
     {
         Crouch,//蹲下
-        Falling,
+        Falling,//下落
         Stand,//站立
         Jumping,//滞空
         Landing//着陆
@@ -48,7 +48,7 @@ public class PlayerController : MonoBehaviour
 
     Vector2 moveInput;//用二维值 存贮玩家输入的前后左右的值
 
-    bool isRunning;
+    bool isRunning;//是否处于奔跑状态
     bool isCrouch;
     bool isAiming;
     bool isJumping;
@@ -67,15 +67,13 @@ public class PlayerController : MonoBehaviour
     float VerticalVelocity;//垂直速度
 
     //public float jumpedVelocity = 5f;//跳跃速度
+
     //最大的跳跃高度
     public float maxHeight = 1.5f;
 
-    static readonly int CACHE_SIZE = 3;
-
+    static readonly int CACHE_SIZE = 3;//缓存三帧
     Vector3[] velCache = new Vector3[CACHE_SIZE];
-
     int currentChaCheIndex = 0;
-
     Vector3 averageVel = Vector3 .zero;
 
     //下落加速度的倍数
@@ -158,7 +156,12 @@ public class PlayerController : MonoBehaviour
 
     void CheckGround()
     {
-        if(Physics.SphereCast(PlayerTransform.position + (Vector3.up * groundCheckOffset), characterController.radius,Vector3.down,out RaycastHit hit,groundCheckOffset - characterController.radius + 2 * characterController.skinWidth))
+        
+        if(Physics.SphereCast(PlayerTransform.position + (Vector3.up * groundCheckOffset), //球形检测射线从人物向上0.5米开始
+            characterController.radius,// 使用角色胶囊的半径, 
+            Vector3.down,//向下探测
+            out RaycastHit hit,//输入碰撞的信息
+            groundCheckOffset - characterController.radius + 2 * characterController.skinWidth))//检测距离
         {
             isGround = true;
         }
@@ -167,30 +170,37 @@ public class PlayerController : MonoBehaviour
             isGround = false;
             couldFall = !Physics.Raycast(PlayerTransform.position, Vector3.down, fallHeight);
         }
-    }
+    }//地面检测
 
     void SwitchPlayerState()
     {
         //如果不在地面则切换成滞空状态
         if(!isGround)
         {
+            //垂直速度大于0
             if(VerticalVelocity > 0)
             {
+                //在跳跃中
                 PlayerPostrue = E_PlayerPostrue.Jumping;
             }
+            //不是处于坠落
             else if(PlayerPostrue != E_PlayerPostrue.Falling)
             {
+                //并且是跌落
                 if (couldFall)
                 {
+                    //在坠落中
                     PlayerPostrue = E_PlayerPostrue.Falling;
                 }
             }
             
         }
+        //不是处于跳跃
         else if (PlayerPostrue == E_PlayerPostrue.Jumping)
         {
             StartCoroutine(CoolDownJump()); 
         }
+        
         else if (isLanding)
         {
             PlayerPostrue = E_PlayerPostrue.Landing;
@@ -211,11 +221,11 @@ public class PlayerController : MonoBehaviour
         }
         else if (isRunning)
         {
-            LocomotionState = E_LocomotionState.Walk;
+            LocomotionState = E_LocomotionState.Run;
         }
         else
         {
-            LocomotionState = E_LocomotionState.Run;
+            LocomotionState = E_LocomotionState.Walk;
         }
 
         if (isAiming)
@@ -226,9 +236,9 @@ public class PlayerController : MonoBehaviour
         {
             ArmState = E_ArmState.Norml;
         }
-    }
+    }//状态切换
 
-    IEnumerator CoolDownJump()
+    IEnumerator CoolDownJump()//跳跃冷却 使用协程 
     {
         LandingThreshold = Mathf.Clamp(VerticalVelocity, -10, 0);
         LandingThreshold /= 20f;
@@ -266,7 +276,7 @@ public class PlayerController : MonoBehaviour
                 VerticalVelocity += gravity * Time.deltaTime;
             }
         }
-    }
+    }//重力切换
    
     void Jump()
     {
@@ -274,6 +284,7 @@ public class PlayerController : MonoBehaviour
         if (PlayerPostrue == E_PlayerPostrue.Stand && isJumping)
         {
             VerticalVelocity = MathF.Sqrt(-2 * gravity * maxHeight);
+            //计算动画脚本混合值
             feetTween = Mathf.Repeat(Animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 1);
             feetTween = feetTween < 0.5 ? 1 : -1;
             if(LocomotionState == E_LocomotionState.Run)
@@ -289,7 +300,7 @@ public class PlayerController : MonoBehaviour
                 feetTween = UnityEngine.Random.Range(0.5f,1f) * feetTween;
             }
         }
-    }
+    }//跳跃
 
 
     void CaculateInputDirection()//输入方向的计算
@@ -306,7 +317,7 @@ public class PlayerController : MonoBehaviour
             //0.1f(dampTime)表示:从当前值过渡到standThreshold需要0.1f,使得动画过渡更加自然
             Animator.SetFloat(postrueHash, standThreshold, 0.1f, Time.deltaTime);
 
-            switch (LocomotionState)
+            switch (LocomotionState)//切换行动状态
             {
                 case E_LocomotionState.Idle:
                     Animator.SetFloat(moveSpeedHash, 0f, 0.1f, Time.deltaTime);
@@ -372,7 +383,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    Vector3 AverageVel(Vector3 newVel)
+    Vector3 AverageVel(Vector3 newVel)//评价速度计算
     {
         velCache[currentChaCheIndex] = newVel;
         currentChaCheIndex++;

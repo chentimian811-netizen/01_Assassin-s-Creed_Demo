@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,6 +15,7 @@ public enum E_AttackState
 
 public class MeeleFighter : MonoBehaviour
 {
+    [SerializeField] List<AttackData> attacks;
     [SerializeField] GameObject Sword;
 
     E_AttackState attackState;
@@ -24,6 +26,8 @@ public class MeeleFighter : MonoBehaviour
 
     bool inAction = false;
 
+    bool docombo;
+    int combocount = 0;
 
     void Awake()
     {
@@ -45,6 +49,11 @@ public class MeeleFighter : MonoBehaviour
         {
             StartCoroutine(Attack());
         }
+        else if (attackState == E_AttackState.Impact || attackState == E_AttackState.Cooldown)
+        {
+            docombo = true;
+
+        }
     }
 
     IEnumerator Attack()
@@ -52,10 +61,7 @@ public class MeeleFighter : MonoBehaviour
         inAction = true;
         attackState = E_AttackState.Windup;
 
-        float impactStartTime = 0.22f;
-        float impactEndTime = 0.50f;
-
-        animator.CrossFade("Slash", 0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
+        animator.CrossFade(attacks[combocount].AnimName,0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
 
         yield return null;//等待一帧 
 
@@ -70,7 +76,7 @@ public class MeeleFighter : MonoBehaviour
 
             if(attackState == E_AttackState.Windup)
             {
-                if (normalizedTime >= impactStartTime)
+                if (normalizedTime >= attacks[combocount].ImpactStartTime)
                 {
                     attackState = E_AttackState.Impact;
                     SwordCollider.enabled = true;
@@ -79,7 +85,7 @@ public class MeeleFighter : MonoBehaviour
             }
             else if (attackState == E_AttackState.Impact)
             {
-                if(normalizedTime >= impactEndTime)
+                if(normalizedTime >= attacks[combocount].ImpactEndTime)
                 {
                     attackState = E_AttackState.Cooldown;
                     SwordCollider.enabled = false ;
@@ -88,7 +94,14 @@ public class MeeleFighter : MonoBehaviour
             }
             else if (attackState == E_AttackState.Cooldown)
             {
-                //优化处理冷却
+                if( docombo )
+                {
+                    docombo = false;
+                    combocount = (combocount + 1) % attacks.Count;
+
+                    StartCoroutine(Attack());
+                    yield break;
+                }
             }
 
                 yield return null;//等待一帧
@@ -97,6 +110,7 @@ public class MeeleFighter : MonoBehaviour
         attackState = E_AttackState.idle;
 
         //yield return new WaitForSeconds(animState.length);//根据动画的长度进行等待
+        combocount = 0 ;
 
         inAction = false; //结束动画
     }
@@ -118,7 +132,7 @@ public class MeeleFighter : MonoBehaviour
 
         var animState = animator.GetNextAnimatorStateInfo(1);//获取下一个动画的状态信息
 
-        yield return new WaitForSeconds(animState.length);//根据动画的长度进行等待
+        yield return new WaitForSeconds(animState.length * 0.8f);//根据动画的长度进行等待
 
         inAction = false; //结束动画
     }

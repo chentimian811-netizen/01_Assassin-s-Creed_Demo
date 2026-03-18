@@ -18,6 +18,8 @@ public class MeeleFighter : MonoBehaviour
     [SerializeField] List<AttackData> attacks;
     [SerializeField] GameObject Sword;
 
+    SphereCollider leftHandeConllider, rightHandeConllider,leftFootConllider,rightFootConllider;
+
     E_AttackState attackState;
 
     BoxCollider SwordCollider;
@@ -26,7 +28,7 @@ public class MeeleFighter : MonoBehaviour
 
     bool inAction = false;
 
-    bool docombo;
+    bool doCombo;
     int combocount = 0;
 
     void Awake()
@@ -39,7 +41,15 @@ public class MeeleFighter : MonoBehaviour
         if (Sword != null)
         {
             SwordCollider =Sword.GetComponent<BoxCollider>();
+
+            leftHandeConllider = animator.GetBoneTransform(HumanBodyBones.LeftHand).GetComponent<SphereCollider>();
+            leftFootConllider = animator.GetBoneTransform(HumanBodyBones.LeftFoot).GetComponent<SphereCollider>();
+            rightHandeConllider = animator.GetBoneTransform(HumanBodyBones.RightHand).GetComponent<SphereCollider>();
+            rightFootConllider = animator.GetBoneTransform(HumanBodyBones.RightFoot).GetComponent<SphereCollider>();
+            
             SwordCollider.enabled = false;
+
+            DisableAllHitxboxes();
         }
     }
 
@@ -51,7 +61,7 @@ public class MeeleFighter : MonoBehaviour
         }
         else if (attackState == E_AttackState.Impact || attackState == E_AttackState.Cooldown)
         {
-            docombo = true;
+            doCombo = true;
 
         }
     }
@@ -79,7 +89,9 @@ public class MeeleFighter : MonoBehaviour
                 if (normalizedTime >= attacks[combocount].ImpactStartTime)
                 {
                     attackState = E_AttackState.Impact;
-                    SwordCollider.enabled = true;
+                    EnableHitbox(attacks[combocount]);
+
+                    //SwordCollider.enabled = true;
                     //¿ªÆôÅö×²
                 }
             }
@@ -88,15 +100,17 @@ public class MeeleFighter : MonoBehaviour
                 if(normalizedTime >= attacks[combocount].ImpactEndTime)
                 {
                     attackState = E_AttackState.Cooldown;
-                    SwordCollider.enabled = false ;
+                    DisableAllHitxboxes();
+
+                    //SwordCollider.enabled = false ;
                     //¹Ø±ÕÅö×²
                 }
             }
             else if (attackState == E_AttackState.Cooldown)
             {
-                if( docombo )
+                if( doCombo )
                 {
-                    docombo = false;
+                    doCombo = false;
                     combocount = (combocount + 1) % attacks.Count;
 
                     StartCoroutine(Attack());
@@ -137,4 +151,36 @@ public class MeeleFighter : MonoBehaviour
         inAction = false; //½áÊø¶¯»­
     }
 
+    void EnableHitbox(AttackData attack)
+    {
+        switch (attack.HitboxToUse)
+        {
+            case E_AttackHitbox.LeftHande:
+                leftHandeConllider.enabled = true;
+                break;
+            case E_AttackHitbox.RightHande:
+                rightHandeConllider.enabled = true;
+                break;
+            case E_AttackHitbox.LeftFoot:
+                leftFootConllider.enabled = true;
+                break;
+            case E_AttackHitbox.RightFoot:
+                rightFootConllider.enabled = true;
+                break;
+            case E_AttackHitbox.Sword:
+                SwordCollider.enabled = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+    void DisableAllHitxboxes()
+    {
+        leftHandeConllider.enabled = false;
+        leftFootConllider.enabled = false;
+        rightHandeConllider.enabled = false;
+        rightFootConllider.enabled = false;
+        SwordCollider.enabled = false;
+    }
 }

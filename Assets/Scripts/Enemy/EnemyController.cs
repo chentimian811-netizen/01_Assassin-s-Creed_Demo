@@ -5,17 +5,17 @@ using UnityEngine.AI;
 public enum E_EnemyState
 {
     Idle,
-    Chase,
+    CombatMovement,
 }
 
 public class EnemyController : MonoBehaviour
 {
-    [field:SerializeField] public float Fov { get; private set; } = 180f;
+    [field: SerializeField] public float Fov { get; private set; } = 180f;
 
-    public List<MeeleFighter> TargetsInRange {  get;  set; } = new List<MeeleFighter>();  
+    public List<MeeleFighter> TargetsInRange { get; set; } = new List<MeeleFighter>();
 
     public MeeleFighter Target { get; set; }
-    public StateMachine<EnemyController> stateMachine {  get; private set; }
+    public StateMachine<EnemyController> stateMachine { get; private set; }
 
     Dictionary<E_EnemyState, State<EnemyController>> stateDict;
 
@@ -30,8 +30,8 @@ public class EnemyController : MonoBehaviour
         animator = GetComponent<Animator>();
 
         stateDict = new Dictionary<E_EnemyState, State<EnemyController>>();
-        stateDict[E_EnemyState.Idle] = GetComponent<IdleState>(); 
-        stateDict[E_EnemyState.Chase] = GetComponent<ChaseState>(); 
+        stateDict[E_EnemyState.Idle] = GetComponent<IdleState>();
+        stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovmentState>();
 
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
@@ -45,5 +45,7 @@ public class EnemyController : MonoBehaviour
     private void Update()
     {
         stateMachine.Execute();
+
+        animator.SetFloat("MoveAmount", NavAgent.velocity.magnitude / NavAgent.speed);
     }
 }

@@ -737,7 +737,7 @@ Transform:
   m_GameObject: {fileID: 1129962410}
   serializedVersion: 2
   m_LocalRotation: {x: 0.4272561, y: 0.00788984, z: -0.0037285972, w: 0.90408856}
-  m_LocalPosition: {x: 0, y: 0.0000009536743, z: 0}
+  m_LocalPosition: {x: 0, y: 0.0000014305115, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1451,10 +1451,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1563397594}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09de4497f446e4944972bb3e8d12f1c3, type: 3}
+  m_Script: {fileID: 11500000, guid: 5cd2e46d3fbe34048b3483188515a43e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   distanceToSand: 3
+  adjustDistanceThreshold: 1
 --- !u!114 &1563397602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1493,7 +1494,7 @@ NavMeshAgent:
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
-  m_AngularSpeed: 120
+  m_AngularSpeed: 750
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 0
@@ -1573,7 +1574,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1568921404}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3779983, y: 0.008078991, z: -0.003298725, w: 0.9257652}
+  m_LocalRotation: {x: 0.37799823, y: 0.008079005, z: -0.0032987304, w: 0.9257652}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2018,7 +2019,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2063042446}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.39614373, y: 0.008012516, z: -0.0034570803, w: 0.9181471}
+  m_LocalRotation: {x: 0.39614365, y: 0.0080125015, z: -0.0034570731, w: 0.9181471}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -13239,5 +13240,5 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1186076033}
   - {fileID: 1438546959224737755}
-  - {fileID: 1563397600}
   - {fileID: 356798553}
+  - {fileID: 1563397600}

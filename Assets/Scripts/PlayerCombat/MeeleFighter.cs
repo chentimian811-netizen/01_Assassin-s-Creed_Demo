@@ -47,7 +47,6 @@ public class MeeleFighter : MonoBehaviour
             rightHandeConllider = animator.GetBoneTransform(HumanBodyBones.RightHand).GetComponent<SphereCollider>();
             rightFootConllider = animator.GetBoneTransform(HumanBodyBones.RightFoot).GetComponent<SphereCollider>();
             
-            SwordCollider.enabled = false;
 
             DisableAllHitxboxes();
         }
@@ -89,7 +88,7 @@ public class MeeleFighter : MonoBehaviour
                 if (normalizedTime >= attacks[combocount].ImpactStartTime)
                 {
                     attackState = E_AttackState.Impact;
-                    EnableHitbox(attacks[combocount]);
+                    EnableHitbox(attacks[combocount]); 
 
                     //SwordCollider.enabled = true;
                     //开启碰撞
@@ -133,7 +132,8 @@ public class MeeleFighter : MonoBehaviour
     {
         if (other.tag == "Hitbox" && !inAction)
         {
-            Debug.Log("打中了");
+            Debug.Log("打中了！");
+
             StartCoroutine(PlayerHitReaction());
         }
     }
@@ -146,7 +146,7 @@ public class MeeleFighter : MonoBehaviour
 
         var animState = animator.GetNextAnimatorStateInfo(1);//获取下一个动画的状态信息
 
-        yield return new WaitForSeconds(animState.length * 0.8f);//根据动画的长度进行等待
+        yield return new WaitForSeconds(animState.length * 0.60f);//根据动画的长度进行等待
 
         inAction = false; //结束动画
     }
@@ -181,6 +181,6 @@ public class MeeleFighter : MonoBehaviour
         leftFootConllider.enabled = false;
         rightHandeConllider.enabled = false;
         rightFootConllider.enabled = false;
-        SwordCollider.enabled = false;
+        SwordCollider.enabled = false; 
     }
 }

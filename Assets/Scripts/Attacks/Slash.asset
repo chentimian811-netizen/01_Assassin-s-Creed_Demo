@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Slash
   m_EditorClassIdentifier: 
   <AnimName>k__BackingField: Slash
-  <HitboxToHUse>k__BackingField: 4
+  <HitboxToUse>k__BackingField: 4
   <ImpactStartTime>k__BackingField: 0.22
   <ImpactEndTime>k__BackingField: 0.5

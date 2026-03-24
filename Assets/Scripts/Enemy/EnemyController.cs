@@ -30,8 +30,10 @@ public class EnemyController : MonoBehaviour
         animator = GetComponent<Animator>();
 
         stateDict = new Dictionary<E_EnemyState, State<EnemyController>>();
+
         stateDict[E_EnemyState.Idle] = GetComponent<IdleState>();
-        stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovmentState>();
+
+        stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovmentStates>();
 
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);

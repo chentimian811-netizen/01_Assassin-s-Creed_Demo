@@ -7,6 +7,7 @@ public enum E_EnemyState
     Idle,
     CombatMovement,
     Attack,
+    ReteatAfterAttack,
 }
 
 public class EnemyController : MonoBehaviour
@@ -45,6 +46,8 @@ public class EnemyController : MonoBehaviour
 
         stateDict[E_EnemyState.Attack] = GetComponent<AttackSates>();
 
+        stateDict[E_EnemyState.ReteatAfterAttack] = GetComponent<RetreatAfterAttackState>();
+
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
     }
@@ -75,7 +78,6 @@ public class EnemyController : MonoBehaviour
 
         float angle = Vector3.SignedAngle(transform.forward, velocity, Vector3.up);
         float strafeSpeed = Mathf.Sin(angle * Mathf.Deg2Rad);
-
         Animator.SetFloat("strafeSpeed", strafeSpeed, 0.2f, Time.deltaTime);
 
         prevPos = transform.position;

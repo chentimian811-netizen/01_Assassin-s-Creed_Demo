@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class AttackSates : State<EnemyController>
 {
-    [SerializeField] float attackDistance = 2.0f;
+    [SerializeField] float attackDistance = 3.0f;
 
     EnemyController enemy;
 
@@ -20,24 +20,41 @@ public class AttackSates : State<EnemyController>
     {
         if (isAttacking) return;
 
+        
+
         enemy.NavAgent.SetDestination(enemy.Target.transform.position);
 
-        if (Vector3.Distance(enemy.Target.transform.position, enemy.transform.position) <= attackDistance + 0.5f)
+        if (Vector3.Distance(enemy.Target.transform.position, enemy.transform.position) <= attackDistance + 0.3f) 
         {
-            StartCoroutine(Attack());
+            StartCoroutine(Attack(Random.Range(0,enemy.Fighter.Attacks.Count + 1)));
         }
 
     }
 
-    IEnumerator Attack()
+    IEnumerator Attack( int comboCount = 1)
     {
         isAttacking = true;
         enemy.Animator.applyRootMotion = true;
 
         enemy.Fighter.ToTryAttack();
+
+
+        for(int i = 1; i < comboCount; i++)
+        {
+            yield return new WaitUntil(() => enemy.Fighter.AttackState == E_AttackState.Cooldown);
+            enemy.Fighter.ToTryAttack();
+        }
+
         yield return new WaitUntil(() => enemy.Fighter.AttackState == E_AttackState.idle); 
 
         enemy.Animator.applyRootMotion = false;
         isAttacking = false;
+
+        enemy.ChangeState(E_EnemyState.ReteatAfterAttack);
+    }
+
+    public override void Exit()
+    {
+        enemy.NavAgent.ResetPath();
     }
 }

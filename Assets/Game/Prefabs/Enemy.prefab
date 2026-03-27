@@ -1351,6 +1351,7 @@ GameObject:
   - component: {fileID: 1221789589308667825}
   - component: {fileID: 3779881558062216638}
   - component: {fileID: 1847130694280441761}
+  - component: {fileID: 8081065872394179666}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
@@ -1454,7 +1455,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: e2152246b6fb46843acef27e461907be, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_WarningMessage: 
@@ -1514,6 +1515,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attackDistance: 1
+--- !u!114 &8081065872394179666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769488866850045155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9340b3f37a592a4f8e0d60909e06e78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  backwardWalkSpeed: 1.5
+  distanceToRetreat: 3
 --- !u!1 &4997539610557008081
 GameObject:
   m_ObjectHideFlags: 0

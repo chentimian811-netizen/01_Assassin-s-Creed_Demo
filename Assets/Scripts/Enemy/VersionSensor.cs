@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+ 
 public class VersionSensor : MonoBehaviour
 {
     [SerializeField] EnemyController enemy;
@@ -11,6 +11,7 @@ public class VersionSensor : MonoBehaviour
         if (fighter != null)
         {
             enemy.TargetsInRange.Add(fighter);
+            EnemyManager.i.AddEnemyInRange(enemy);
         }
 
     }
@@ -21,6 +22,7 @@ public class VersionSensor : MonoBehaviour
         if (fighter != null)
         {
             enemy.TargetsInRange.Remove(fighter);
+            EnemyManager.i.RemoveEnemyInRange(enemy);
         }
     }
 }

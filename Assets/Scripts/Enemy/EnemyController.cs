@@ -6,6 +6,7 @@ public enum E_EnemyState
 {
     Idle,
     CombatMovement,
+    Attack,
 }
 
 public class EnemyController : MonoBehaviour
@@ -21,19 +22,28 @@ public class EnemyController : MonoBehaviour
 
     public NavMeshAgent NavAgent { get; private set; }
 
-    public Animator animator { get; private set; }
+    public Animator Animator { get; private set; }
+    public MeeleFighter Fighter { get; private set; }
+    public float CombatMovementTimer { get; set; } = 0f;
+
+
+    Vector3 prevPos;
 
     private void Start()
     {
         NavAgent = GetComponent<NavMeshAgent>();
 
-        animator = GetComponent<Animator>();
+        Animator = GetComponent<Animator>();
+
+        Fighter = GetComponent<MeeleFighter>();
 
         stateDict = new Dictionary<E_EnemyState, State<EnemyController>>();
 
         stateDict[E_EnemyState.Idle] = GetComponent<IdleState>();
 
         stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovmentStates>();
+
+        stateDict[E_EnemyState.Attack] = GetComponent<AttackSates>();
 
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
@@ -44,10 +54,31 @@ public class EnemyController : MonoBehaviour
         stateMachine.ChangeState(stateDict[state]);
     }
 
+
+    public bool IsInState(E_EnemyState state)
+    {
+         return stateMachine.CurrentState == stateDict[state];
+    }
+
+
+    
+
     private void Update()
     {
         stateMachine.Execute();
 
-        animator.SetFloat("MoveAmount", NavAgent.velocity.magnitude / NavAgent.speed);
+        var deltaPos =Animator.applyRootMotion ? Vector3.zero:transform.position - prevPos;
+        var velocity = deltaPos / Time.deltaTime;
+
+        float forwardSpeed =Vector3.Dot(velocity, transform.forward);
+        Animator.SetFloat("forwardSpeed", forwardSpeed / NavAgent.speed, 0.2f, Time.deltaTime);
+
+        float angle = Vector3.SignedAngle(transform.forward, velocity, Vector3.up);
+        float strafeSpeed = Mathf.Sin(angle * Mathf.Deg2Rad);
+
+        Animator.SetFloat("strafeSpeed", strafeSpeed, 0.2f, Time.deltaTime);
+
+        prevPos = transform.position;
+
     }
 }

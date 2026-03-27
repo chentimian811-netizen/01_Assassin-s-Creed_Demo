@@ -20,13 +20,13 @@ public class MeeleFighter : MonoBehaviour
 
     SphereCollider leftHandeConllider, rightHandeConllider,leftFootConllider,rightFootConllider;
 
-    E_AttackState attackState;
+    public  E_AttackState AttackState {  get; private set; }
 
     BoxCollider SwordCollider;
 
     Animator animator;
 
-    bool inAction = false;
+    public  bool inAction { get; private set; } = false;
 
     bool doCombo;
     int combocount = 0;
@@ -58,7 +58,7 @@ public class MeeleFighter : MonoBehaviour
         {
             StartCoroutine(Attack());
         }
-        else if (attackState == E_AttackState.Impact || attackState == E_AttackState.Cooldown)
+        else if (AttackState == E_AttackState.Impact || AttackState == E_AttackState.Cooldown)
         {
             doCombo = true;
 
@@ -68,7 +68,7 @@ public class MeeleFighter : MonoBehaviour
     IEnumerator Attack()
     {
         inAction = true;
-        attackState = E_AttackState.Windup;
+        AttackState = E_AttackState.Windup;
 
         animator.CrossFade(attacks[combocount].AnimName,0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
 
@@ -83,29 +83,29 @@ public class MeeleFighter : MonoBehaviour
 
             float normalizedTime = timer / animState.length;
 
-            if(attackState == E_AttackState.Windup)
+            if(AttackState == E_AttackState.Windup)
             {
                 if (normalizedTime >= attacks[combocount].ImpactStartTime)
                 {
-                    attackState = E_AttackState.Impact;
+                    AttackState = E_AttackState.Impact;
                     EnableHitbox(attacks[combocount]); 
 
                     //SwordCollider.enabled = true;
                     //开启碰撞
                 }
             }
-            else if (attackState == E_AttackState.Impact)
+            else if (AttackState == E_AttackState.Impact)
             {
                 if(normalizedTime >= attacks[combocount].ImpactEndTime)
                 {
-                    attackState = E_AttackState.Cooldown;
+                    AttackState = E_AttackState.Cooldown;
                     DisableAllHitxboxes();
 
                     //SwordCollider.enabled = false ;
                     //关闭碰撞
                 }
             }
-            else if (attackState == E_AttackState.Cooldown)
+            else if (AttackState == E_AttackState.Cooldown)
             {
                 if( doCombo )
                 {
@@ -120,7 +120,7 @@ public class MeeleFighter : MonoBehaviour
                 yield return null;//等待一帧
         }
 
-        attackState = E_AttackState.idle;
+        AttackState = E_AttackState.idle;
 
         //yield return new WaitForSeconds(animState.length);//根据动画的长度进行等待
         combocount = 0 ;
@@ -177,10 +177,28 @@ public class MeeleFighter : MonoBehaviour
 
     void DisableAllHitxboxes()
     {
-        leftHandeConllider.enabled = false;
-        leftFootConllider.enabled = false;
-        rightHandeConllider.enabled = false;
-        rightFootConllider.enabled = false;
-        SwordCollider.enabled = false; 
+        if(leftFootConllider != null)
+        {
+            leftHandeConllider.enabled = false;
+        }
+        
+        if (leftHandeConllider != null)
+        {
+            leftFootConllider.enabled = false;
+        }
+        
+        if (rightFootConllider != null)
+        {
+            rightHandeConllider.enabled = false;
+        }
+        if(leftHandeConllider != null)
+        {
+            rightFootConllider.enabled = false;
+        }
+        if(SwordCollider != null)
+        {
+            SwordCollider.enabled = false;
+        }
+        
     }
 }

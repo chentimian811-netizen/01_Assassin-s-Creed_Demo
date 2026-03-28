@@ -19,15 +19,15 @@ public class MeeleFighter : MonoBehaviour
     [SerializeField] List<AttackData> attacks;
     [SerializeField] GameObject Sword;
 
-    SphereCollider leftHandeConllider, rightHandeConllider,leftFootConllider,rightFootConllider;
+    SphereCollider leftHandeConllider, rightHandeConllider, leftFootConllider, rightFootConllider;
 
-    public  E_AttackState AttackState {  get; private set; }
+    public E_AttackState AttackState { get; private set; }
 
     BoxCollider SwordCollider;
 
     Animator animator;
 
-    public  bool inAction { get; private set; } = false;
+    public bool inAction { get; private set; } = false;
 
     public bool inCounter { get; set; } = false;
 
@@ -37,26 +37,26 @@ public class MeeleFighter : MonoBehaviour
     void Awake()
     {
         animator = GetComponent<Animator>();
-        
+
     }
     private void Start()
     {
         if (Sword != null)
         {
-            SwordCollider =Sword.GetComponent<BoxCollider>();
+            SwordCollider = Sword.GetComponent<BoxCollider>();
 
             leftHandeConllider = animator.GetBoneTransform(HumanBodyBones.LeftHand).GetComponent<SphereCollider>();
             leftFootConllider = animator.GetBoneTransform(HumanBodyBones.LeftFoot).GetComponent<SphereCollider>();
             rightHandeConllider = animator.GetBoneTransform(HumanBodyBones.RightHand).GetComponent<SphereCollider>();
             rightFootConllider = animator.GetBoneTransform(HumanBodyBones.RightFoot).GetComponent<SphereCollider>();
-            
+
 
             DisableAllHitxboxes();
         }
     }
 
     public void ToTryAttack()
-    {  
+    {
         if (!inAction)
         {
             StartCoroutine(Attack());
@@ -73,7 +73,7 @@ public class MeeleFighter : MonoBehaviour
         inAction = true;
         AttackState = E_AttackState.Windup;
 
-        animator.CrossFade(attacks[combocount].AnimName,0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
+        animator.CrossFade(attacks[combocount].AnimName, 0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
 
         yield return null;//等待一帧 
 
@@ -86,15 +86,15 @@ public class MeeleFighter : MonoBehaviour
 
             float normalizedTime = timer / animState.length;
 
-            if(AttackState == E_AttackState.Windup)
+            if (AttackState == E_AttackState.Windup)
             {
-                if(inCounter) 
+                if (inCounter)
                     break;
 
                 if (normalizedTime >= attacks[combocount].ImpactStartTime)
                 {
                     AttackState = E_AttackState.Impact;
-                    EnableHitbox(attacks[combocount]); 
+                    EnableHitbox(attacks[combocount]);
 
                     //SwordCollider.enabled = true;
                     //开启碰撞
@@ -102,7 +102,7 @@ public class MeeleFighter : MonoBehaviour
             }
             else if (AttackState == E_AttackState.Impact)
             {
-                if(normalizedTime >= attacks[combocount].ImpactEndTime)
+                if (normalizedTime >= attacks[combocount].ImpactEndTime)
                 {
                     AttackState = E_AttackState.Cooldown;
                     DisableAllHitxboxes();
@@ -113,7 +113,7 @@ public class MeeleFighter : MonoBehaviour
             }
             else if (AttackState == E_AttackState.Cooldown)
             {
-                if( doCombo )
+                if (doCombo)
                 {
                     doCombo = false;
                     combocount = (combocount + 1) % attacks.Count;
@@ -123,13 +123,13 @@ public class MeeleFighter : MonoBehaviour
                 }
             }
 
-                yield return null;//等待一帧
+            yield return null;//等待一帧
         }
 
         AttackState = E_AttackState.idle;
 
         //yield return new WaitForSeconds(animState.length);//根据动画的长度进行等待
-        combocount = 0 ;
+        combocount = 0;
 
         inAction = false; //结束动画
     }
@@ -220,29 +220,29 @@ public class MeeleFighter : MonoBehaviour
 
     void DisableAllHitxboxes()
     {
-        if(leftFootConllider != null)
+        if (leftFootConllider != null)
         {
             leftHandeConllider.enabled = false;
         }
-        
+
         if (leftHandeConllider != null)
         {
             leftFootConllider.enabled = false;
         }
-        
+
         if (rightFootConllider != null)
         {
             rightHandeConllider.enabled = false;
         }
-        if(leftHandeConllider != null)
+        if (leftHandeConllider != null)
         {
             rightFootConllider.enabled = false;
         }
-        if(SwordCollider != null)
+        if (SwordCollider != null)
         {
             SwordCollider.enabled = false;
         }
-        
+
     }
 
     public List<AttackData> Attacks => attacks;

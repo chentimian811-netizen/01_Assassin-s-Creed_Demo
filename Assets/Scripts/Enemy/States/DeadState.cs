@@ -12,6 +12,6 @@ public class DeadState : State<EnemyController>
         EnemyManager.i.RemoveEnemyInRange(owner);
 
         owner.NavAgent.enabled = false;
-        owner.Animator.enabled = false;
+        owner.character.enabled = false;
     }
 }

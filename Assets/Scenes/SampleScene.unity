@@ -736,7 +736,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1129962410}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.4272561, y: 0.00788984, z: -0.0037285972, w: 0.90408856}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1292,7 +1292,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1568921404}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3779983, y: 0.008078991, z: -0.003298725, w: 0.9257652}
+  m_LocalRotation: {x: 0.37799814, y: 0.008079001, z: -0.0032987276, w: 0.9257653}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1308,6 +1308,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1006722472745913749, guid: bfa37c064e54d2b4ab4c04511b454caf,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: e2152246b6fb46843acef27e461907be, type: 2}
     - target: {fileID: 1006722472745913749, guid: bfa37c064e54d2b4ab4c04511b454caf,
         type: 3}
       propertyPath: m_ApplyRootMotion
@@ -1775,7 +1780,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2063042446}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.39614373, y: 0.008012516, z: -0.0034570803, w: 0.9181471}
+  m_LocalRotation: {x: 0.39614365, y: 0.008012514, z: -0.0034570785, w: 0.9181471}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -9790,6 +9795,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1006722472745913749, guid: bfa37c064e54d2b4ab4c04511b454caf,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: e2152246b6fb46843acef27e461907be, type: 2}
     - target: {fileID: 4769488866850045155, guid: bfa37c064e54d2b4ab4c04511b454caf,
         type: 3}
       propertyPath: m_Name

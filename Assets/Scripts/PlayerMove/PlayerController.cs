@@ -444,7 +444,6 @@ public class PlayerController : MonoBehaviour
             Vector3 playerDelataMovement = averageVel * Time.deltaTime;
             characterController.Move(playerDelataMovement); 
         }
-       
     }
 
     private void OnAnimatorMove()

@@ -1352,6 +1352,7 @@ GameObject:
   - component: {fileID: 3779881558062216638}
   - component: {fileID: 1847130694280441761}
   - component: {fileID: 8081065872394179666}
+  - component: {fileID: 4621072309094632632}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
@@ -1413,8 +1414,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attacks:
-  - {fileID: 11400000, guid: e2abf08d88207cc48ad8b09f66758426, type: 2}
-  - {fileID: 11400000, guid: 9ffeb712fb5fd3a4aa7de97050feeae7, type: 2}
+  - {fileID: 11400000, guid: ac0c29b7b65405247b8d850d08e98675, type: 2}
+  - {fileID: 11400000, guid: 3c5b7744a4f889f47bf29fae2b0528d1, type: 2}
   Sword: {fileID: 3139722781369767024}
 --- !u!143 &8684321585978170563
 CharacterController:
@@ -1529,6 +1530,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   backwardWalkSpeed: 1.5
   distanceToRetreat: 3
+--- !u!114 &4621072309094632632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769488866850045155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2af3d7d299c3d554aa662355a7eb358a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4997539610557008081
 GameObject:
   m_ObjectHideFlags: 0

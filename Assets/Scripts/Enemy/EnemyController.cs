@@ -8,6 +8,7 @@ public enum E_EnemyState
     CombatMovement,
     Attack,
     ReteatAfterAttack,
+    Dead,
 }
 
 public class EnemyController : MonoBehaviour
@@ -25,7 +26,11 @@ public class EnemyController : MonoBehaviour
 
     public Animator Animator { get; private set; }
     public MeeleFighter Fighter { get; private set; }
+    public VersionSensor VersionSensor { get;  set; }
+    public CharacterController character { get; private set; }
     public float CombatMovementTimer { get; set; } = 0f;
+
+
 
 
     Vector3 prevPos;
@@ -38,6 +43,8 @@ public class EnemyController : MonoBehaviour
 
         Fighter = GetComponent<MeeleFighter>();
 
+        character = GetComponent<CharacterController>();
+
         stateDict = new Dictionary<E_EnemyState, State<EnemyController>>();
 
         stateDict[E_EnemyState.Idle] = GetComponent<IdleState>();
@@ -47,6 +54,8 @@ public class EnemyController : MonoBehaviour
         stateDict[E_EnemyState.Attack] = GetComponent<AttackSates>();
 
         stateDict[E_EnemyState.ReteatAfterAttack] = GetComponent<RetreatAfterAttackState>();
+
+        stateDict[E_EnemyState.Dead] = GetComponent<DeadState>();
 
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);

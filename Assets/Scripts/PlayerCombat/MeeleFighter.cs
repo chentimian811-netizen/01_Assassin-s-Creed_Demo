@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Search;
 using UnityEngine;
 
 
@@ -27,6 +28,8 @@ public class MeeleFighter : MonoBehaviour
     Animator animator;
 
     public  bool inAction { get; private set; } = false;
+
+    public bool inCounter { get; set; } = false;
 
     bool doCombo;
     int combocount = 0;
@@ -85,6 +88,9 @@ public class MeeleFighter : MonoBehaviour
 
             if(AttackState == E_AttackState.Windup)
             {
+                if(inCounter) 
+                    break;
+
                 if (normalizedTime >= attacks[combocount].ImpactStartTime)
                 {
                     AttackState = E_AttackState.Impact;
@@ -150,6 +156,43 @@ public class MeeleFighter : MonoBehaviour
 
         inAction = false; //结束动画
     }
+    public IEnumerator PerformCounterAttack(EnemyController opponet)
+    {
+        inAction = true;
+
+        inCounter = true;
+        opponet.Fighter.inCounter = true;
+        opponet.ChangeState(E_EnemyState.Dead);
+
+        var disVec = opponet.transform.position - transform.position;
+        disVec.y = 0;
+
+        transform.rotation = Quaternion.LookRotation(disVec);
+        opponet.transform.rotation = Quaternion.LookRotation(-disVec);
+
+        var targetPos = opponet.transform.position - disVec.normalized * 2.7f;
+
+        animator.CrossFade("CounterAttack", 0.2f);
+        opponet.Animator.CrossFade("CounterAttackVictim", 0.2f);
+
+        yield return null;
+
+        var animState = animator.GetNextAnimatorStateInfo(1);
+
+        float timer = 0f;
+        while (timer <= animState.length)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, 2 * Time.deltaTime);
+
+            yield return null;
+            timer += Time.deltaTime;
+        }
+
+        inCounter = false;
+        opponet.Fighter.inCounter = false;
+
+        inAction = false; //结束动画
+    }
 
     void EnableHitbox(AttackData attack)
     {
@@ -203,4 +246,6 @@ public class MeeleFighter : MonoBehaviour
     }
 
     public List<AttackData> Attacks => attacks;
+
+    public bool IsCounterable => AttackState == E_AttackState.Windup && combocount == 0;
 }

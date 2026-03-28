@@ -50,7 +50,12 @@ public class AttackSates : State<EnemyController>
         enemy.Animator.applyRootMotion = false;
         isAttacking = false;
 
-        enemy.ChangeState(E_EnemyState.ReteatAfterAttack);
+
+        if (enemy.IsInState(E_EnemyState.Attack))
+        {
+            enemy.ChangeState(E_EnemyState.ReteatAfterAttack);
+        }
+        
     }
 
     public override void Exit()

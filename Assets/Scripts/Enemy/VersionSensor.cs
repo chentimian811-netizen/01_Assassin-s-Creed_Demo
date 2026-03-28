@@ -5,6 +5,12 @@ using UnityEngine;
 public class VersionSensor : MonoBehaviour
 {
     [SerializeField] EnemyController enemy;
+
+    private void Awake()
+    {
+        enemy.VersionSensor = this;
+    }
+    
     private void OnTriggerEnter(Collider other)
     {
         var fighter = other.GetComponent<MeeleFighter>();

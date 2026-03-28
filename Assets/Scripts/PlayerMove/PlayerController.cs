@@ -168,7 +168,18 @@ public class PlayerController : MonoBehaviour
 
     public void GetLightAttack(InputAction.CallbackContext context)
     {
-        meeleFighter.ToTryAttack();
+        var enemy = EnemyManager.i.GetAttackingEnemy();
+
+        if(enemy != null && enemy.Fighter.IsCounterable && !meeleFighter.inAction)
+        {
+            StartCoroutine(meeleFighter.PerformCounterAttack(enemy));
+        }
+        else
+        {
+            meeleFighter.ToTryAttack();
+        }
+
+        
     }
     #endregion
      
@@ -434,5 +445,15 @@ public class PlayerController : MonoBehaviour
             characterController.Move(playerDelataMovement); 
         }
        
+    }
+
+    private void OnAnimatorMove()
+    {
+        if (!meeleFighter.inCounter)
+        {
+            transform.position += Animator.deltaPosition;
+        }
+        
+        transform.rotation *= Animator.deltaRotation;
     }
 }

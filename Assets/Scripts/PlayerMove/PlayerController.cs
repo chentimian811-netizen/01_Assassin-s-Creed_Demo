@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Cinemachine;
+using UnityEngine.Rendering;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,6 +14,13 @@ public class PlayerController : MonoBehaviour
     Transform cameraTransform;
     CharacterController characterController;
     MeeleFighter meeleFighter;
+
+
+    public EnemyController tatgetEnemy;
+
+    CinemachineFreeLook freeLook;
+
+   
 
     public enum E_PlayerPostrue//玩家姿态枚举
     {
@@ -36,7 +45,7 @@ public class PlayerController : MonoBehaviour
     }
     public E_LocomotionState LocomotionState = E_LocomotionState.Idle;//规定玩家的初始动作
 
-    public enum E_ArmState//玩家瞄准状态枚举
+    public enum E_ArmState//玩家瞄准状态枚举 
     {
         Norml,
         Aim,
@@ -127,6 +136,8 @@ public class PlayerController : MonoBehaviour
         Animator.SetFloat(postrueHash, standThreshold);
         Animator.SetFloat(moveSpeedHash, 0f);
         Animator.SetFloat(turnSpeedHash, 0f);
+
+        freeLook = FindAnyObjectByType<CinemachineFreeLook>();
 
     }
     // Update is called once per frame
@@ -342,7 +353,7 @@ public class PlayerController : MonoBehaviour
        playerMovement = PlayerTransform.InverseTransformVector(playerMovement);//将世界坐标转换为玩家的当前坐标
     }
 
-    void SetupAnimator()//动画状态更新
+    void  SetupAnimator()//动画状态更新
     {
         if (PlayerPostrue == E_PlayerPostrue.Stand)
         {
@@ -431,6 +442,9 @@ public class PlayerController : MonoBehaviour
 
     private void AnimatorMove()//动画驱动移动
     {
+        
+
+
         if(PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling)
         {
             Vector3 playerDelataMovement = Animator.deltaPosition;
@@ -454,5 +468,19 @@ public class PlayerController : MonoBehaviour
         }
         
         transform.rotation *= Animator.deltaRotation;
+    }
+
+    public Vector3 GetTargetingDir()//获取目标方向
+    {
+        if (tatgetEnemy != null && freeLook.m_LookAt != null)
+        {
+            Vector3 VecFromCam = freeLook.m_LookAt.position - transform.position;
+            VecFromCam.y = 0;
+            return VecFromCam.normalized;
+        }
+        else
+        {
+            return transform.forward;
+        }
     }
 }

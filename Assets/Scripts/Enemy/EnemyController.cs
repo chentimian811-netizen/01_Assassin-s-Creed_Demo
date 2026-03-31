@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using Cinemachine;
 
 public enum E_EnemyState
 {
@@ -20,6 +21,8 @@ public class EnemyController : MonoBehaviour
     public MeeleFighter Target { get; set; }
     public StateMachine<EnemyController> stateMachine { get; private set; }
 
+    public SkinnedMeshHighlighter MeshHightlighter { get; private set; }
+
     Dictionary<E_EnemyState, State<EnemyController>> stateDict;
 
     public NavMeshAgent NavAgent { get; private set; }
@@ -37,6 +40,8 @@ public class EnemyController : MonoBehaviour
 
     private void Start()
     {
+        MeshHightlighter = GetComponent<SkinnedMeshHighlighter>();
+
         NavAgent = GetComponent<NavMeshAgent>();
 
         Animator = GetComponent<Animator>();

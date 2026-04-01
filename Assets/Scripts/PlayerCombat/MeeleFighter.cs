@@ -27,6 +27,8 @@ public class MeeleFighter : MonoBehaviour
 
     Animator animator;
 
+    public bool IsAttackingHit { get; private set; } = false;
+
     public bool inAction { get; private set; } = false;
 
     public bool inCounter { get; set; } = false;
@@ -55,11 +57,11 @@ public class MeeleFighter : MonoBehaviour
         }
     }
 
-    public void ToTryAttack()
+    public void ToTryAttack(MeeleFighter target = null)
     {
         if (!inAction)
         {
-            StartCoroutine(Attack());
+            StartCoroutine(Attack(target));
         }
         else if (AttackState == E_AttackState.Impact || AttackState == E_AttackState.Cooldown)
         {
@@ -68,9 +70,13 @@ public class MeeleFighter : MonoBehaviour
         }
     }
 
-    IEnumerator Attack()
+    MeeleFighter currentTarget;
+
+    IEnumerator Attack(MeeleFighter target = null)
     {
         inAction = true;
+
+        currentTarget = target;
         AttackState = E_AttackState.Windup;
 
         animator.CrossFade(attacks[combocount].AnimName, 0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
@@ -82,6 +88,11 @@ public class MeeleFighter : MonoBehaviour
         float timer = 0f;
         while (timer <= animState.length)
         {
+            if (IsAttackingHit)
+            {
+                break;
+            }
+
             timer += Time.deltaTime;
 
             float normalizedTime = timer / animState.length;
@@ -118,7 +129,7 @@ public class MeeleFighter : MonoBehaviour
                     doCombo = false;
                     combocount = (combocount + 1) % attacks.Count;
 
-                    StartCoroutine(Attack());
+                    StartCoroutine(Attack(target));
                     yield break;
                 }
             }
@@ -130,22 +141,32 @@ public class MeeleFighter : MonoBehaviour
 
         //yield return new WaitForSeconds(animState.length);//根据动画的长度进行等待
         combocount = 0;
-
         inAction = false; //结束动画
+        currentTarget = null;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Hitbox" && !inAction)
+        if (other.tag == "Hitbox" && !IsAttackingHit && !inCounter)
         {
             Debug.Log("打中了！");
+            var attacker = other.GetComponentInParent<MeeleFighter>();
+            if(attacker.currentTarget != null && attacker.currentTarget != this)
+            {
+                return;
+            }
 
-            StartCoroutine(PlayerHitReaction());
+            StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeeleFighter>().transform));
         }
     }
-    IEnumerator PlayerHitReaction()
+    IEnumerator PlayerHitReaction(Transform attacker)
     {
         inAction = true;
+        IsAttackingHit = true;
+        var dispVec = attacker.position - transform.position;
+        dispVec.y = 0;
+        transform.rotation = Quaternion.LookRotation(dispVec); 
+
         animator.CrossFade("SwordImpact", 0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
 
         yield return null;//等待一帧 
@@ -155,6 +176,7 @@ public class MeeleFighter : MonoBehaviour
         yield return new WaitForSeconds(animState.length * 0.60f);//根据动画的长度进行等待
 
         inAction = false; //结束动画
+        IsAttackingHit = false;
     }
     public IEnumerator PerformCounterAttack(EnemyController opponet)
     {

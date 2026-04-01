@@ -36,13 +36,13 @@ public class AttackSates : State<EnemyController>
         isAttacking = true;
         enemy.Animator.applyRootMotion = true;
 
-        enemy.Fighter.ToTryAttack();
+        enemy.Fighter.ToTryAttack(enemy.Target);
 
 
         for(int i = 1; i < comboCount; i++)
         {
             yield return new WaitUntil(() => enemy.Fighter.AttackState == E_AttackState.Cooldown);
-            enemy.Fighter.ToTryAttack();
+            enemy.Fighter.ToTryAttack(enemy.Target);
         }
 
         yield return new WaitUntil(() => enemy.Fighter.AttackState == E_AttackState.idle); 

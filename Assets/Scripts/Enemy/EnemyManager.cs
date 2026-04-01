@@ -31,6 +31,13 @@ public class EnemyManager : MonoBehaviour
     public void RemoveEnemyInRange(EnemyController enemy)
     {
         enemiesInRange.Remove(enemy);
+
+        if(enemy == Player.tatgetEnemy)
+        {
+            enemy.MeshHightlighter?.HighlightMesh(false);
+            Player.tatgetEnemy = GetClosesEnemyToPlayerDir();
+            Player.tatgetEnemy?.MeshHightlighter?.HighlightMesh(true);
+        }
     }
 
     float timer = 0f;
@@ -96,17 +103,21 @@ public class EnemyManager : MonoBehaviour
         float minDistance = Mathf.Infinity;
         EnemyController closestEnemy = null;
 
+
         foreach (var enemy in enemiesInRange)
         {
             var vecToEnemy = enemy.transform.position - Player.transform.position;
             vecToEnemy.y = 0;
 
             float angle = Vector3.Angle(targetingDir,vecToEnemy);
-            float distance = vecToEnemy.magnitude * Mathf.Sin(angle * Mathf.Deg2Rad);
+            float perpDist = vecToEnemy.magnitude * Mathf.Sin(angle * Mathf.Deg2Rad);
+            float paraDist = vecToEnemy.magnitude * Mathf.Cos(angle * Mathf.Deg2Rad);
 
-            if(distance < minDistance)
+            float score = paraDist * 10 + paraDist;
+
+            if (score < minDistance)
             {
-                minDistance = distance;
+                minDistance = score;
                 closestEnemy = enemy;
             }
 

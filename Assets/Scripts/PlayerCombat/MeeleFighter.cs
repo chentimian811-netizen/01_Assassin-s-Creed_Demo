@@ -27,7 +27,7 @@ public class MeeleFighter : MonoBehaviour
 
     public E_AttackState AttackState { get; private set; }
 
-    public event Action OnGotHit;
+    public event Action<MeeleFighter> OnGotHit;
     public event Action OnHitComplete;
 
     BoxCollider SwordCollider;
@@ -164,7 +164,7 @@ public class MeeleFighter : MonoBehaviour
             }
 
             TakeDamage(5f);
-            OnGotHit?.Invoke();
+            OnGotHit?.Invoke(attacker);
 
             if (Health > 0)
             {

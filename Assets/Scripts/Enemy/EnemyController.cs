@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using Cinemachine;
+using Unity.Mathematics;
+using UnityEditor.Experimental.GraphView;
 
 public enum E_EnemyState
 {
@@ -16,6 +18,8 @@ public enum E_EnemyState
 public class EnemyController : MonoBehaviour
 {
     [field: SerializeField] public float Fov { get; private set; } = 180f;
+
+    [field: SerializeField] public float AlertRange { get; private set; } = 20f;
 
     public List<MeeleFighter> TargetsInRange { get; set; } = new List<MeeleFighter>();
 
@@ -68,10 +72,15 @@ public class EnemyController : MonoBehaviour
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
 
-        Fighter.OnGotHit += () =>
+        Fighter.OnGotHit += (MeeleFighter attacker) =>
         {
             if(Fighter.Health > 0)
             {
+                if(Target == null)
+                {
+                    Target = attacker;
+                    AlertNearbyEnemies();
+                }
                 ChangeState(E_EnemyState.GettingHit);
             }
             else
@@ -141,5 +150,24 @@ public class EnemyController : MonoBehaviour
         }
 
         return null; 
+    }
+
+    public void AlertNearbyEnemies()
+    {
+        var colliders =  Physics.OverlapBox(transform.position, new Vector3(AlertRange / 2f, 1, AlertRange / 2f),
+            Quaternion.identity, EnemyManager.i.EnemyLayer);
+
+        foreach (var collider in colliders)
+        {
+            if(collider.gameObject == gameObject) continue;
+
+            var naerbyEnemy = collider.GetComponent<EnemyController>();
+
+            if(naerbyEnemy != null && naerbyEnemy.Target == null)
+            {
+                naerbyEnemy.Target = Target;
+                naerbyEnemy.ChangeState(E_EnemyState.CombatMovement);
+            }
+        }
     }
 }

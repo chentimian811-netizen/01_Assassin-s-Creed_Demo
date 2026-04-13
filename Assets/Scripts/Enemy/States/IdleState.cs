@@ -20,6 +20,7 @@ public class IdleState : State<EnemyController>
         Enemy.Target = Enemy.FindTarget();
         if(Enemy.Target != null)
         {
+            Enemy.AlertNearbyEnemies();
             Enemy.ChangeState(E_EnemyState.CombatMovement);
         }
     }

@@ -10,6 +10,7 @@ public enum E_EnemyState
     Attack,
     ReteatAfterAttack,
     Dead,
+    GettingHit,
 }
 
 public class EnemyController : MonoBehaviour
@@ -62,8 +63,28 @@ public class EnemyController : MonoBehaviour
 
         stateDict[E_EnemyState.Dead] = GetComponent<DeadState>();
 
+        stateDict[E_EnemyState.GettingHit] = GetComponent<GettingHitState>();
+
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
+
+        Fighter.OnGotHit += () =>
+        {
+            if(Fighter.Health > 0)
+            {
+                ChangeState(E_EnemyState.GettingHit);
+            }
+            else
+            {
+                ChangeState(E_EnemyState.Dead);
+            }
+            
+        };
+    }
+
+    public void ReactToHit(E_EnemyState state)
+    {
+        ChangeState(E_EnemyState.GettingHit);
     }
 
     public void ChangeState(E_EnemyState state)
@@ -94,7 +115,31 @@ public class EnemyController : MonoBehaviour
         float strafeSpeed = Mathf.Sin(angle * Mathf.Deg2Rad);
         Animator.SetFloat("strafeSpeed", strafeSpeed, 0.2f, Time.deltaTime);
 
+        if(Target?.Health <= 0)
+        {
+
+            TargetsInRange.Remove(Target);
+            EnemyManager.i.RemoveEnemyInRange(this);
+        }
+
         prevPos = transform.position;
 
+    }
+
+    public MeeleFighter FindTarget()
+    {
+        foreach (var target in TargetsInRange)
+        {
+            var vecToTarget = target.transform.position - transform.position;
+
+            float angle = Vector3.Angle(transform.forward, vecToTarget);
+
+            if (angle <= Fov / 2)
+            {
+                return target;
+            }
+        }
+
+        return null; 
     }
 }

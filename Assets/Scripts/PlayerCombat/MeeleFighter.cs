@@ -16,12 +16,19 @@ public enum E_AttackState
 
 public class MeeleFighter : MonoBehaviour
 {
+    [field: SerializeField] public float Health { get; private set; } = 25f;
+
+
+
     [SerializeField] List<AttackData> attacks;
     [SerializeField] GameObject Sword;
 
     SphereCollider leftHandeConllider, rightHandeConllider, leftFootConllider, rightFootConllider;
 
     public E_AttackState AttackState { get; private set; }
+
+    public event Action OnGotHit;
+    public event Action OnHitComplete;
 
     BoxCollider SwordCollider;
 
@@ -156,16 +163,35 @@ public class MeeleFighter : MonoBehaviour
                 return;
             }
 
-            StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeeleFighter>().transform));
+            TakeDamage(5f);
+            OnGotHit?.Invoke();
+
+            if (Health > 0)
+            {
+                StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeeleFighter>().transform));
+            }
+            else
+            {
+                PlayDeathAnimation(attacker);
+            }
+                
         }
     }
+
+    void TakeDamage(float damage)
+    {
+        Health = Mathf.Clamp(Health - damage, 0, Health); 
+    }
+
     IEnumerator PlayerHitReaction(Transform attacker)
     {
         inAction = true;
         IsAttackingHit = true;
         var dispVec = attacker.position - transform.position;
         dispVec.y = 0;
-        transform.rotation = Quaternion.LookRotation(dispVec); 
+        transform.rotation = Quaternion.LookRotation(dispVec);
+
+        
 
         animator.CrossFade("SwordImpact", 0.2f);//使用交叉变化 从上一个动画慢慢过渡到下一个动画（slash）
 
@@ -175,6 +201,8 @@ public class MeeleFighter : MonoBehaviour
 
         yield return new WaitForSeconds(animState.length * 0.60f);//根据动画的长度进行等待
 
+
+        OnHitComplete?.Invoke();
         inAction = false; //结束动画
         IsAttackingHit = false;
     }
@@ -214,6 +242,11 @@ public class MeeleFighter : MonoBehaviour
         opponet.Fighter.inCounter = false;
 
         inAction = false; //结束动画
+    }
+
+    void PlayDeathAnimation(MeeleFighter attacker)
+    {
+        animator.CrossFade("FallBackDeath", 0.2f);
     }
 
     void EnableHitbox(AttackData attack)

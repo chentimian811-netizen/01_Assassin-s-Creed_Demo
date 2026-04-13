@@ -143,6 +143,15 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (meeleFighter.Health <= 0)
+        {
+            moveInput = Vector2.zero; // 清空移动输入
+            isRunning = false;
+            isCrouch = false;
+            isAiming = false;
+            isJumping = false;
+            return;
+        }
         CheckGround();
         SwitchPlayerState();
         CaculateGravity();
@@ -452,7 +461,7 @@ public class PlayerController : MonoBehaviour
 
     private void AnimatorMove()//动画驱动移动
     {
-        if (PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling)
+        if (PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling )
         {
             Vector3 playerDelataMovement = Animator.deltaPosition;
             playerDelataMovement.y = VerticalVelocity * Time.deltaTime;//叠加垂直移动 实现跳跃

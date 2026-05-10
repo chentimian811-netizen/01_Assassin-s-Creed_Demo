@@ -63,6 +63,9 @@ public class PlayerController : MonoBehaviour
     bool isJumping;
     bool isLocking;
 
+    bool isMainMenuOpen;
+
+
     int postrueHash;
     int moveSpeedHash;
     int turnSpeedHash;
@@ -186,6 +189,25 @@ public class PlayerController : MonoBehaviour
         isJumping = context.ReadValueAsButton();
     }
 
+    public void GetBackpackInput(InputAction.CallbackContext context)
+    {
+        if(!context.performed) return;
+
+        isMainMenuOpen = !isMainMenuOpen;
+        if(isMainMenuOpen)
+        {
+            Time.timeScale = 0f;//打开背包时暂停游戏
+            Cursor.lockState = CursorLockMode.None;
+            UIManager.Instance.OpenPanel(UIconst.MainPanel);
+        }
+        else
+        {
+            Time.timeScale = 1f;//关闭背包时恢复游戏
+            Cursor.lockState = CursorLockMode.Locked;
+            UIManager.Instance.ClosePanel(UIconst.MainPanel);
+        }
+    }
+
     public void GetLightAttack(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
@@ -208,7 +230,6 @@ public class PlayerController : MonoBehaviour
         {
 
         }
-
 
     }
     #endregion

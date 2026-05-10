@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bbfc1ec9cbb1ff4b9e737a186416827, type: 3}
+  m_Name: PackageTable
+  m_EditorClassIdentifier: 
+  DataList:
+  - id: 1
+    type: 1
+    star: 5
+    name: "\u65A9\u65AD-\u6781\u5BD2\u4E4B\u65F6"
+    description: "\u5C18\u5C01\u5728\u51B0\u5C01\u4E0B\u4E0D\u77E5\u591A\u5C11\u5C81\u6708,\u6C38\u8FDC\u6563\u53D1\u7740\u5BD2\u5149\u548C\u51CC\u51BD\u7684\u5251\u6C14\u3002"
+    skillDescription: "\u4F7F\u7528[\u65A9\u65AD-\u6781\u5BD2\u4E4B\u65F6]\u6280\u80FD\u80FD\u591F\u51BB\u7ED3\u65F6\u95F4."
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_01.png"
+    Num: 1
+  - id: 2
+    type: 1
+    star: 4
+    name: "\u7834\u9B54"
+    description: "\u8EAB\u4E0A\u6563\u53D1\u7740\u4EE4\u4EBA\u4E0D\u5BD2\u800C\u6817\u7684\u9B54\u6C14,\u4F46\u53C8\u5374\u8BA9\u4EBA\u5341\u5206\u5B89\u5FC3..."
+    skillDescription: "\u4F7F\u7528[\u7834\u9B54]\u53EF\u4EE5\u53D1\u5C04\u65E0\u6570<\u7834\u9B54\u7BAD\u77E2>\u7A7F\u900F\u654C\u4EBA"
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_02.png"
+    Num: 1
+  - id: 3
+    type: 1
+    star: 5
+    name: "\u5347\u9F99-\u62A2\u51FA\u60CA\u96F7"
+    description: "\u5B55\u80B2\u5728\u96F7\u4E91\u4E4B\u4E0A\u7684\u957F\u67AA,\u6563\u53D1\u7740\u65E0\u4E0A\u7684\u6B63\u6C14,\u4EE4\u90AA\u6C14\u4E0D\u6562\u63A5\u8FD1"
+    skillDescription: "\u4F7F\u7528[\u60CA\u96F7]\u751F\u6210\u96F7\u4E91,\u81EA\u52A8\u653B\u51FB\u6700\u8FD1\u7684\u654C\u4EBA\u76F4\u81F3\u6D88\u4EA1\u3002"
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_04.png"
+    Num: 1

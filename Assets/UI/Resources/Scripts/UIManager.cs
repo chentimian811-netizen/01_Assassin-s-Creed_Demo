@@ -60,7 +60,7 @@ public class UIManager
             {UIconst.PackagePanel,"Package/PackagePanel" },
             {UIconst.LotteryPanel,"Lottery/LotteryPanel" },
             {UIconst.MainPanel,"MainPanel" },
-            //{UIconst.PickupPo}
+            
         };
     }
 
@@ -146,4 +146,6 @@ public class UIconst
     public const string LotteryPanel = "LotteryPanel";
 
     public const string MainPanel = "MainPanel";
+
+    public const string PickupPopup = "PickupPopup";
 }

@@ -5,8 +5,7 @@ public class WeaponPickup : MonoBehaviour
     [SerializeField] int weaponId;
     [SerializeField] float pickupRadius = 1.5f;
 
-    bool playerInside = false;
-    bool pickupInProgress = false;
+    bool equipped = false;
     Collider activeCollider;
     PlayerController interactingPlayer;
 
@@ -44,24 +43,25 @@ public class WeaponPickup : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        // ”√◊Èº˛ºÏ≤‚¥˙ÃÊ Tag ºÏ≤‚£®Player ∂‘œÛø…ƒ‹√ª”– "Player" Tag£©
-        if (other.GetComponentInParent<PlayerController>() == null) return;
-        playerInside = true;
+        if (equipped) return;
+        PlayerController pc = other.GetComponentInParent<PlayerController>();
+        if (pc == null) return;
+        interactingPlayer = pc;
+        pc.SetNearestPickup(this);
+        ShowPickupPopup();
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.GetComponentInParent<PlayerController>() == null) return;
-        playerInside = false;
+        PlayerController pc = other.GetComponentInParent<PlayerController>();
+        if (pc == null) return;
+        pc.SetNearestPickup(null);
+        ClosePickupPopup();
     }
 
-    public void TryPickup(PlayerController player)
+    void ShowPickupPopup()
     {
-        if (pickupInProgress || !playerInside) return;
-
-        pickupInProgress = true;
-        interactingPlayer = player;
-        player.acceptInput = false;
+        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
 
         PackageTableItem item = GameManager.Instance.GetPackageItemById(weaponId);
         PickupPopupData data = new PickupPopupData
@@ -72,26 +72,31 @@ public class WeaponPickup : MonoBehaviour
             starCount = item?.star ?? 0,
             onEquip = () => HandleEquip(),
             onAddToBag = () => HandleAddToBag(),
-            onClose = () => CleanupPickup()
+            onClose = () => ClosePickupPopup()
         };
 
         PickupPopup popup = UIManager.Instance.OpenPanel(UIconst.PickupPopup) as PickupPopup;
         if (popup != null)
             popup.ShowPopup(data);
-        else
-            CleanupPickup(); // µØ¥∞¥Úø™ ß∞‹ ±“≤“™ª÷∏¥ ‰»Î
+    }
+
+    public void TryEquip()
+    {
+        if (equipped) return;
+        HandleEquip();
     }
 
     void HandleEquip()
     {
+        if (equipped) return;
         bool success = InventoryManager.Instance.EquipFromGround(weaponId);
         if (!success)
         {
-            ToastMessage.Show("◊∞±∏ ß∞‹£°");
-            CleanupPickup();
+            ToastMessage.Show("Ë£ÖÂ§áÂ§±Ë¥•ÔºÅ");
             return;
         }
-        CleanupPickup(); // ≥…π¶∫Û±ÿ–Îª÷∏¥ ‰»Î
+        equipped = true;
+        ClosePickupPopup();
         PlayPickupEffect();
     }
 
@@ -100,12 +105,21 @@ public class WeaponPickup : MonoBehaviour
         string uid = InventoryManager.Instance.AddToBag(weaponId);
         if (uid == null)
         {
-            ToastMessage.Show("±≥∞¸“—¬˙£°");
-            CleanupPickup();
+            ToastMessage.Show("ËÉåÂåÖÂ∑≤Êª°ÔºÅ");
             return;
         }
-        CleanupPickup(); // ≥…π¶∫Û±ÿ–Îª÷∏¥ ‰»Î
+        equipped = true;
+        ClosePickupPopup();
         PlayPickupEffect();
+    }
+
+    void ClosePickupPopup()
+    {
+        if (interactingPlayer != null)
+        {
+            interactingPlayer.SetNearestPickup(null);
+        }
+        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
     }
 
     void PlayPickupEffect()
@@ -116,18 +130,11 @@ public class WeaponPickup : MonoBehaviour
         Destroy(gameObject, 0.3f);
     }
 
-    void CleanupPickup()
-    {
-        if (interactingPlayer != null)
-        {
-            interactingPlayer.acceptInput = true;
-            interactingPlayer = null;
-        }
-        pickupInProgress = false;
-    }
-
     void OnDisable()
     {
-        CleanupPickup();
+        if (!equipped)
+        {
+            ClosePickupPopup();
+        }
     }
 }

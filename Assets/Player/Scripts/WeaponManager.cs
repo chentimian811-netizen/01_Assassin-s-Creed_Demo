@@ -5,7 +5,7 @@ using static PackageLocalData;
 
 public class WeaponManager : MonoBehaviour
 {
-    [Header("≈‰÷√")]
+    [Header("ÈÖçÁΩÆ")]
     [SerializeField] string weaponConfigPath = "WeaponConfigs";
     [SerializeField] WeaponSlot[] weaponSlots = new WeaponSlot[0];
     [SerializeField] int mainWeaponSlotIndex = 0;
@@ -28,6 +28,23 @@ public class WeaponManager : MonoBehaviour
             }
         }
         meeleFighter = GetComponent<MeeleFighter>();
+        HidePreplacedWeapons();
+    }
+
+    void HidePreplacedWeapons()
+    {
+        foreach (var slot in weaponSlots)
+        {
+            if (slot.holdPoint == null) continue;
+            foreach (Transform child in slot.holdPoint)
+            {
+                if (child.name == "Sword")
+                {
+                    child.gameObject.SetActive(false);
+                    break;
+                }
+            }
+        }
     }
 
     public bool EquipWeapon(string uid)
@@ -53,8 +70,6 @@ public class WeaponManager : MonoBehaviour
         if (config.weaponPrefab != null)
         {
             targetSlot.currentModel = Instantiate(config.weaponPrefab, targetSlot.holdPoint);
-            targetSlot.currentModel.transform.localPosition = Vector3.zero;
-            targetSlot.currentModel.transform.localRotation = Quaternion.identity;
             SetLayerRecursive(targetSlot.currentModel, gameObject.layer);
         }
 
@@ -114,13 +129,13 @@ public class WeaponManager : MonoBehaviour
 
     WeaponSlot FindSlotForWeapon(E_WeaponType type)
     {
-        // ”≈œ»’“ø’œ–≤€Œª
+        // ÂÖàÊâæÁ©∫ÊßΩ‰Ωç
         foreach (var slot in weaponSlots)
         {
             if (slot.allowedType == type && slot.currentConfig == null)
                 return slot;
         }
-        // ∆‰¥Œ’“Õ¨¿‡–Õ“—’º”√≤€Œª£®ÃÊªª£©
+        // ÊâæÂêåÁ±ªÂûãÂ∑≤Âç†Áî®ÊßΩ‰ΩçÊõøÊç¢
         foreach (var slot in weaponSlots)
         {
             if (slot.allowedType == type)

@@ -1,55 +1,55 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine;
-using UnityEngine.UI;
-
-public class MainPanel : BasePanel
-{
-    private Transform UILottery;
-
-    private Transform UIPacakge;
-
-    private Transform UIQuitBtn;
-
-
-    protected override void Awake()
-    {
-        base.Awake();
-        InitUI();
-    }
-
-    private void InitUI()
-    {
-        UILottery = transform.Find("Top/LotteryBtn");
-        UIPacakge = transform.Find("TopRight/PackageBtn");
-        UIQuitBtn = transform.Find("BottomLeft/QuitBtn");
-
-        UILottery.GetComponent<Button>().onClick.AddListener(OnBtnLottery);
-        UIPacakge.GetComponent<Button>().onClick.AddListener(OnBtnPackage);
-        UIQuitBtn.GetComponent<Button>().onClick.AddListener(OnQuitGame);
-    }
-
-
-    private void OnBtnPackage()
-    {
-        Debug.Log("´ò¿ª±³°ü½çÃæ");
-        UIManager.Instance.OpenPanel(UIconst.PackagePanel);
-        ClosePanel();
-    }
-
-    private void OnBtnLottery()
-    {
-        Debug.Log("´ò¿ª³é¿¨½çÃæ");
-        UIManager.Instance.OpenPanel(UIconst.LotteryPanel);
-        ClosePanel();
-    }
-
-    private void OnQuitGame()
-    {
-        Debug.Log("ÍË³öÓÎÏ·");
-        EditorApplication.isPlaying = false;
-        Application.Quit();
-    }
-}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class MainPanel : BasePanel
+{
+    private Transform UILottery;
+
+    private Transform UIPacakge;
+
+    private Transform UIQuitBtn;
+
+
+    protected override void Awake()
+    {
+        base.Awake();
+        InitUI();
+    }
+
+    private void InitUI()
+    {
+        UILottery = transform.Find("Top/LotteryBtn");
+        UIPacakge = transform.Find("TopRight/PackageBtn");
+        UIQuitBtn = transform.Find("BottomLeft/QuitBtn");
+
+        UILottery.GetComponent<Button>().onClick.AddListener(OnBtnLottery);
+        UIPacakge.GetComponent<Button>().onClick.AddListener(OnBtnPackage);
+        UIQuitBtn.GetComponent<Button>().onClick.AddListener(OnQuitGame);
+    }
+
+
+    private void OnBtnPackage()
+    {
+        Debug.Log("æ‰“å¼€èƒŒåŒ…ç•Œé¢");
+        UIManager.Instance.OpenPanel(UIconst.PackagePanel);
+        ClosePanel();
+    }
+
+    private void OnBtnLottery()
+    {
+        Debug.Log("æ‰“å¼€æŠ½å¡ç•Œé¢");
+        UIManager.Instance.OpenPanel(UIconst.LotteryPanel);
+        ClosePanel();
+    }
+
+    private void OnQuitGame()
+    {
+        Debug.Log("é€€å‡ºæ¸¸æˆ");
+        EditorApplication.isPlaying = false;
+        Application.Quit();
+    }
+}

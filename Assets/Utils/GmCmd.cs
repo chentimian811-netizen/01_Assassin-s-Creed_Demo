@@ -1,60 +1,60 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine;
-using static PackageLocalData;
-
-public class GmCmd
-{
-    [MenuItem("GmCmd/¶ÁÈ¡±í¸ñ")]
-
-    public static void ReadTable()
-    {
-        PackageTables packageTables = Resources.Load<PackageTables>("TableDate/PackageTable");
-
-        foreach (PackageTableItem packageItem in packageTables.DataList)
-        {
-            Debug.Log(string.Format("¡¾id¡¿: {0},¡¾name¡¿:{1}", packageItem.id, packageItem.name));
-        }
-    }
-
-
-    [MenuItem("GmCmd/´´½¨±³°ü²âÊÔÊı¾İ")]
-    public static void CreateLocalPackageData()
-    {
-
-        PackageLocalData.Instance.items = new List<PackageLocalItem>();
-        for(int i = 1; i <= 3; i++)
-        {
-            PackageLocalItem packageLocalItem = new()
-            {
-                uid = Guid.NewGuid().ToString(),
-                id = i,
-                num = i,
-                level = i,
-                isNew = i / 2 == 1
-            };
-            PackageLocalData.Instance.items.Add(packageLocalItem);
-        }
-        PackageLocalData.Instance.SavePackage();
-
-        
-    }
-
-    [MenuItem("GmCmd/¶ÁÈ¡±³°ü²âÊÔÊı¾İ")]
-    public static void ReadLocalPackageData()
-    {
-        List<PackageLocalItem> readitems = PackageLocalData.Instance.LoadPackage();
-        foreach (PackageLocalItem item in readitems)
-        {
-            Debug.Log(item);
-        }
-    }
-
-    [MenuItem("GmCmd/´ò¿ª±³°üÖ÷½çÃæ")]
-    public static void OpenPackagePanel()
-    {
-        UIManager.Instance.OpenPanel(UIconst.PackagePanel);
-    }
-}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using static PackageLocalData;
+
+public class GmCmd
+{
+    [MenuItem("GmCmd/è¯»å–è¡¨æ ¼")]
+
+    public static void ReadTable()
+    {
+        PackageTables packageTables = Resources.Load<PackageTables>("TableDate/PackageTable");
+
+        foreach (PackageTableItem packageItem in packageTables.DataList)
+        {
+            Debug.Log(string.Format("ã€idã€‘: {0},ã€nameã€‘:{1}", packageItem.id, packageItem.name));
+        }
+    }
+
+
+    [MenuItem("GmCmd/åˆ›å»ºèƒŒåŒ…æµ‹è¯•æ•°æ®")]
+    public static void CreateLocalPackageData()
+    {
+
+        PackageLocalData.Instance.items = new List<PackageLocalItem>();
+        for(int i = 1; i <= 3; i++)
+        {
+            PackageLocalItem packageLocalItem = new()
+            {
+                uid = Guid.NewGuid().ToString(),
+                id = i,
+                num = i,
+                level = i,
+                isNew = i / 2 == 1
+            };
+            PackageLocalData.Instance.items.Add(packageLocalItem);
+        }
+        PackageLocalData.Instance.SavePackage();
+
+        
+    }
+
+    [MenuItem("GmCmd/è¯»å–èƒŒåŒ…æµ‹è¯•æ•°æ®")]
+    public static void ReadLocalPackageData()
+    {
+        List<PackageLocalItem> readitems = PackageLocalData.Instance.LoadPackage();
+        foreach (PackageLocalItem item in readitems)
+        {
+            Debug.Log(item);
+        }
+    }
+
+    [MenuItem("GmCmd/æ‰“å¼€èƒŒåŒ…ä¸»ç•Œé¢")]
+    public static void OpenPackagePanel()
+    {
+        UIManager.Instance.OpenPanel(UIconst.PackagePanel);
+    }
+}

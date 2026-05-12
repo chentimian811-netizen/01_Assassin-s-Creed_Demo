@@ -60,7 +60,7 @@ public class UIManager
             {UIconst.PackagePanel,"Package/PackagePanel" },
             {UIconst.LotteryPanel,"Lottery/LotteryPanel" },
             {UIconst.MainPanel,"MainPanel" },
-            
+            {UIconst.PickupPopup, "PickupPopup" },
         };
     }
 
@@ -81,19 +81,19 @@ public class UIManager
         
         if(panelDict.TryGetValue(name,out panel))
         {
-            Debug.Log("½çÃæÒÑ´ò¿ª:"+name);
+            Debug.Log("é¢æ¿å·²å­˜åœ¨:"+name);
             return null;
         }
 
-        // ¼ì²éÂ·¾¶ÊÇ·ñÅäÖÃ
+        // æ£€æŸ¥è·¯å¾„æ˜¯å¦å­˜åœ¨
         string path = "";
         if (!pathDict.TryGetValue(name, out path))
         {
-            Debug.Log("½çÃæÃû³Æ´íÎó£¬»òÎ´ÅäÖÃÂ·¾¶: " + name);
+            Debug.Log("é¢æ¿åç§°é”™è¯¯ï¼Œæˆ–æœªé…ç½®è·¯å¾„: " + name);
             return null;
         }
 
-        // Ê¹ÓÃ»º´æÔ¤ÖÆ¼ş
+        // ä½¿ç”¨ç¼“å­˜é¢„åˆ¶ä»¶
         GameObject panelPrefab = null;
         if (!prefabDict.TryGetValue(name, out panelPrefab))
         {
@@ -103,18 +103,18 @@ public class UIManager
 
             if(panelPrefab == null)
             {
-                Debug.Log("Ô¤ÖÆ¼ş²»´æÔÚ: " + realPath);
+                Debug.Log("é¢„åˆ¶ä»¶åŠ è½½å¤±è´¥: " + realPath);
                 return null;
             }
             prefabDict.Add(name, panelPrefab);
         }
 
-        // ´ò¿ª½çÃæ
+        // æ‰“å¼€ç•Œé¢
         GameObject panelObject = GameObject.Instantiate(panelPrefab, UIRoot, false);
         panel = panelObject.GetComponent<BasePanel>();
         if (panel == null)
         {
-            Debug.LogError("Ô¤ÖÆ¼şÉÏÈ±ÉÙBasePanel×é¼ş: " + name);
+            Debug.LogError("é¢„åˆ¶ä»¶ç¼ºå°‘BasePanelç»„ä»¶: " + name);
             return null;
         }
         panelDict.Add(name, panel);
@@ -128,12 +128,12 @@ public class UIManager
         BasePanel panel = null;
         if(!panelDict.TryGetValue(name,out panel))
         {
-            Debug.Log("½çÃæÎ´´ò¿ª:"+name);
+            Debug.Log("é¢æ¿æœªæ‰“å¼€:"+name);
             return false;
         }
 
         panel.ClosePanel();
-        //panelDict.Remove(name);
+        panelDict.Remove(name);
         return true;
     }
 

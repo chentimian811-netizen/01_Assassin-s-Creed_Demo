@@ -178,7 +178,7 @@ public class PlayerController : MonoBehaviour
 
         if (nearestPickup != null)
         {
-            nearestPickup.TryPickup(this);
+            nearestPickup.TryEquip();
         }
     }
 

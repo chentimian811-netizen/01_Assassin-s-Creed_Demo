@@ -1,261 +1,261 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using static PackageLocalData;
-
-public enum  PackageMode
-{
-    normal,
-    delete,
-    sort
-}
-
-
-public class PackagePanel : BasePanel
-{
-    private Transform UIMenu;
-
-    private Transform UIMenuWeapon;
-
-    private Transform UIMenuFood;
-
-    private Transform UITabName;
-
-    private Transform UICloseBtn;
-
-    private Transform UICenter;
-
-    private Transform UIScrollView;
-
-    private Transform UIDetailPanel;
-
-    private Transform UILeftBtn;
-
-    private Transform UIRightBtn;
-
-    private Transform UIDeletePanel;
-
-    private Transform UIDeleteBackBtn;
-
-    private Transform UIDeleteInfoText;
-
-    private Transform UIDeleteConfirmBtn;
-
-    private Transform UIBottomMenus;
-
-    private Transform UIDeleteBtn;
-
-    private Transform UIDetailBtn;
-
-    public  GameObject packageCellPrefab;
-
-    //µ±«∞“≥√Ê¥¶”⁄…œ√Êƒ£ Ω
-    public PackageMode curMode = PackageMode.normal;
-
-    public List<string> deleteChooseUid;
-
-    private string _chooseUid;
-
-    public string ChooseUid
-    {
-        get
-        { 
-            return _chooseUid; 
-        }
-        set 
-        {
-            _chooseUid = value;
-            RefreshDetail();
-        }
-    }
-
-    public void AddChooseDeleteUid(string uid)
-    {
-        this.deleteChooseUid ??= new List<string>();
-        if ((!this.deleteChooseUid.Contains(uid)))
-        {
-            this.deleteChooseUid.Add(uid);
-        }
-        else
-        {
-            this.deleteChooseUid.Remove(uid);
-        }
-        RefreshDeletePanel();
-    }
-
-    private void RefreshDeletePanel()
-    {
-        RectTransform scrollContent = UIScrollView.GetComponent<ScrollRect>().content;
-        foreach (Transform child in scrollContent)
-        {
-            PackageCell packageCell = child.GetComponent<PackageCell>();
-            packageCell.RefreshDeleteState();
-        }
-    }
-
-    override protected void Awake()
-    {
-        base.Awake();
-        InitUI();
-    }
-
-    private void Start()
-    {
-        RefreshUI();
-    }
-
-    private void InitUI()
-    {
-        InitUIName();
-        InitClick();
-    }
-
-    private void RefreshUI()
-    {
-        RefreshScrollView();
-    }
-
-
-    private void RefreshDetail()
-    {
-        //’“µΩuid∂‘”¶µƒ∂ØÃ¨ ˝æ›
-        PackageLocalItem localItem = GameManager.Instance.GetPackageLocalItemByUid(ChooseUid);
-        //À¢–¬œÍ«È√Ê∞Â
-        UIDetailPanel.GetComponent<PackageDetail>().Refresh(localItem, this);
-    }
-
-    private void RefreshScrollView()
-    {
-         //«Â¿Ìπˆ∂Ø»›∆˜÷–‘≠±æµƒ¥˙¬Î
-         RectTransform scrollContent = UIScrollView.GetComponent<ScrollRect>().content;
-        for (int i = 0; i < scrollContent.childCount; i++)
-        {
-            Destroy(scrollContent.GetChild(i).gameObject);
-        }
-
-        foreach (PackageLocalItem localData in GameManager.Instance.GetSortPackageLocalData())
-        {
-            Transform PackageUIItem = Instantiate(packageCellPrefab.transform, scrollContent) as Transform;
-            PackageCell packageCell = PackageUIItem.GetComponent<PackageCell>();
-            packageCell.Refresh(localData,this);
-        }
-    }
-
-    private void InitUIName()
-    {
-        UIMenu = transform.Find("TopCenter/Menus");
-        UIMenuWeapon = transform.Find("TopCenter/Menus/Weapons");
-        UIMenuFood = transform.Find("TopCenter/Menus/Food");
-        UITabName = transform.Find("LeftTop/Name");
-        UICloseBtn = transform.Find("RightTop/Close/Icon");
-        UICenter = transform.Find("Center");
-        UIScrollView = transform.Find("Center/Scroll View");
-        UIDetailPanel = transform.Find("Center/DetailPanel");
-        UILeftBtn = transform.Find("Left/NextBackPack/icon");
-        UIRightBtn = transform.Find("Right/NextBackPack/icon");
-
-        UIDeletePanel = transform.Find("Bottom/DeletePanel");
-        UIDeleteBackBtn = transform.Find("Bottom/DeletePanel/Back");
-        UIDeleteInfoText = transform.Find("Bottom/DeletePanel/InfoText");
-        UIDeleteConfirmBtn = transform.Find("Bottom/DeletePanel/ConfirmBtn");
-
-        UIBottomMenus = transform.Find("Bottom/BottomMenus");
-        UIDeleteBtn = transform.Find("Bottom/BottomMenus/DeleteBtn");
-        UIDetailBtn = transform.Find("Bottom/BottomMenus/DetilBtn");
-
-        UIDeletePanel.gameObject.SetActive(false);
-        UIBottomMenus.gameObject.SetActive(true);
-    }
-
-    private void InitClick()
-    {
-        UIMenuWeapon.GetComponent<Button>().onClick.AddListener(OnClickWeapon);
-        UIMenuFood.GetComponent<Button>().onClick.AddListener(OnClickFood);
-        UICloseBtn.GetComponent<Button>().onClick.AddListener(OnClickClose);
-
-        UILeftBtn.GetComponent<Button>().onClick.AddListener(OnClickLeft);
-        UIRightBtn.GetComponent<Button>().onClick.AddListener(OnClickRight);
-
-        UIDeleteBackBtn.GetComponent<Button>().onClick.AddListener(OnClickDeleteBack);
-        UIDeleteConfirmBtn.GetComponent<Button>().onClick.AddListener(OnClickDeleteConfirm);
-
-        UIDeleteBtn.GetComponent<Button>().onClick.AddListener(OnClickDelete);
-        UIDetailBtn.GetComponent<Button>().onClick.AddListener(OnClickDetail);
-    }
-
-
-    private void OnClickDetail()
-    {
-        print("µ„ª˜¡ÀœÍ«È");
-    }
-
-    private void OnClickDelete()
-    { 
-        print("µ„ª˜¡À…æ≥˝");
-        curMode = PackageMode.delete;
-        UIDeletePanel.gameObject.SetActive(true);
-    }
-
-    private void OnClickDeleteConfirm()
-    {
-        print("µ„ª˜¡À…æ≥˝»∑»œ");
-        if (this.deleteChooseUid == null)
-        {
-            return;
-        }
-        if(this.deleteChooseUid.Count == 0)
-        {
-            return;
-        }
-        GameManager.Instance.DeletePackageItem(this.deleteChooseUid);
-        //…æ≥˝∫ÛÀ¢–¬’˚∏ˆ“≥√Ê
-        RefreshUI();
-    }
-
-    private void OnClickDeleteBack()
-    {
-        print("µ„ª˜¡À…æ≥˝∑µªÿ");
-        curMode = PackageMode.normal;
-        UIDeletePanel.gameObject.SetActive(false);
-        //÷ÿ÷√—°÷–µƒ…æ≥˝¡–±Ì
-        deleteChooseUid = new List<string>();
-        //À¢–¬—°÷–◊¥Ã¨
-        RefreshDeletePanel();
-    }
-
-    private void OnClickRight()
-    {
-        print("µ„ª˜¡À”“±ﬂ");
-    }
-
-    private void OnClickLeft()
-    {
-        print("µ„ª˜¡À◊Û±ﬂ");
-    }
-
-    private void OnClickClose()
-    {
-        print("µ„ª˜¡Àπÿ±’");
-        ClosePanel();
-        UIManager.Instance.OpenPanel(UIconst.MainPanel);
-    }
-
-    private void OnClickFood()
-    {
-        print("µ„ª˜¡À ≥ŒÔ");
-    }
-
-    private void OnClickWeapon()
-    {
-        print("µ„ª˜¡ÀŒ‰∆˜");
-    }
-
-    public void RefreshList()
-    {
-        RefreshUI();
-    }
-}
-
-
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using static PackageLocalData;
+
+public enum  PackageMode
+{
+    normal,
+    delete,
+    sort
+}
+
+
+public class PackagePanel : BasePanel
+{
+    private Transform UIMenu;
+
+    private Transform UIMenuWeapon;
+
+    private Transform UIMenuFood;
+
+    private Transform UITabName;
+
+    private Transform UICloseBtn;
+
+    private Transform UICenter;
+
+    private Transform UIScrollView;
+
+    private Transform UIDetailPanel;
+
+    private Transform UILeftBtn;
+
+    private Transform UIRightBtn;
+
+    private Transform UIDeletePanel;
+
+    private Transform UIDeleteBackBtn;
+
+    private Transform UIDeleteInfoText;
+
+    private Transform UIDeleteConfirmBtn;
+
+    private Transform UIBottomMenus;
+
+    private Transform UIDeleteBtn;
+
+    private Transform UIDetailBtn;
+
+    public  GameObject packageCellPrefab;
+
+    //ÂΩìÂâçÈ°µÈù¢Â§Ñ‰∫é‰∏äÈù¢Ê®°Âºè
+    public PackageMode curMode = PackageMode.normal;
+
+    public List<string> deleteChooseUid;
+
+    private string _chooseUid;
+
+    public string ChooseUid
+    {
+        get
+        { 
+            return _chooseUid; 
+        }
+        set 
+        {
+            _chooseUid = value;
+            RefreshDetail();
+        }
+    }
+
+    public void AddChooseDeleteUid(string uid)
+    {
+        this.deleteChooseUid ??= new List<string>();
+        if ((!this.deleteChooseUid.Contains(uid)))
+        {
+            this.deleteChooseUid.Add(uid);
+        }
+        else
+        {
+            this.deleteChooseUid.Remove(uid);
+        }
+        RefreshDeletePanel();
+    }
+
+    private void RefreshDeletePanel()
+    {
+        RectTransform scrollContent = UIScrollView.GetComponent<ScrollRect>().content;
+        foreach (Transform child in scrollContent)
+        {
+            PackageCell packageCell = child.GetComponent<PackageCell>();
+            packageCell.RefreshDeleteState();
+        }
+    }
+
+    override protected void Awake()
+    {
+        base.Awake();
+        InitUI();
+    }
+
+    private void Start()
+    {
+        RefreshUI();
+    }
+
+    private void InitUI()
+    {
+        InitUIName();
+        InitClick();
+    }
+
+    private void RefreshUI()
+    {
+        RefreshScrollView();
+    }
+
+
+    private void RefreshDetail()
+    {
+        //ÊâæÂà∞uidÂØπÂ∫îÁöÑÂä®ÊÄÅÊï∞ÊçÆ
+        PackageLocalItem localItem = GameManager.Instance.GetPackageLocalItemByUid(ChooseUid);
+        //Âà∑Êñ∞ËØ¶ÊÉÖÈù¢Êùø
+        UIDetailPanel.GetComponent<PackageDetail>().Refresh(localItem, this);
+    }
+
+    private void RefreshScrollView()
+    {
+         //Ê∏ÖÁêÜÊªöÂä®ÂÆπÂô®‰∏≠ÂéüÊú¨ÁöÑ‰ª£Á†Å
+         RectTransform scrollContent = UIScrollView.GetComponent<ScrollRect>().content;
+        for (int i = 0; i < scrollContent.childCount; i++)
+        {
+            Destroy(scrollContent.GetChild(i).gameObject);
+        }
+
+        foreach (PackageLocalItem localData in GameManager.Instance.GetSortPackageLocalData())
+        {
+            Transform PackageUIItem = Instantiate(packageCellPrefab.transform, scrollContent) as Transform;
+            PackageCell packageCell = PackageUIItem.GetComponent<PackageCell>();
+            packageCell.Refresh(localData,this);
+        }
+    }
+
+    private void InitUIName()
+    {
+        UIMenu = transform.Find("TopCenter/Menus");
+        UIMenuWeapon = transform.Find("TopCenter/Menus/Weapons");
+        UIMenuFood = transform.Find("TopCenter/Menus/Food");
+        UITabName = transform.Find("LeftTop/Name");
+        UICloseBtn = transform.Find("RightTop/Close/Icon");
+        UICenter = transform.Find("Center");
+        UIScrollView = transform.Find("Center/Scroll View");
+        UIDetailPanel = transform.Find("Center/DetailPanel");
+        UILeftBtn = transform.Find("Left/NextBackPack/icon");
+        UIRightBtn = transform.Find("Right/NextBackPack/icon");
+
+        UIDeletePanel = transform.Find("Bottom/DeletePanel");
+        UIDeleteBackBtn = transform.Find("Bottom/DeletePanel/Back");
+        UIDeleteInfoText = transform.Find("Bottom/DeletePanel/InfoText");
+        UIDeleteConfirmBtn = transform.Find("Bottom/DeletePanel/ConfirmBtn");
+
+        UIBottomMenus = transform.Find("Bottom/BottomMenus");
+        UIDeleteBtn = transform.Find("Bottom/BottomMenus/DeleteBtn");
+        UIDetailBtn = transform.Find("Bottom/BottomMenus/DetilBtn");
+
+        UIDeletePanel.gameObject.SetActive(false);
+        UIBottomMenus.gameObject.SetActive(true);
+    }
+
+    private void InitClick()
+    {
+        UIMenuWeapon.GetComponent<Button>().onClick.AddListener(OnClickWeapon);
+        UIMenuFood.GetComponent<Button>().onClick.AddListener(OnClickFood);
+        UICloseBtn.GetComponent<Button>().onClick.AddListener(OnClickClose);
+
+        UILeftBtn.GetComponent<Button>().onClick.AddListener(OnClickLeft);
+        UIRightBtn.GetComponent<Button>().onClick.AddListener(OnClickRight);
+
+        UIDeleteBackBtn.GetComponent<Button>().onClick.AddListener(OnClickDeleteBack);
+        UIDeleteConfirmBtn.GetComponent<Button>().onClick.AddListener(OnClickDeleteConfirm);
+
+        UIDeleteBtn.GetComponent<Button>().onClick.AddListener(OnClickDelete);
+        UIDetailBtn.GetComponent<Button>().onClick.AddListener(OnClickDetail);
+    }
+
+
+    private void OnClickDetail()
+    {
+        print("ÁÇπÂáª‰∫ÜËØ¶ÊÉÖ");
+    }
+
+    private void OnClickDelete()
+    { 
+        print("ÁÇπÂáª‰∫ÜÂà†Èô§");
+        curMode = PackageMode.delete;
+        UIDeletePanel.gameObject.SetActive(true);
+    }
+
+    private void OnClickDeleteConfirm()
+    {
+        print("ÁÇπÂáª‰∫ÜÂà†Èô§Á°ÆËÆ§");
+        if (this.deleteChooseUid == null)
+        {
+            return;
+        }
+        if(this.deleteChooseUid.Count == 0)
+        {
+            return;
+        }
+        GameManager.Instance.DeletePackageItem(this.deleteChooseUid);
+        //Âà†Èô§ÂêéÂà∑Êñ∞Êï¥‰∏™È°µÈù¢
+        RefreshUI();
+    }
+
+    private void OnClickDeleteBack()
+    {
+        print("ÁÇπÂáª‰∫ÜÂà†Èô§ËøîÂõû");
+        curMode = PackageMode.normal;
+        UIDeletePanel.gameObject.SetActive(false);
+        //ÈáçÁΩÆÈÄâ‰∏≠ÁöÑÂà†Èô§ÂàóË°®
+        deleteChooseUid = new List<string>();
+        //Âà∑Êñ∞ÈÄâ‰∏≠Áä∂ÊÄÅ
+        RefreshDeletePanel();
+    }
+
+    private void OnClickRight()
+    {
+        print("ÁÇπÂáª‰∫ÜÂè≥Ëæπ");
+    }
+
+    private void OnClickLeft()
+    {
+        print("ÁÇπÂáª‰∫ÜÂ∑¶Ëæπ");
+    }
+
+    private void OnClickClose()
+    {
+        print("ÁÇπÂáª‰∫ÜÂÖ≥Èó≠");
+        ClosePanel();
+        UIManager.Instance.OpenPanel(UIconst.MainPanel);
+    }
+
+    private void OnClickFood()
+    {
+        print("ÁÇπÂáª‰∫ÜÈ£üÁâ©");
+    }
+
+    private void OnClickWeapon()
+    {
+        print("ÁÇπÂáª‰∫ÜÊ≠¶Âô®");
+    }
+
+    public void RefreshList()
+    {
+        RefreshUI();
+    }
+}
+
+

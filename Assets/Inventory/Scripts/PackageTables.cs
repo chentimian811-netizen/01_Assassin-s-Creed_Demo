@@ -1,30 +1,30 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-[CreateAssetMenu(menuName ="Package/PackageTables", fileName = "PackageTables")]
-public class PackageTables : ScriptableObject
-{
-    public List<PackageTableItem> DataList = new List<PackageTableItem>();
-}
-
-[System.Serializable]
-public class PackageTableItem//ÎïÌåµÄ¾²Ì¬Êı¾İ
-{
-    public int id;
-
-    public int type;
-
-    public int star;
-
-    public string name;
-
-    public string description;
-
-    public string skillDescription;
-
-    public string imagePath;
-
-    public int Num;
-}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[CreateAssetMenu(menuName ="Package/PackageTables", fileName = "PackageTables")]
+public class PackageTables : ScriptableObject
+{
+    public List<PackageTableItem> DataList = new List<PackageTableItem>();
+}
+
+[System.Serializable]
+public class PackageTableItem//ç‰©ä½“çš„é™æ€æ•°æ®
+{
+    public int id;
+
+    public int type;
+
+    public int star;
+
+    public string name;
+
+    public string description;
+
+    public string skillDescription;
+
+    public string imagePath;
+
+    public int Num;
+}

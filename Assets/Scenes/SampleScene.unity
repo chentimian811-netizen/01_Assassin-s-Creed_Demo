@@ -335,7 +335,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.37799832, y: 0.008078955, z: -0.003298711, w: 0.92576516}
-  m_LocalPosition: {x: 10.072548, y: 2.6399999, z: -14.639848}
+  m_LocalPosition: {x: 10.072548, y: 2.6399999, z: -11.869847}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1163,7 +1163,7 @@ Transform:
   m_GameObject: {fileID: 1186076030}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.072548, y: 2.6399999, z: -14.639848}
+  m_LocalPosition: {x: 10.072548, y: 2.6399999, z: -11.869847}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1541,7 +1541,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1568921404}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.37799838, y: 0.008078957, z: -0.0032987115, w: 0.92576516}
+  m_LocalRotation: {x: 0.3779984, y: 0.008078955, z: -0.0032987115, w: 0.92576516}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1998,7 +1998,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2063042446}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.39614373, y: 0.0080124745, z: -0.0034570622, w: 0.918147}
+  m_LocalRotation: {x: 0.39614373, y: 0.008012473, z: -0.0034570617, w: 0.9181471}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3268,7 +3268,7 @@ Transform:
   m_GameObject: {fileID: 1782702501733029217}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.09, y: 0.13999999, z: -13.64}
+  m_LocalPosition: {x: 10.09, y: 0.13999999, z: -10.87}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5697,7 +5697,7 @@ PrefabInstance:
     - target: {fileID: 1725509709468344114, guid: b21ed3581a87c834eb6947da7a8c7dc2,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4905612562613983482, guid: b21ed3581a87c834eb6947da7a8c7dc2,
         type: 3}
@@ -6228,7 +6228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad5306f128adaaf4b98fdbc6f409238e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Health>k__BackingField: 5
+  <Health>k__BackingField: 100
   attacks:
   - {fileID: 11400000, guid: e2abf08d88207cc48ad8b09f66758426, type: 2}
   - {fileID: 11400000, guid: 9ffeb712fb5fd3a4aa7de97050feeae7, type: 2}

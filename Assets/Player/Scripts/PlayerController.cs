@@ -65,9 +65,9 @@ public class PlayerController : MonoBehaviour
 
     [HideInInspector] public bool acceptInput = true; //拾取时 冻结玩家输入
 
-    //WeaponPickup nearestPickup;
+    WeaponPickup nearestPickup;
 
-    //public void SetNearestPickup(WeaponPickup pickup){ nearestPickup = pickup; }
+    public void SetNearestPickup(WeaponPickup pickup) { nearestPickup = pickup; }
 
 
     bool isMainMenuOpen;
@@ -176,9 +176,9 @@ public class PlayerController : MonoBehaviour
     {
         if (!context.performed) return;
 
-        //if (nearestPickup != null)
+        if (nearestPickup != null)
         {
-            //nearestPickup.TryPickup(this);
+            nearestPickup.TryPickup(this);
         }
     }
 

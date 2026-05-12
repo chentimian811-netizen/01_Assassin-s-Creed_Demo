@@ -112,7 +112,7 @@ public class InventoryManager : MonoBehaviour
 
     }
 
-    public bool EquiFormGround(int weaponId)
+    public bool EquipFromGround(int weaponId)
     {
         string uid = AddItem(weaponId);
         if (uid == null) return false;

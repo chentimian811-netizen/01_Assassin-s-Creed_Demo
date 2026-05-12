@@ -8,6 +8,7 @@ public class WeaponPickup : MonoBehaviour
     bool equipped = false;
     Collider activeCollider;
     PlayerController interactingPlayer;
+    PickupPopup activePopup;
 
     void Awake()
     {
@@ -67,17 +68,12 @@ public class WeaponPickup : MonoBehaviour
         PickupPopupData data = new PickupPopupData
         {
             weaponId = weaponId,
-            weaponName = item?.name ?? "Unknown",
-            iconPath = item?.imagePath ?? "",
-            starCount = item?.star ?? 0,
-            onEquip = () => HandleEquip(),
-            onAddToBag = () => HandleAddToBag(),
-            onClose = () => ClosePickupPopup()
+            weaponName = item?.name ?? "Unknown"
         };
 
-        PickupPopup popup = UIManager.Instance.OpenPanel(UIconst.PickupPopup) as PickupPopup;
-        if (popup != null)
-            popup.ShowPopup(data);
+        activePopup = UIManager.Instance.OpenPanel(UIconst.PickupPopup) as PickupPopup;
+        if (activePopup != null)
+            activePopup.ShowPopup(data);
     }
 
     public void TryEquip()
@@ -100,26 +96,17 @@ public class WeaponPickup : MonoBehaviour
         PlayPickupEffect();
     }
 
-    void HandleAddToBag()
-    {
-        string uid = InventoryManager.Instance.AddToBag(weaponId);
-        if (uid == null)
-        {
-            ToastMessage.Show("背包已满！");
-            return;
-        }
-        equipped = true;
-        ClosePickupPopup();
-        PlayPickupEffect();
-    }
-
     void ClosePickupPopup()
     {
+        if (activePopup != null)
+        {
+            activePopup.ClosePopup();
+            activePopup = null;
+        }
         if (interactingPlayer != null)
         {
             interactingPlayer.SetNearestPickup(null);
         }
-        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
     }
 
     void PlayPickupEffect()

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public enum E_WeaType
+public enum E_WeaponType
 {
     Sword,
     Dagger,
@@ -12,7 +12,7 @@ public enum E_WeaType
     Staff,
 }
 
-public class E_WeaponType : MonoBehaviour
+public class WeaponType : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()

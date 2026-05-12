@@ -77,7 +77,7 @@ public class InventoryManager : MonoBehaviour
 
     }
 
-    public bool EquipItem(string uid)
+    public bool EquipWeapon(string uid)
     {
         PackageLocalItem item = GameManager.Instance.GetPackageLocalItemByUid(uid);
         if (item == null) return false;
@@ -116,7 +116,7 @@ public class InventoryManager : MonoBehaviour
     {
         string uid = AddItem(weaponId);
         if (uid == null) return false;
-        return EquipItem(uid);
+        return EquipWeapon(uid);
     }
 
     public string AddToBag(int weaponId)

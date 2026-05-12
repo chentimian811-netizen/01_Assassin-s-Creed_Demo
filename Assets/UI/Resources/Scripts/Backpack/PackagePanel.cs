@@ -251,6 +251,11 @@ public class PackagePanel : BasePanel
     {
         print("µã»÷ÁËÎäÆ÷");
     }
+
+    public void RefreshList()
+    {
+        RefreshUI();
+    }
 }
 
 

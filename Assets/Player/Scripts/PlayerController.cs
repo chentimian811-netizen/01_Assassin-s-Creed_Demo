@@ -63,6 +63,8 @@ public class PlayerController : MonoBehaviour
     bool isJumping;
     bool isLocking;
 
+    [HideInInspector] public bool acceptInput = true; //拾取时 冻结玩家输入
+
     bool isMainMenuOpen;
 
 
@@ -146,7 +148,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (meeleFighter.Health <= 0)
+        if (meeleFighter.Health <= 0 || !acceptInput)
         {
             moveInput = Vector2.zero; // 清空移动输入
             isRunning = false;

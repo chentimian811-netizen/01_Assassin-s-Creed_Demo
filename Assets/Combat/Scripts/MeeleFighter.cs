@@ -64,6 +64,27 @@ public class MeeleFighter : MonoBehaviour
         }
     }
 
+    public void SetWeapon(GameObject newSword)
+    {
+        Sword = newSword;
+        if(newSword != null)
+        {
+            SwordCollider = newSword.GetComponent<BoxCollider>();
+
+            if (leftHandeConllider == null && animator != null)
+            {
+                leftHandeConllider = animator.GetBoneTransform(HumanBodyBones.LeftHand).GetComponent<SphereCollider>();
+                leftFootConllider = animator.GetBoneTransform(HumanBodyBones.LeftFoot).GetComponent<SphereCollider>();
+                rightHandeConllider = animator.GetBoneTransform(HumanBodyBones.RightHand).GetComponent<SphereCollider>();
+                rightFootConllider = animator.GetBoneTransform(HumanBodyBones.RightFoot).GetComponent<SphereCollider>();
+            }
+        }
+        else
+        {
+            SwordCollider = null;
+        }
+    }
+
     public void ToTryAttack(MeeleFighter target = null)
     {
         if (!inAction)

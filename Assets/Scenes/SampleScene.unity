@@ -868,7 +868,7 @@ Transform:
   m_GameObject: {fileID: 1129962410}
   serializedVersion: 2
   m_LocalRotation: {x: 0.42725617, y: 0.007889789, z: -0.003728574, w: 0.9040885}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.00000047683716, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1528,7 +1528,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1568921404}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.37799832, y: 0.008078963, z: -0.003298714, w: 0.9257652}
+  m_LocalRotation: {x: 0.37799835, y: 0.008078953, z: -0.00329871, w: 0.92576516}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1548,6 +1548,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Enemy2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4769488866850045155, guid: bfa37c064e54d2b4ab4c04511b454caf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6879652371183806636, guid: bfa37c064e54d2b4ab4c04511b454caf,
         type: 3}
@@ -1754,6 +1759,7 @@ MonoBehaviour:
   crouchSpeed: 1.5
   walkSpeed: 3
   runSpeed: 6
+  acceptInput: 1
   gravity: -12
   maxHeight: 0.8
 --- !u!143 &1828096749
@@ -1979,7 +1985,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2063042446}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.39614373, y: 0.00801248, z: -0.0034570645, w: 0.9181471}
+  m_LocalRotation: {x: 0.3961438, y: 0.00801247, z: -0.0034570608, w: 0.918147}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3761,6 +3767,7 @@ GameObject:
   - component: {fileID: 1828096748}
   - component: {fileID: 4540229000164828862}
   - component: {fileID: 1828096749}
+  - component: {fileID: 4540229000164828865}
   - component: {fileID: 4540229000164828863}
   m_Layer: 6
   m_Name: Player
@@ -5674,6 +5681,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sword
       objectReference: {fileID: 0}
+    - target: {fileID: 1725509709468344114, guid: b21ed3581a87c834eb6947da7a8c7dc2,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4905612562613983482, guid: b21ed3581a87c834eb6947da7a8c7dc2,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -6193,6 +6205,27 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9ffeb712fb5fd3a4aa7de97050feeae7, type: 2}
   - {fileID: 11400000, guid: 5e7a7b88e80657e45afc16636a80acc2, type: 2}
   Sword: {fileID: 2017372463101431183}
+--- !u!114 &4540229000164828865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1782702501733029217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a43e024db389aad409c1a79871fc31ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weaponConfigPath: WeaponConfigs
+  weaponSlots:
+  - slotName: MainHand
+    holdPoint: {fileID: 4747334637504938552}
+    allowedType: 0
+    currentConfig: {fileID: 0}
+    currentModel: {fileID: 0}
+    equippedUid: 
+  mainWeaponSlotIndex: 0
 --- !u!1 &4558889169136283393
 GameObject:
   m_ObjectHideFlags: 0
@@ -10031,6 +10064,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Enemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 4769488866850045155, guid: bfa37c064e54d2b4ab4c04511b454caf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6879652371183806636, guid: bfa37c064e54d2b4ab4c04511b454caf,
         type: 3}

@@ -65,6 +65,11 @@ public class PlayerController : MonoBehaviour
 
     [HideInInspector] public bool acceptInput = true; //拾取时 冻结玩家输入
 
+    //WeaponPickup nearestPickup;
+
+    //public void SetNearestPickup(WeaponPickup pickup){ nearestPickup = pickup; }
+
+
     bool isMainMenuOpen;
 
 
@@ -167,6 +172,16 @@ public class PlayerController : MonoBehaviour
     }
 
     #region 输入相关
+    public void GetPickupInput(InputAction.CallbackContext context)
+    {
+        if (!context.performed) return;
+
+        //if (nearestPickup != null)
+        {
+            //nearestPickup.TryPickup(this);
+        }
+    }
+
     public void GetMoveInput(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();//将输入原始数据转为二维向量 方便后续调取

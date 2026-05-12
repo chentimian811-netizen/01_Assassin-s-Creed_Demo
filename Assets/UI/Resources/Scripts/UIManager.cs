@@ -60,6 +60,7 @@ public class UIManager
             {UIconst.PackagePanel,"Package/PackagePanel" },
             {UIconst.LotteryPanel,"Lottery/LotteryPanel" },
             {UIconst.MainPanel,"MainPanel" },
+            //{UIconst.PickupPo}
         };
     }
 

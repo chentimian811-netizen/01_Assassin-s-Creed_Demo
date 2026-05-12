@@ -61,6 +61,8 @@ public class PackageLocalData
 
         public bool isNew;
 
+        public bool isEquipped;
+
         public override string ToString()
         {
             return string.Format("¡¾id¡¿: {0},¡¾name¡¿:{1}", id, num);

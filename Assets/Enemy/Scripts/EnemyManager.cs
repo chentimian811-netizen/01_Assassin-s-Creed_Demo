@@ -34,11 +34,27 @@ public class EnemyManager : MonoBehaviour
     {
         enemiesInRange.Remove(enemy);
 
-        if(enemy == Player.tatgetEnemy)
+        if (enemy == Player.tatgetEnemy)
         {
             enemy.MeshHightlighter?.HighlightMesh(false);
-            Player.tatgetEnemy = GetClosesEnemyToPlayerDir();
-            Player.tatgetEnemy?.MeshHightlighter?.HighlightMesh(true);
+
+            if (Player.isLocking)
+            {
+                EnemyController next = GetClosesEnemyToPlayerDir();
+                if (next != null)
+                {
+                    Player.tatgetEnemy = next;
+                    next.MeshHightlighter?.HighlightMesh(true);
+                }
+                else
+                {
+                    Player.ForceUnlock();
+                }
+            }
+            else
+            {
+                Player.tatgetEnemy = GetClosesEnemyToPlayerDir();
+            }
         }
     }
 
@@ -68,6 +84,8 @@ public class EnemyManager : MonoBehaviour
             }
         }
 
+        if (Player.isLocking) return;
+
         if(timer >= 0.1f)
         {
             timer = 0f;
@@ -75,11 +93,7 @@ public class EnemyManager : MonoBehaviour
 
             if (closestEnemy != null && closestEnemy != Player.tatgetEnemy)
             {
-                var prevEnemy = Player.tatgetEnemy;
                 Player.tatgetEnemy = closestEnemy;
-
-                Player?.tatgetEnemy?.MeshHightlighter.HighlightMesh(true);
-                prevEnemy?.MeshHightlighter?.HighlightMesh(false);
             }
 
         }
@@ -115,7 +129,7 @@ public class EnemyManager : MonoBehaviour
             float perpDist = vecToEnemy.magnitude * Mathf.Sin(angle * Mathf.Deg2Rad);
             float paraDist = vecToEnemy.magnitude * Mathf.Cos(angle * Mathf.Deg2Rad);
 
-            float score = paraDist * 10 + paraDist;
+            float score = perpDist * 10 + paraDist;
 
             if (score < minDistance)
             {

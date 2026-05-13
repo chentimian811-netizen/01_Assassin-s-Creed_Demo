@@ -61,7 +61,10 @@ public class PlayerController : MonoBehaviour
     bool isCrouch;
     bool isAiming;
     bool isJumping;
-    bool isLocking;
+    public bool isLocking { get; private set; }
+    EnemyController lockedEnemy;
+    float lockRotateSpeed = 8f;
+    float lockDistance = 15f;
 
     [HideInInspector] public bool acceptInput = true; //拾取时 冻结玩家输入
 
@@ -169,6 +172,15 @@ public class PlayerController : MonoBehaviour
         CaculateInputDirection();
         SetupAnimator();
         AnimatorMove();
+
+        if (isLocking && lockedEnemy != null)
+        {
+            float dist = Vector3.Distance(transform.position, lockedEnemy.transform.position);
+            if (dist > lockDistance)
+            {
+                UnlockEnemy();
+            }
+        }
     }
 
     #region 输入相关
@@ -229,6 +241,12 @@ public class PlayerController : MonoBehaviour
     {
         if (!context.performed) return;
 
+        MeeleFighter targetFighter = null;
+        if (isLocking && lockedEnemy != null)
+        {
+            targetFighter = lockedEnemy.Fighter;
+        }
+
         var enemy = EnemyManager.i.GetAttackingEnemy();
 
         if (enemy != null && enemy.Fighter.IsCounterable && !meeleFighter.inAction && !meeleFighter.IsAttackingHit)
@@ -237,17 +255,70 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            meeleFighter.ToTryAttack(tatgetEnemy?.Fighter);
+            meeleFighter.ToTryAttack(targetFighter ?? tatgetEnemy?.Fighter);
         }
     }
 
     public void GetLockInput(InputAction.CallbackContext context)
     {
-        if (context.ReadValueAsButton())
-        {
+        if (!context.performed) return;
 
+        if (isLocking)
+        {
+            UnlockEnemy();
+        }
+        else
+        {
+            var enemy = EnemyManager.i.GetClosesEnemyToPlayerDir();
+            if (enemy != null)
+            {
+                LockEnemy(enemy);
+            }
+        }
+    }
+
+    void LockEnemy(EnemyController enemy)
+    {
+        isLocking = true;
+        lockedEnemy = enemy;
+        tatgetEnemy = enemy;
+        ArmState = E_ArmState.Lock;
+
+        if (freeLook != null)
+        {
+            freeLook.m_XAxis.m_InputAxisName = "";
+            freeLook.m_YAxis.m_InputAxisName = "";
+            freeLook.m_XAxis.m_InputAxisValue = 0f;
+            freeLook.m_YAxis.m_InputAxisValue = 0f;
         }
 
+        enemy.MeshHightlighter?.HighlightMesh(true);
+    }
+
+    void UnlockEnemy()
+    {
+        isLocking = false;
+
+        if (lockedEnemy != null)
+            lockedEnemy.MeshHightlighter?.HighlightMesh(false);
+
+        if (freeLook != null)
+        {
+            freeLook.m_XAxis.m_InputAxisName = "Mouse X";
+            freeLook.m_YAxis.m_InputAxisName = "Mouse Y";
+        }
+
+        lockedEnemy = null;
+        tatgetEnemy = null;
+        ArmState = E_ArmState.Norml;
+    }
+
+    public void ForceUnlock()
+    {
+        if (isLocking)
+        {
+            UnlockEnemy();
+        }
     }
     #endregion
 
@@ -325,7 +396,11 @@ public class PlayerController : MonoBehaviour
             LocomotionState = E_LocomotionState.Walk;
         }
 
-        if (isAiming)
+        if (isLocking)
+        {
+            ArmState = E_ArmState.Lock;
+        }
+        else if (isAiming)
         {
             ArmState = E_ArmState.Aim;
         }
@@ -402,12 +477,24 @@ public class PlayerController : MonoBehaviour
 
     void CaculateInputDirection()//输入方向的计算
     {
-        //获取相机水平向前的方向，剔除上下倾斜 并且保证方向向量为1
-        Vector3 cameraForward = new Vector3(cameraTransform.forward.x, 0, cameraTransform.forward.z).normalized;
+        if (isLocking && lockedEnemy != null)
+        {
+            // 索敌模式：以玩家到敌人的方向为前方向
+            Vector3 toEnemy = lockedEnemy.transform.position - PlayerTransform.position;
+            toEnemy.y = 0;
+            Vector3 forward = toEnemy.normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
 
-        playerMovement = cameraForward * moveInput.y + cameraTransform.right * moveInput.x;//让玩家移动跟随摄像头的朝向
-
-        playerMovement = PlayerTransform.InverseTransformVector(playerMovement);//将世界坐标转换为玩家的当前坐标
+            playerMovement = forward * moveInput.y + right * moveInput.x;
+            playerMovement = PlayerTransform.InverseTransformVector(playerMovement);
+        }
+        else
+        {
+            // 正常模式：跟随摄像机方向
+            Vector3 cameraForward = new Vector3(cameraTransform.forward.x, 0, cameraTransform.forward.z).normalized;
+            playerMovement = cameraForward * moveInput.y + cameraTransform.right * moveInput.x;
+            playerMovement = PlayerTransform.InverseTransformVector(playerMovement);
+        }
     }
 
     void SetupAnimator()//动画状态更新
@@ -475,7 +562,20 @@ public class PlayerController : MonoBehaviour
 
         }
 
-        if (ArmState == E_ArmState.Norml)
+        if (ArmState == E_ArmState.Lock && lockedEnemy != null)
+        {
+            Vector3 dirToEnemy = lockedEnemy.transform.position - PlayerTransform.position;
+            dirToEnemy.y = 0;
+            if (dirToEnemy.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(dirToEnemy);
+                PlayerTransform.rotation = Quaternion.Slerp(PlayerTransform.rotation, targetRot, lockRotateSpeed * Time.deltaTime);
+            }
+            // turnSpeed 设为移动方向角度，供 Blend Tree 混合 strafe 动画
+            float rad = Mathf.Atan2(playerMovement.x, playerMovement.z);
+            Animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
+        }
+        else if (ArmState == E_ArmState.Norml)
         {
             float rad = Mathf.Atan2(playerMovement.x, playerMovement.z);
             Animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
@@ -499,11 +599,23 @@ public class PlayerController : MonoBehaviour
 
     private void AnimatorMove()//动画驱动移动
     {
-        if (PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling )
+        if (PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling)
         {
-            Vector3 playerDelataMovement = Animator.deltaPosition;
-            playerDelataMovement.y = VerticalVelocity * Time.deltaTime;//叠加垂直移动 实现跳跃
-            characterController.Move(playerDelataMovement);//实现玩家移动
+            if (isLocking)
+            {
+                // 索敌模式：禁用 root motion 水平移动，用代码控制 strafe 方向
+                Vector3 worldMove = PlayerTransform.TransformVector(playerMovement);
+                worldMove.y = 0;
+                float speed = (isRunning ? runSpeed : walkSpeed);
+                characterController.Move(worldMove * speed * Time.deltaTime);
+                characterController.Move(Vector3.up * VerticalVelocity * Time.deltaTime);
+            }
+            else
+            {
+                Vector3 playerDelataMovement = Animator.deltaPosition;
+                playerDelataMovement.y = VerticalVelocity * Time.deltaTime;
+                characterController.Move(playerDelataMovement);
+            }
             averageVel = AverageVel(Animator.velocity);
         }
         else
@@ -516,16 +628,26 @@ public class PlayerController : MonoBehaviour
 
     private void OnAnimatorMove()
     {
-        if (!meeleFighter.inCounter)
+        if (!meeleFighter.inCounter && !isLocking)
         {
             transform.position += Animator.deltaPosition;
         }
 
-        transform.rotation *= Animator.deltaRotation;
+        if (!isLocking)
+        {
+            transform.rotation *= Animator.deltaRotation;
+        }
     }
 
     public Vector3 GetTargetingDir()//获取目标方向
     {
+        if (isLocking && lockedEnemy != null)
+        {
+            Vector3 dir = lockedEnemy.transform.position - transform.position;
+            dir.y = 0;
+            return dir.normalized;
+        }
+
         if (tatgetEnemy != null && freeLook.m_LookAt != null)
         {
             Vector3 VecFromCam = freeLook.m_LookAt.position - transform.position;

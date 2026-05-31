@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
     public EnemyController tatgetEnemy;
 
     CinemachineFreeLook freeLook;
-
+    
 
     public enum E_PlayerPostrue//玩家姿态枚举
     {
@@ -151,6 +151,8 @@ public class PlayerController : MonoBehaviour
         Animator.SetFloat(turnSpeedHash, 0f);
 
         freeLook = FindAnyObjectByType<CinemachineFreeLook>();
+
+        Debug.Log("当前金币" + CurrencyManager.Instance.Gold);
 
     }
     // Update is called once per frame

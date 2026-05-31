@@ -12,16 +12,14 @@ public class StateMachine<T>
     {
         _owner = owner;
     }
-
-    public void ChangeState(State<T> newstate)
+    public void ChangeState(State<T> newState)
     {
         CurrentState?.Exit();
-        CurrentState = newstate;
+        CurrentState = newState;
         CurrentState.Enter(_owner);
     }
-
     public void Execute()
     {
-        CurrentState?.Execute(); 
+        CurrentState?.Execute();
     }
 }

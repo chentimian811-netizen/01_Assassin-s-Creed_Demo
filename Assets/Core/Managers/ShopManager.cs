@@ -246,4 +246,5 @@ public class ShopItemDisplay
     public ShopItemData itemData;
     public int currentStock;
     public int finalPrice;
+    public string uid;//出售模式下使用 标识背包的里面的具体物品
 }

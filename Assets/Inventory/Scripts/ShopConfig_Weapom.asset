@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3aa9b5c3d63e88f4fbd5fb02f3904c7d, type: 3}
-  m_Name: NewShopConfig
+  m_Name: ShopConfig_Weapom
   m_EditorClassIdentifier: 
   items:
-  - itemID: 0
-    price: 0
-    stock: 0
-    discount: 0
-  - itemID: 0
-    price: 0
-    stock: 0
-    discount: 0
+  - itemID: 1
+    price: 200
+    stock: 5
+    discount: 1
+  - itemID: 2
+    price: 500
+    stock: 5
+    discount: 1

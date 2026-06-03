@@ -65,13 +65,12 @@ public class PlayerController : MonoBehaviour
     EnemyController lockedEnemy;
     float lockRotateSpeed = 8f;
     float lockDistance = 15f;
-
     [HideInInspector] public bool acceptInput = true; //拾取时 冻结玩家输入
-
     WeaponPickup nearestPickup;
-
     public void SetNearestPickup(WeaponPickup pickup) { nearestPickup = pickup; }
 
+    ShopNPC nearestShopNPC;
+    public void SetNearestShopNPC(ShopNPC npc){nearestShopNPC = npc;}
 
     bool isMainMenuOpen;
 
@@ -83,9 +82,6 @@ public class PlayerController : MonoBehaviour
     int feetTweensHash;
 
     Vector3 playerMovement = Vector3.zero;//玩家移动向量为(0,0,0)
-
-    //。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。
-
 
     public float gravity = -9.8f;//重力
 
@@ -167,6 +163,17 @@ public class PlayerController : MonoBehaviour
             isJumping = false;
             return;
         }
+
+        if (UIManager.Instance.panelDict.ContainsKey(UIconst.ShopPanel))
+        {
+            moveInput = Vector2.zero; // 清空移动输入
+            isRunning = false;
+            isCrouch = false;
+            isAiming = false;
+            isJumping = false;
+            return;
+        }
+
         CheckGround();
         SwitchPlayerState();
         CaculateGravity();
@@ -189,6 +196,12 @@ public class PlayerController : MonoBehaviour
     public void GetPickupInput(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
+
+        if(nearestShopNPC != null)
+        {
+            nearestShopNPC.OpenShop();
+            return;
+        }
 
         if (nearestPickup != null)
         {

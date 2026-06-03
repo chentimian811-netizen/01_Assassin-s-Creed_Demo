@@ -4,14 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 
 public class ShopCell : MonoBehaviour,IPointerClickHandler
 {
     private Transform UIIcon;
-    private Transform UIName;
-    private Transform UIDiscount;
-    private Transform UIPrice;
-    private Transform UIStock;
+    private Transform UIQuantity;
     private Transform UISelect;
 
     private ShopItemDisplay displayData;
@@ -26,15 +24,10 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
     private void InitUIName()
     {
         UIIcon = transform.Find("Top/Icon");
-        UIName = transform.Find("Top/Name");
-        UIDiscount = transform.Find("Top/Discount");
-        UIPrice = transform.Find("Bottom/Price");
-        UIStock = transform.Find("Bottom/Stock");
+        UIQuantity = transform.Find("Quantity");
         UISelect = transform.Find("Select");
 
-        //默认隐藏选中的高亮和折扣标签
         UISelect.gameObject.SetActive(false);
-        UIDiscount.gameObject.SetActive(false);
     }
 
     public void Refresh(ShopItemDisplay data,ShopPanel parent)
@@ -46,30 +39,18 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
 
         RefreshIcon(tableItem);
 
-        UIName.GetComponent<Text>().text = tableItem.name;
-
-        UIPrice.GetComponent<Text>().text = "Money" + data.finalPrice;
-
-
-        if(data.currentStock == -1)
+        // 显示数量：库存模式显示stock，出售模式显示1
+        if(UIQuantity != null)
         {
-            UIStock.GetComponent<Text>().text = "库存:∞";
-        }
-        else
-        {
-            UIStock.GetComponent<Text>().text = "库存" + data.currentStock;
-        }
-
-        if(data.itemData.discount < 1f)
-        {
-            UIDiscount.gameObject.SetActive(true);
-            //折扣转为“几折”：0.8 ——> 8折
-            int discountDisplay = Mathf.RoundToInt(data.itemData.discount * 10);
-            UIDiscount.GetComponent<Text>().text = discountDisplay + "折";
-        }
-        else
-        {
-            UIDiscount.gameObject.SetActive(false);
+            if(data.currentStock == -1)
+            {
+                UIQuantity.gameObject.SetActive(false);
+            }
+            else
+            {
+                UIQuantity.gameObject.SetActive(true);
+                UIQuantity.GetComponent<TextMeshProUGUI>().text = "x" + data.currentStock;
+            }
         }
 
         //默认取消选中

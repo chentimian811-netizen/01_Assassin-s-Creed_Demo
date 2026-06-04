@@ -37,3 +37,27 @@ MonoBehaviour:
     skillDescription: "\u4F7F\u7528[\u60CA\u96F7]\u751F\u6210\u96F7\u4E91,\u81EA\u52A8\u653B\u51FB\u6700\u8FD1\u7684\u654C\u4EBA\u76F4\u81F3\u6D88\u4EA1\u3002"
     imagePath: "Sprites/UI/Weapon/\u6B66\u5668_04"
     Num: 1
+  - id: 1001
+    type: 2
+    star: 1
+    name: "\u9999\u714E\u9A9B\u9E1F\u86CB"
+    description: "\u6062\u590D50HP"
+    skillDescription: 
+    imagePath: "Sprites/UI/Food/\u98DF\u726902"
+    Num: 1
+  - id: 1002
+    type: 2
+    star: 1
+    name: "\u9999\u62E7\u9CB1\u9C7C"
+    description: "\u89E3\u9664\u4E2D\u6BD2\u72B6\u6001"
+    skillDescription: 
+    imagePath: "Sprites/UI/Food/\u98DF\u726912"
+    Num: 1
+  - id: 1003
+    type: 2
+    star: 5
+    name: "\u9999\u8349\u6811\u8393\u86CB\u7CD5"
+    description: "\u6062\u590D100HP"
+    skillDescription: 
+    imagePath: "Sprites/UI/Food/\u98DF\u726908"
+    Num: 1

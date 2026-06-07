@@ -1,10 +1,12 @@
 using System;
 using UnityEngine;
-using static PackageLocalData;
+using static PackageLocalData;
+
 public class InventoryManager : MonoBehaviour
 {
     private static InventoryManager _instance;//单例模式
-    public static InventoryManager Instance => _instance;
+    public static InventoryManager Instance => _instance;
+
     WeaponManager weaponManager;
     public event Action<PackageLocalItem> OnItemAdded;
     public event Action<PackageLocalItem> OnItemRemoved;
@@ -78,39 +80,63 @@ public class InventoryManager : MonoBehaviour
             string oldUid = weaponManager.GetMainEquippedUid();
             if (oldUid != null)
             {
-                weaponManager.UnequipSlotByType(E_WeaponType.Sword);
+                //通过旧武器ID查询WeaponConfig，获取真实的武器类型
+                WeaponConfig oldCongig = weaponManager.GetWeaponConfig(oldEquipped.id);
+                if(oldCongig != null)
+                {
+                    weaponManager.UnequipSlotByType(oldCongig.weaponType);//动态获取
+                }
+                
             }
             oldEquipped.isEquipped = false;
-        }
+        }
+
         bool success = weaponManager.EquipWeapon(uid);
-        if(!success)return false;
+        if(!success)return false;
+
         item.isEquipped = true;
         PackageLocalData.Instance.SavePackage();
         if (oldEquipped != null)OnItemUnequipped?.Invoke(oldEquipped);
         OnItemEquipped?.Invoke(item);
-        return true;
-    }
+        return true;
+
+    }
+
     public bool EquipFromGround(int weaponId)
     {
-        string uid = AddItem(weaponId);
-        if (uid == null) return false;
+        string uid = AddItem(weaponId);
+
+        if (uid == null) return false;
+
         return EquipWeapon(uid);
-    }
+    }
+
     public string AddToBag(int weaponId)
     {
-        return AddItem(weaponId);
-    }
+        return AddItem(weaponId);
+
+    }
+
     public bool Unequip(int slotIndex = 0)
     {
-        if (weaponManager == null) return false;
-        PackageLocalItem equipped = GetEquippedWeapon();
-        if (equipped == null) return false;
-        weaponManager.UnequipSlot(slotIndex);
-        equipped.isEquipped = false;
-        PackageLocalData.Instance.SavePackage();
-        OnItemUnequipped?.Invoke(equipped);
-        return true;
-    }
+        if (weaponManager == null) return false;
+
+        PackageLocalItem equipped = GetEquippedWeapon();
+
+        if (equipped == null) return false;
+
+        weaponManager.UnequipSlot(slotIndex);
+
+        equipped.isEquipped = false;
+
+        PackageLocalData.Instance.SavePackage();
+
+        OnItemUnequipped?.Invoke(equipped);
+
+        return true;
+
+    }
+
 
     public PackageLocalItem GetEquippedWeapon()
     {
@@ -119,7 +145,8 @@ public class InventoryManager : MonoBehaviour
             if (item.isEquipped) return item;
         }
         return null;
-    }
+    }
+
     void RestoreEquippedState()
     {
         PackageLocalItem equipped = GetEquippedWeapon();
@@ -128,4 +155,5 @@ public class InventoryManager : MonoBehaviour
             weaponManager.EquipWeapon(equipped.uid);
         }
     }
-}
+}
+

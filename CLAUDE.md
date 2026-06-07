@@ -78,6 +78,7 @@ UIManager → BasePanel 面板体系 (从 Resources/Prefabs/Panels/ 按需加载
 - **食物系统**（`PackageTypeFood = 2`）仅定义了常量，未实现功能
 - **注释规范** — 写代码时必须同时添加中文注释，包括：字段说明、方法功能、关键逻辑节点
 - `CombatController.cs` 是空壳/WIP 文件
+- **代码提供方式** — Claude 只提供带中文注释的代码文本和逻辑讲解，不直接写入文件；代码写入由用户自己完成
 
 ## 第三方资源（勿修改）
 

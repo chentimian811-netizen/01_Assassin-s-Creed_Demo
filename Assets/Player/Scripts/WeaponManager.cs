@@ -131,6 +131,14 @@ public class WeaponManager : MonoBehaviour
         return weaponSlots[slotIndex].equippedUid;
     }
 
+    //根据武器的Id获取武器配置
+    public WeaponConfig GetWeaponConfig(int weaponId)
+    {
+        WeaponConfig config;
+        weaponConfigMap.TryGetValue(weaponId,out config);
+        return config;
+    }
+
     public string GetMainEquippedUid()
     {
         return GetEquippedUid(mainWeaponSlotIndex);

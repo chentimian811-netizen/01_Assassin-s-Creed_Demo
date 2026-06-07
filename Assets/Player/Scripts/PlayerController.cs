@@ -13,14 +13,14 @@ public class PlayerController : MonoBehaviour
     Animator Animator;
     Transform cameraTransform;
     CharacterController characterController;
-    MeeleFighter meeleFighter;
+    MeleeFighter meleeFighter;
 
-    public EnemyController tatgetEnemy;
+    public EnemyController targetEnemy;
 
     CinemachineFreeLook freeLook;
     
 
-    public enum E_PlayerPostrue//玩家姿态枚举
+    public enum E_PlayerPosture//玩家姿态枚举
     {
         Crouch,//蹲下
         Falling,//下落
@@ -28,7 +28,7 @@ public class PlayerController : MonoBehaviour
         Jumping,//滞空
         Landing//着陆
     }
-    public E_PlayerPostrue PlayerPostrue = E_PlayerPostrue.Stand;//规定玩家的初始姿态
+    public E_PlayerPosture PlayerPosture = E_PlayerPosture.Stand;//规定玩家的初始姿态
 
     float crouchThreshold = 0f;//姿态阈值设定
     float standThreshold = 1f;
@@ -45,11 +45,11 @@ public class PlayerController : MonoBehaviour
 
     public enum E_ArmState//玩家瞄准状态枚举 
     {
-        Norml,
+        Normal,
         Aim,
         Lock,
     }
-    public E_ArmState ArmState = E_ArmState.Norml;//初始攻击
+    public E_ArmState ArmState = E_ArmState.Normal;//初始攻击
 
     public float crouchSpeed = 1.5f;
     public float walkSpeed = 3f;
@@ -125,7 +125,7 @@ public class PlayerController : MonoBehaviour
 
     public void Awake()
     {
-        meeleFighter = GetComponent<MeeleFighter>();
+        meleeFighter = GetComponent<MeleeFighter>();
     }
     void Start()
     {
@@ -154,7 +154,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (meeleFighter.Health <= 0 || !acceptInput)
+        if (meleeFighter.Health <= 0 || !acceptInput)
         {
             moveInput = Vector2.zero; // 清空移动输入
             isRunning = false;
@@ -256,7 +256,7 @@ public class PlayerController : MonoBehaviour
     {
         if (!context.performed) return;
 
-        MeeleFighter targetFighter = null;
+        MeleeFighter targetFighter = null;
         if (isLocking && lockedEnemy != null)
         {
             targetFighter = lockedEnemy.Fighter;
@@ -264,13 +264,13 @@ public class PlayerController : MonoBehaviour
 
         var enemy = EnemyManager.i.GetAttackingEnemy();
 
-        if (enemy != null && enemy.Fighter.IsCounterable && !meeleFighter.inAction && !meeleFighter.IsAttackingHit)
+        if (enemy != null && enemy.Fighter.IsCounterable && !meleeFighter.inAction && !meleeFighter.IsAttackingHit)
         {
-            StartCoroutine(meeleFighter.PerformCounterAttack(enemy));
+            StartCoroutine(meleeFighter.PerformCounterAttack(enemy));
         }
         else
         {
-            meeleFighter.ToTryAttack(targetFighter ?? tatgetEnemy?.Fighter);
+            meleeFighter.ToTryAttack(targetFighter ?? targetEnemy?.Fighter);
         }
     }
 
@@ -296,7 +296,7 @@ public class PlayerController : MonoBehaviour
     {
         isLocking = true;
         lockedEnemy = enemy;
-        tatgetEnemy = enemy;
+        targetEnemy = enemy;
         ArmState = E_ArmState.Lock;
 
         if (freeLook != null)
@@ -324,8 +324,8 @@ public class PlayerController : MonoBehaviour
         }
 
         lockedEnemy = null;
-        tatgetEnemy = null;
-        ArmState = E_ArmState.Norml;
+        targetEnemy = null;
+        ArmState = E_ArmState.Normal;
     }
 
     public void ForceUnlock()
@@ -364,37 +364,37 @@ public class PlayerController : MonoBehaviour
             if (VerticalVelocity > 0)
             {
                 //在跳跃中
-                PlayerPostrue = E_PlayerPostrue.Jumping;
+                PlayerPosture = E_PlayerPosture.Jumping;
             }
             //不是处于坠落
-            else if (PlayerPostrue != E_PlayerPostrue.Falling)
+            else if (PlayerPosture != E_PlayerPosture.Falling)
             {
                 //并且是跌落
                 if (couldFall)
                 {
                     //在坠落中
-                    PlayerPostrue = E_PlayerPostrue.Falling;
+                    PlayerPosture = E_PlayerPosture.Falling;
                 }
             }
 
         }
         //不是处于跳跃
-        else if (PlayerPostrue == E_PlayerPostrue.Jumping)
+        else if (PlayerPosture == E_PlayerPosture.Jumping)
         {
             StartCoroutine(CoolDownJump());
         }
 
         else if (isLanding)
         {
-            PlayerPostrue = E_PlayerPostrue.Landing;
+            PlayerPosture = E_PlayerPosture.Landing;
         }
         else if (isCrouch)
         {
-            PlayerPostrue = E_PlayerPostrue.Crouch;
+            PlayerPosture = E_PlayerPosture.Crouch;
         }
         else
         {
-            PlayerPostrue = E_PlayerPostrue.Stand;
+            PlayerPosture = E_PlayerPosture.Stand;
         }
 
 
@@ -421,7 +421,7 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            ArmState = E_ArmState.Norml;
+            ArmState = E_ArmState.Normal;
         }
     }
 
@@ -431,7 +431,7 @@ public class PlayerController : MonoBehaviour
         LandingThreshold /= 20f;
         LandingThreshold += 1f;
         isLanding = true;
-        PlayerPostrue = E_PlayerPostrue.Landing;
+        PlayerPosture = E_PlayerPosture.Landing;
         yield return new WaitForSeconds(jumpCD);
         isLanding = false;
     }
@@ -439,7 +439,7 @@ public class PlayerController : MonoBehaviour
 
     void CaculateGravity()//重力
     {
-        if (PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling)
+        if (PlayerPosture != E_PlayerPosture.Jumping && PlayerPosture != E_PlayerPosture.Falling)
         {
             if (!isGround)
             {
@@ -468,7 +468,7 @@ public class PlayerController : MonoBehaviour
     void Jump()//跳跃
     {
         //当角色在地面并且 按下跳跃 则获得一个瞬时向上的力
-        if (PlayerPostrue == E_PlayerPostrue.Stand && isJumping)
+        if (PlayerPosture == E_PlayerPosture.Stand && isJumping)
         {
             VerticalVelocity = MathF.Sqrt(-2 * gravity * maxHeight);
             //计算动画脚本混合值
@@ -514,7 +514,7 @@ public class PlayerController : MonoBehaviour
 
     void SetupAnimator()//动画状态更新
     {
-        if (PlayerPostrue == E_PlayerPostrue.Stand)
+        if (PlayerPosture == E_PlayerPosture.Stand)
         {
             //0.1f(dampTime)表示:从当前值 过渡到standThreshold 需要0.1f 使得动画过渡更加自然
             Animator.SetFloat(postrueHash, standThreshold, 0.1f, Time.deltaTime);
@@ -532,7 +532,7 @@ public class PlayerController : MonoBehaviour
                     break;
             }
         }
-        else if (PlayerPostrue == E_PlayerPostrue.Crouch)
+        else if (PlayerPosture == E_PlayerPosture.Crouch)
         {
             Animator.SetFloat(postrueHash, crouchThreshold, 0.1f, Time.deltaTime);
 
@@ -547,13 +547,13 @@ public class PlayerController : MonoBehaviour
             }
 
         }
-        else if (PlayerPostrue == E_PlayerPostrue.Jumping)
+        else if (PlayerPosture == E_PlayerPosture.Jumping)
         {
             Animator.SetFloat(postrueHash, midAirThreshold, 0.1f, Time.deltaTime);
             Animator.SetFloat(jumpSpeedHash, VerticalVelocity, 0.1f, Time.deltaTime);
             Animator.SetFloat("FeetTween", feetTween);
         }
-        else if (PlayerPostrue == E_PlayerPostrue.Landing)
+        else if (PlayerPosture == E_PlayerPosture.Landing)
         {
             Animator.SetFloat(postrueHash, LandingThreshold, 0.08f, Time.deltaTime);
 
@@ -570,7 +570,7 @@ public class PlayerController : MonoBehaviour
                     break;
             }
         }
-        else if (PlayerPostrue == E_PlayerPostrue.Falling)
+        else if (PlayerPosture == E_PlayerPosture.Falling)
         {
             Animator.SetFloat(postrueHash, midAirThreshold, 0.1f, Time.deltaTime);
             Animator.SetFloat(jumpSpeedHash, VerticalVelocity, 0.1f, Time.deltaTime);
@@ -590,7 +590,7 @@ public class PlayerController : MonoBehaviour
             float rad = Mathf.Atan2(playerMovement.x, playerMovement.z);
             Animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
         }
-        else if (ArmState == E_ArmState.Norml)
+        else if (ArmState == E_ArmState.Normal)
         {
             float rad = Mathf.Atan2(playerMovement.x, playerMovement.z);
             Animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
@@ -614,7 +614,7 @@ public class PlayerController : MonoBehaviour
 
     private void AnimatorMove()//动画驱动移动
     {
-        if (PlayerPostrue != E_PlayerPostrue.Jumping && PlayerPostrue != E_PlayerPostrue.Falling)
+        if (PlayerPosture != E_PlayerPosture.Jumping && PlayerPosture != E_PlayerPosture.Falling)
         {
             if (isLocking)
             {
@@ -643,7 +643,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnAnimatorMove()
     {
-        if (!meeleFighter.inCounter && !isLocking)
+        if (!meleeFighter.inCounter && !isLocking)
         {
             transform.position += Animator.deltaPosition;
         }
@@ -663,7 +663,7 @@ public class PlayerController : MonoBehaviour
             return dir.normalized;
         }
 
-        if (tatgetEnemy != null && freeLook.m_LookAt != null)
+        if (targetEnemy != null && freeLook.m_LookAt != null)
         {
             Vector3 VecFromCam = freeLook.m_LookAt.position - transform.position;
             VecFromCam.y = 0;

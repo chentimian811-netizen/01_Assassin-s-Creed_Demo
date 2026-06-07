@@ -34,7 +34,7 @@ public class EnemyManager : MonoBehaviour
     {
         enemiesInRange.Remove(enemy);
 
-        if (enemy == Player.tatgetEnemy)
+        if (enemy == Player.targetEnemy)
         {
             enemy.MeshHightlighter?.HighlightMesh(false);
 
@@ -43,7 +43,7 @@ public class EnemyManager : MonoBehaviour
                 EnemyController next = GetClosesEnemyToPlayerDir();
                 if (next != null)
                 {
-                    Player.tatgetEnemy = next;
+                    Player.targetEnemy = next;
                     next.MeshHightlighter?.HighlightMesh(true);
                 }
                 else
@@ -53,7 +53,7 @@ public class EnemyManager : MonoBehaviour
             }
             else
             {
-                Player.tatgetEnemy = GetClosesEnemyToPlayerDir();
+                Player.targetEnemy = GetClosesEnemyToPlayerDir();
             }
         }
     }
@@ -91,9 +91,9 @@ public class EnemyManager : MonoBehaviour
             timer = 0f;
             var closestEnemy = GetClosesEnemyToPlayerDir();
 
-            if (closestEnemy != null && closestEnemy != Player.tatgetEnemy)
+            if (closestEnemy != null && closestEnemy != Player.targetEnemy)
             {
-                Player.tatgetEnemy = closestEnemy;
+                Player.targetEnemy = closestEnemy;
             }
 
         }

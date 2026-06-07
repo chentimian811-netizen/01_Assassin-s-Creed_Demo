@@ -3,22 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
+//枚举 攻击的四个阶段
 public enum E_AttackState
 {
     idle,
-    Windup,
-    Impact,
-    Cooldown,
+    Windup,//前摇
+    Impact,//生效
+    Cooldown,//后摇
 }
-
-
-public class MeeleFighter : MonoBehaviour
+public class MeleeFighter : MonoBehaviour
 {
     [field: SerializeField] public float Health { get; private set; } = 25f;
-
-
-
     [SerializeField] List<AttackData> attacks;
     [SerializeField] GameObject Sword;
 
@@ -26,25 +21,23 @@ public class MeeleFighter : MonoBehaviour
 
     public E_AttackState AttackState { get; private set; }
 
-    public event Action<MeeleFighter> OnGotHit;
+    public event Action<MeleeFighter> OnGotHit;
     public event Action OnHitComplete;
 
     BoxCollider SwordCollider;
 
     Animator animator;
-
-    public bool IsAttackingHit { get; private set; } = false;
-
-    public bool inAction { get; private set; } = false;
-
-    public bool inCounter { get; set; } = false;
-
-    bool doCombo;
-    int combocount = 0;
+    RuntimeAnimatorController originalController;
+    public bool IsAttackingHit { get; private set; } = false; //是否处于被攻击状态
+    public bool inAction { get; private set; } = false;//是否处于攻击中
+    public bool inCounter { get; set; } = false;//反击演出阶段
+    bool doCombo;//连击标志
+    int combocount = 0;//连技计数
 
     void Awake()
     {
         animator = GetComponent<Animator>();
+        originalController = animator.runtimeAnimatorController;
 
     }
     private void Start()
@@ -86,22 +79,35 @@ public class MeeleFighter : MonoBehaviour
         }
     }
 
-    public void ToTryAttack(MeeleFighter target = null)
+    //应用武器动画覆盖，替代Animator中的动画片段
+    public void SetAnimatorOverride(RuntimeAnimatorController overrdeController)
     {
-        if (!inAction)
+        if(animator == null || overrdeController == null)return;
+        animator.runtimeAnimatorController = overrdeController;
+    }
+
+    //恢复原始动画控制器(卸装武器时调用)
+    public void ClearAnimatorOverride()
+    {
+        if(animator == null || originalController == null)return;
+        animator.runtimeAnimatorController = originalController;
+    }
+
+    public void ToTryAttack(MeleeFighter target = null)
+    {
+        if (!inAction)//没有攻击——>启动
         {
             StartCoroutine(Attack(target));
         }
-        else if (AttackState == E_AttackState.Impact || AttackState == E_AttackState.Cooldown)
+        else if (AttackState == E_AttackState.Impact || AttackState == E_AttackState.Cooldown)//处于生效/后摇——>排队
         {
             doCombo = true;
-
         }
     }
 
-    MeeleFighter currentTarget;
+    MeleeFighter currentTarget;
 
-    IEnumerator Attack(MeeleFighter target = null)
+    IEnumerator Attack(MeleeFighter target = null)
     {
         inAction = true;
 
@@ -176,7 +182,7 @@ public class MeeleFighter : MonoBehaviour
     {
         if (other.tag == "Hitbox" && !IsAttackingHit && !inCounter)
         {
-            var attacker = other.GetComponentInParent<MeeleFighter>();
+            var attacker = other.GetComponentInParent<MeleeFighter>();
             if (attacker == null || attacker == this) return;
 
             if(attacker.currentTarget != null && attacker.currentTarget != this)
@@ -189,7 +195,7 @@ public class MeeleFighter : MonoBehaviour
 
             if (Health > 0)
             {
-                StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeeleFighter>().transform));
+                StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeleeFighter>().transform));
             }
             else
             {
@@ -212,8 +218,6 @@ public class MeeleFighter : MonoBehaviour
         dispVec.y = 0;
         transform.rotation = Quaternion.LookRotation(dispVec);
 
-        
-
         animator.CrossFade("SwordImpact", 0.2f);
 
         yield return null;
@@ -227,7 +231,7 @@ public class MeeleFighter : MonoBehaviour
         inAction = false;
         IsAttackingHit = false;
     }
-    public IEnumerator PerformCounterAttack(EnemyController opponet)
+    public IEnumerator PerformCounterAttack(EnemyController opponet)//实现反击
     {
         inAction = true;
 
@@ -265,7 +269,7 @@ public class MeeleFighter : MonoBehaviour
         inAction = false;
     }
 
-    void PlayDeathAnimation(MeeleFighter attacker)
+    void PlayDeathAnimation(MeleeFighter attacker)
     {
         animator.CrossFade("FallBackDeath", 0.2f);
     }

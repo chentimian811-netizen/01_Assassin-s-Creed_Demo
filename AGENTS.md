@@ -13,7 +13,7 @@ Unity 2022.3 LTS (2022.3.62f2c1) — 第三人称动作游戏 Demo（刺客信�
 ```
 Assets/
 ├── Player/Scripts/      — PlayerController, WeaponManager, WeaponSlot
-├── Combat/Scripts/      — MeeleFighter, AttackData, CombaController(空壳WIP)
+├── Combat/Scripts/      — MeleeFighter, AttackData, CombatController(空壳WIP)
 ├── Enemy/Scripts/       — EnemyController, EnemyManager, States/
 ├── Inventory/Scripts/   — InventoryManager, PackageLocalData, PackageTables, ShopConfig
 ├── Weapon/Scripts/      — WeaponPickup, WeaponConfig(SO), WeaponType
@@ -36,19 +36,15 @@ Assets/
 
 ## Layers & Tags
 
-- Layers: Player(6), Enemy(7), Playehitbox(8), Enemyhitbox(9), VersionSensor(10), Obstacles(11)
+- Layers: Player(6), Enemy(7), Playehitbox(8), Enemyhitbox(9), VisionSensor(10), Obstacles(11)
 - Tags: Enemy, Hitbox
-
-## 历史命名拼写错误（勿修正）
-
-`MeeleFighter`、`CombaController`、`AttackSates`、`CombatMovmentStates`、`LottertCell`、`VersionSensor`、`tatgetEnemy`、`ReteatAfterAttack`、`E_PlayerPostrue`、`Norml`
 
 ## 已知限制
 
-- 血量硬编码为 25（`MeeleFighter`），伤害硬编码为 5
+- 血量硬编码为 25（`MeleeFighter`），伤害硬编码为 5
 - `E_WeaponType` 定义了 5 种武器类型，但只有 Sword 有实际游戏逻辑
 - 食物系统（`PackageTypeFood = 2`）仅定义了常量，未实现
-- `CombaController.cs` 是空壳/WIP 文件
+- `CombatController.cs` 是空壳/WIP 文件
 
 ## 第三方依赖（勿修改）
 

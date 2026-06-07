@@ -10,7 +10,7 @@ public enum E_EnemyState
     Idle,
     CombatMovement,
     Attack,
-    ReteatAfterAttack,
+    RetreatAfterAttack,
     Dead,
     GettingHit,
 }
@@ -21,9 +21,9 @@ public class EnemyController : MonoBehaviour
 
     [field: SerializeField] public float AlertRange { get; private set; } = 20f;
 
-    public List<MeeleFighter> TargetsInRange { get; set; } = new List<MeeleFighter>();
+    public List<MeleeFighter> TargetsInRange { get; set; } = new List<MeleeFighter>();
 
-    public MeeleFighter Target { get; set; }
+    public MeleeFighter Target { get; set; }
     public StateMachine<EnemyController> stateMachine { get; private set; }
 
     public SkinnedMeshHighlighter MeshHightlighter { get; private set; }
@@ -33,8 +33,8 @@ public class EnemyController : MonoBehaviour
     public NavMeshAgent NavAgent { get; private set; }
 
     public Animator Animator { get; private set; }
-    public MeeleFighter Fighter { get; private set; }
-    public VersionSensor VersionSensor { get;  set; }
+    public MeleeFighter Fighter { get; private set; }
+    public VisionSensor VisionSensor { get;  set; }
     public CharacterController character { get; private set; }
     public float CombatMovementTimer { get; set; } = 0f;
 
@@ -51,7 +51,7 @@ public class EnemyController : MonoBehaviour
 
         Animator = GetComponent<Animator>();
 
-        Fighter = GetComponent<MeeleFighter>();
+        Fighter = GetComponent<MeleeFighter>();
 
         character = GetComponent<CharacterController>();
 
@@ -59,11 +59,11 @@ public class EnemyController : MonoBehaviour
 
         stateDict[E_EnemyState.Idle] = GetComponent<IdleState>();
 
-        stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovmentStates>();
+        stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovementStates>();
 
-        stateDict[E_EnemyState.Attack] = GetComponent<AttackSates>();
+        stateDict[E_EnemyState.Attack] = GetComponent<AttackStates>();
 
-        stateDict[E_EnemyState.ReteatAfterAttack] = GetComponent<RetreatAfterAttackState>();
+        stateDict[E_EnemyState.RetreatAfterAttack] = GetComponent<RetreatAfterAttackState>();
 
         stateDict[E_EnemyState.Dead] = GetComponent<DeadState>();
 
@@ -72,7 +72,7 @@ public class EnemyController : MonoBehaviour
         stateMachine = new StateMachine<EnemyController>(this);
         stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
 
-        Fighter.OnGotHit += (MeeleFighter attacker) =>
+        Fighter.OnGotHit += (MeleeFighter attacker) =>
         {
             if(Fighter.Health > 0)
             {
@@ -135,7 +135,7 @@ public class EnemyController : MonoBehaviour
 
     }
 
-    public MeeleFighter FindTarget()
+    public MeleeFighter FindTarget()
     {
         foreach (var target in TargetsInRange)
         {

@@ -2071,8 +2071,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1599c5079f5814469eab0e20a31488d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tatgetEnemy: {fileID: 0}
-  PlayerPostrue: 1
+  targetEnemy: {fileID: 0}
+  PlayerPosture: 1
   LocomotionState: 0
   ArmState: 0
   crouchSpeed: 1.5

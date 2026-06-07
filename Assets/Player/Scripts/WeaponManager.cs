@@ -11,7 +11,7 @@ public class WeaponManager : MonoBehaviour
     [SerializeField] int mainWeaponSlotIndex = 0;
 
     Dictionary<int, WeaponConfig> weaponConfigMap;
-    MeeleFighter meeleFighter;
+    MeleeFighter meleeFighter;
 
     public event Action<WeaponConfig> OnWeaponModelChanged;
 
@@ -27,7 +27,7 @@ public class WeaponManager : MonoBehaviour
                     weaponConfigMap[config.weaponID] = config; 
             }
         }
-        meeleFighter = GetComponent<MeeleFighter>();
+        meleeFighter = GetComponent<MeleeFighter>();
         HidePreplacedWeapons();
     }
 
@@ -75,6 +75,11 @@ public class WeaponManager : MonoBehaviour
 
         SyncFighterWeapon();
         OnWeaponModelChanged?.Invoke(config);
+        
+        if(meleeFighter != null && config.animOverride != null)
+        {
+            meleeFighter.SetAnimatorOverride(config.animOverride);
+        }
         return true;
     }
 
@@ -113,6 +118,10 @@ public class WeaponManager : MonoBehaviour
 
         SyncFighterWeapon();
         OnWeaponModelChanged?.Invoke(oldConfig);
+        if(meleeFighter != null && slot == weaponSlots[mainWeaponSlotIndex])
+        {
+            meleeFighter.ClearAnimatorOverride();
+        }
         return uid;
     }
 
@@ -150,8 +159,8 @@ public class WeaponManager : MonoBehaviour
             return;
 
         WeaponSlot mainSlot = weaponSlots[mainWeaponSlotIndex];
-        if (meeleFighter != null)
-            meeleFighter.SetWeapon(mainSlot.currentModel);
+        if (meleeFighter != null)
+            meleeFighter.SetWeapon(mainSlot.currentModel);
     }
 
     void SetLayerRecursive(GameObject obj, int layer)

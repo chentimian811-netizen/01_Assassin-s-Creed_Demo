@@ -6,15 +6,15 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class CombaController : MonoBehaviour
+public class CombatController : MonoBehaviour
 {
-    MeeleFighter meeleFighter;
+    MeleeFighter meleeFighter;
 
    
 
     private void Awake()
     {
-        meeleFighter = GetComponent<MeeleFighter>();
+        meleeFighter = GetComponent<MeleeFighter>();
     }
 
     private void Update()

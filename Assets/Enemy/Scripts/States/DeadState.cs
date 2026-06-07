@@ -6,7 +6,7 @@ public class DeadState : State<EnemyController>
 {
     public override void Enter(EnemyController owner)
     {
-        owner.VersionSensor.gameObject.SetActive(false);
+        owner.VisionSensor.gameObject.SetActive(false);
         EnemyManager.i.RemoveEnemyInRange(owner);
 
         owner.NavAgent.enabled = false;

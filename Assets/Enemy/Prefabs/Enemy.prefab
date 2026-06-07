@@ -168,7 +168,7 @@ GameObject:
   - component: {fileID: 3710807192637758116}
   - component: {fileID: 4830808074516020066}
   m_Layer: 10
-  m_Name: VersionSensor
+  m_Name: VisionSensor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

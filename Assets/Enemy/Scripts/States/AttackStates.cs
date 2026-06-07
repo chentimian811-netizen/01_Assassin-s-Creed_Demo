@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AttackSates : State<EnemyController>
+public class AttackStates : State<EnemyController>
 {
     [SerializeField] float attackDistance = 3.0f;
 
@@ -53,7 +53,7 @@ public class AttackSates : State<EnemyController>
 
         if (enemy.IsInState(E_EnemyState.Attack))
         {
-            enemy.ChangeState(E_EnemyState.ReteatAfterAttack);
+            enemy.ChangeState(E_EnemyState.RetreatAfterAttack);
         }
         
     }

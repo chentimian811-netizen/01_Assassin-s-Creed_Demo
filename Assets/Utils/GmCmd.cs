@@ -20,8 +20,9 @@ public class GmCmd
             Debug.Log(string.Format("【id】: {0},【name】:{1}", packageItem.id, packageItem.name));
         }
     }
-
+    #if UNITY_EDITOR
     [MenuItem("GmCmd/创建背包测试数据")]
+    #endif
     public static void CreateLocalPackageData()
     {
         PackageLocalData.Instance.items = new List<PackageLocalItem>();

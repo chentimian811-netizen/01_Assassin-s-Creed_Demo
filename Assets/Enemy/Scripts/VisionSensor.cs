@@ -2,18 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
  
-public class VersionSensor : MonoBehaviour
+public class VisionSensor : MonoBehaviour
 {
     [SerializeField] EnemyController enemy;
 
     private void Awake()
     {
-        enemy.VersionSensor = this;
+        enemy.VisionSensor = this;
     }
     
     private void OnTriggerEnter(Collider other)
     {
-        var fighter = other.GetComponent<MeeleFighter>();
+        var fighter = other.GetComponent<MeleeFighter>();
         if (fighter != null)
         {
             enemy.TargetsInRange.Add(fighter);
@@ -24,7 +24,7 @@ public class VersionSensor : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        var fighter = other.GetComponent<MeeleFighter>();
+        var fighter = other.GetComponent<MeleeFighter>();
         if (fighter != null)
         {
             enemy.TargetsInRange.Remove(fighter);

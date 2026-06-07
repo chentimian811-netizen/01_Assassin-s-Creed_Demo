@@ -11,7 +11,7 @@ public enum E_AICombatStates
     Circling,
 }
 
-public class CombatMovmentStates : State<EnemyController>
+public class CombatMovementStates : State<EnemyController>
 {
     EnemyController enemy;
     E_AICombatStates state;

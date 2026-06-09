@@ -127,15 +127,20 @@ public class EnemyController : MonoBehaviour
     {
         stateMachine.Execute();
 
-        var deltaPos =Animator.applyRootMotion ? Vector3.zero:transform.position - prevPos;
-        var velocity = deltaPos / Time.deltaTime;
+        // 巡逻状态下由 PatrolState 自己控制动画，跳过这里的计算
+        if (!IsInState(E_EnemyState.Patrol))
+        {
+            var deltaPos = Animator.applyRootMotion ? Vector3.zero : transform.position - prevPos;
+            var velocity = deltaPos / Time.deltaTime;
 
-        float forwardSpeed =Vector3.Dot(velocity, transform.forward);
-        Animator.SetFloat("forwardSpeed", forwardSpeed / NavAgent.speed, 0.2f, Time.deltaTime);
+            // 计算实际移动速度（不归一化，保留原始值）
+            float forwardSpeed = Vector3.Dot(velocity, transform.forward);
+            Animator.SetFloat("forwardSpeed", forwardSpeed, 0.2f, Time.deltaTime);
 
-        float angle = Vector3.SignedAngle(transform.forward, velocity, Vector3.up);
-        float strafeSpeed = Mathf.Sin(angle * Mathf.Deg2Rad);
-        Animator.SetFloat("strafeSpeed", strafeSpeed, 0.2f, Time.deltaTime);
+            float angle = Vector3.SignedAngle(transform.forward, velocity, Vector3.up);
+            float strafeSpeed = Mathf.Sin(angle * Mathf.Deg2Rad);
+            Animator.SetFloat("strafeSpeed", strafeSpeed, 0.2f, Time.deltaTime);
+        }
 
         if(Target?.Health <= 0)
         {
@@ -162,7 +167,7 @@ public class EnemyController : MonoBehaviour
             }
         }
 
-        return null; 
+        return null;
     }
 
     public void AlertNearbyEnemies()

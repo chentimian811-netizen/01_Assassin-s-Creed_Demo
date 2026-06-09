@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
- 
+
 public class VisionSensor : MonoBehaviour
 {
     [SerializeField] EnemyController enemy;
@@ -10,7 +10,7 @@ public class VisionSensor : MonoBehaviour
     {
         enemy.VisionSensor = this;
     }
-    
+
     private void OnTriggerEnter(Collider other)
     {
         var fighter = other.GetComponent<MeleeFighter>();
@@ -19,7 +19,6 @@ public class VisionSensor : MonoBehaviour
             enemy.TargetsInRange.Add(fighter);
             EnemyManager.i.AddEnemyInRange(enemy);
         }
-
     }
 
     private void OnTriggerExit(Collider other)

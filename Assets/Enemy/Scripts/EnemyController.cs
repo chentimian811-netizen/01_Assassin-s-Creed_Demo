@@ -8,6 +8,7 @@ using Unity.Mathematics;
 public enum E_EnemyState
 {
     Idle,
+    Patrol,
     CombatMovement,
     Attack,
     RetreatAfterAttack,
@@ -58,6 +59,8 @@ public class EnemyController : MonoBehaviour
         stateDict = new Dictionary<E_EnemyState, State<EnemyController>>();
 
         stateDict[E_EnemyState.Idle] = GetComponent<IdleState>();
+        
+        stateDict[E_EnemyState.Patrol] = GetComponent<PatrolState>();
 
         stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovementStates>();
 
@@ -70,7 +73,17 @@ public class EnemyController : MonoBehaviour
         stateDict[E_EnemyState.GettingHit] = GetComponent<GettingHitState>();
 
         stateMachine = new StateMachine<EnemyController>(this);
-        stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
+
+        // stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
+
+        if(GetComponent<PatrolPoute>() != null && GetComponent<PatrolPoute>().HasPoints)
+        {
+            ChangeState(E_EnemyState.Patrol);
+        }
+        else
+        {
+            ChangeState(E_EnemyState.Idle);
+        }
 
         Fighter.OnGotHit += (MeleeFighter attacker) =>
         {

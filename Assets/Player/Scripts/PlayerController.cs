@@ -302,9 +302,7 @@ public class PlayerController : MonoBehaviour
         if (freeLook != null)
         {
             freeLook.m_XAxis.m_InputAxisName = "";
-            freeLook.m_YAxis.m_InputAxisName = "";
             freeLook.m_XAxis.m_InputAxisValue = 0f;
-            freeLook.m_YAxis.m_InputAxisValue = 0f;
         }
 
         enemy.MeshHightlighter?.HighlightMesh(true);
@@ -366,7 +364,7 @@ public class PlayerController : MonoBehaviour
                 //在跳跃中
                 PlayerPosture = E_PlayerPosture.Jumping;
             }
-            //不是处于坠落
+            //如果不是处于坠落
             else if (PlayerPosture != E_PlayerPosture.Falling)
             {
                 //并且是跌落
@@ -378,7 +376,7 @@ public class PlayerController : MonoBehaviour
             }
 
         }
-        //不是处于跳跃
+        //如果是处于跳跃
         else if (PlayerPosture == E_PlayerPosture.Jumping)
         {
             StartCoroutine(CoolDownJump());
@@ -425,11 +423,11 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    IEnumerator CoolDownJump()//跳跃冷却 使用协程 
+    IEnumerator CoolDownJump()//计算落地动画的混合值
     {
         LandingThreshold = Mathf.Clamp(VerticalVelocity, -10, 0);
-        LandingThreshold /= 20f;
-        LandingThreshold += 1f;
+        LandingThreshold /= 20f;//[-0.5,0]
+        LandingThreshold += 1f;//[0.5,1.0]
         isLanding = true;
         PlayerPosture = E_PlayerPosture.Landing;
         yield return new WaitForSeconds(jumpCD);
@@ -473,7 +471,7 @@ public class PlayerController : MonoBehaviour
             VerticalVelocity = MathF.Sqrt(-2 * gravity * maxHeight);
             //计算动画脚本混合值
             feetTween = Mathf.Repeat(Animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 1);
-            feetTween = feetTween < 0.5 ? 1 : -1;
+            feetTween = feetTween < 0.5 ? 1 : -1; // 0-0.5 前半步 左脚在前 1 ; 0.5-1 后半部 右脚在前 -1
             if (LocomotionState == E_LocomotionState.Run)
             {
                 feetTween *= 3;

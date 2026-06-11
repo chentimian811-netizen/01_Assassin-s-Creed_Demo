@@ -205,7 +205,7 @@ public class MeleeFighter : MonoBehaviour
         }
     }
 
-    void TakeDamage(float damage)
+    public void TakeDamage(float damage)
     {
         Health = Mathf.Clamp(Health - damage, 0, Health); 
     }
@@ -291,7 +291,7 @@ public class MeleeFighter : MonoBehaviour
                 rightFootConllider.enabled = true;
                 break;
             case E_AttackHitbox.Sword:
-                SwordCollider.enabled = true;
+                if (SwordCollider != null) SwordCollider.enabled = true;
                 break;
             default:
                 break;

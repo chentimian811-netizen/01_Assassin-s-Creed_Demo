@@ -98,7 +98,8 @@ UIManager → BasePanel 面板体系 (从 Resources/Prefabs/Panels/ 按需加载
 | 玩家移动 | 90% | 蹲/走/跑/跳/落/着陆 + RootMotion |
 | 锁定系统 | 85% | 锁敌/Cinemachine禁用/自动切换 |
 | 近战战斗 | 80% | 连招/命中盒/受击/反击/死亡 |
-| 敌人AI | 85% | 完整FSM / 检测/追击/环绕/攻击/撤退/受击 |
+| 敌人AI | 90% | 完整FSM / 检测/追击/环绕/攻击/撤退/受击 / 巡逻 |
+| 巡逻系统 | ✅ | PatrolPoint/PatrolRoute/PatrolState，循环/折返/随机模式 |
 | 武器拾取/装备 | 80% | 地面拾取/多槽位/模型实例化/动画覆盖接入 |
 | 背包系统 | 85% | JSON持久化/增删改查/排序/筛选/翻页 |
 | 商店系统 | 100% | 已完整实现（ShopConfig/ShopManager/ShopPanel/ShopCell/ShopNPC） |
@@ -112,7 +113,6 @@ UIManager → BasePanel 面板体系 (从 Resources/Prefabs/Panels/ 按需加载
 | 功能 | 设计要点 |
 |:----|:---------|
 | **Phase 1 清理** | `CombatController.cs` 空壳、`InventoryManager` 槽位硬编码 `Sword`、`Core/Events/` 和 `Core/Singleton/` 空文件夹 |
-| 巡逻 AI | PatrolPoint/PatrolRoute/PatrolState，路径点巡逻（循环/折返/随机） |
 | 远程武器 | ProjectileBase/Arrow/Magic/ObjectPool/RangedCombat/AimController |
 | 跑酷系统 | 攀爬检测(Raycast+Tag)、跳跃过渡、墙跑、边缘抓取、下落翻滚 |
 | 潜行系统 | 警戒值(视野/听觉/距离)、状态切换(未察觉→怀疑→调查→战斗)、草丛隐身 |

@@ -61,3 +61,11 @@ MonoBehaviour:
     skillDescription: 
     imagePath: "Sprites/UI/Food/\u98DF\u726908"
     Num: 1
+  - id: 1111
+    type: 1
+    star: 5
+    name: "\u730E\u5F13"
+    description: "\u5F13\u7BAD"
+    skillDescription: 
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_08"
+    Num: 1

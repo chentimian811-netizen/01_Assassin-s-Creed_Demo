@@ -177,4 +177,71 @@ public class WeaponManager : MonoBehaviour
         foreach (Transform child in obj.transform)
             SetLayerRecursive(child.gameObject, layer);
     }
+    /// <summary>
+    /// 切换到指定槽位（供 WeaponSwitcher 调用）
+    /// </summary>
+    public void SwitchToSlot(int slotIndex)
+    {
+        if(slotIndex < 0 || slotIndex >= weaponSlots.Length)
+        {
+            Debug.LogWarning($"WeaponManager: 槽位索引无效 [{slotIndex}]");
+            return;
+        }
+
+        //隐藏所有槽位的武器模型
+        foreach(var slot in weaponSlots)
+        {
+            if(slot.currentModel != null)
+            {
+                slot.currentModel.SetActive(false);
+            }
+        }
+
+        //显示目标槽位的武器模型
+        WeaponConfig targetConfig = weaponSlots[slotIndex].currentConfig;
+        if(targetConfig != null && weaponSlots[slotIndex].currentModel != null)
+        {
+            weaponSlots[slotIndex].currentModel.SetActive(true);
+        }
+
+        //更新 RangedFighter
+        RangedFighter rangedFighter = GetComponent<RangedFighter>();
+        if(rangedFighter != null)
+        {
+            if(targetConfig != null && targetConfig.isRanged)
+            {
+                //装备远程武器
+                rangedFighter.SetWeapon(targetConfig);
+            }
+            else
+            {
+                //清除远程武器
+                rangedFighter.ClearWeapon();
+            }
+        }
+
+        //更新动画覆盖
+        if(targetConfig != null && targetConfig.animOverride != null)
+        {
+            meleeFighter?.SetAnimatorOverride(targetConfig.animOverride);
+        }
+        else
+        {
+            meleeFighter?.ClearAnimatorOverride();
+        }
+
+        OnWeaponModelChanged?.Invoke(targetConfig);
+    }
+
+    /// <summary>
+    /// 获取指定槽位的武器配置
+    /// </summary>
+    public WeaponConfig GetSlotConfig(int slotIndex)
+    {
+        if(slotIndex < 0 || slotIndex >= weaponSlots.Length)
+        {
+            return null;
+        }
+        return weaponSlots[slotIndex].currentConfig;
+    }
 }

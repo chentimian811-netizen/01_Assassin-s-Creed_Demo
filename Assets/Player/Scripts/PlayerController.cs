@@ -14,6 +14,9 @@ public class PlayerController : MonoBehaviour
     Transform cameraTransform;
     CharacterController characterController;
     MeleeFighter meleeFighter;
+    [Header("远程武器")]
+    RangedFighter rangedFighter;
+    
 
     public EnemyController targetEnemy;
 
@@ -59,7 +62,7 @@ public class PlayerController : MonoBehaviour
 
     bool isRunning;//是否处于奔跑状态
     bool isCrouch;
-    bool isAiming;
+    bool isAiming = false;
     bool isJumping;
     public bool isLocking { get; private set; }
     EnemyController lockedEnemy;
@@ -126,6 +129,7 @@ public class PlayerController : MonoBehaviour
     public void Awake()
     {
         meleeFighter = GetComponent<MeleeFighter>();
+        rangedFighter = GetComponent<RangedFighter>();
     }
     void Start()
     {
@@ -225,7 +229,30 @@ public class PlayerController : MonoBehaviour
 
     public void GetAimInput(InputAction.CallbackContext context)
     {
-        isAiming = context.ReadValueAsButton();
+        if(rangedFighter == null) return;
+        if (context.performed)
+        {
+            //按下右键 开始瞄准
+            isAiming = true;
+            rangedFighter.SetAiming(true);
+        }
+        else if (context.canceled)
+        {
+            isAiming = false;
+            rangedFighter.SetAiming(false);
+        }
+    }
+
+    public void GetFireInput(InputAction.CallbackContext context)
+    {
+        if(rangedFighter == null) return;
+        if(!context.performed) return;
+
+        //获取瞄准方向(从摄像机中心发射射线)
+        Vector3 aimDirection  = GetAimDirection();
+
+        //尝试射击
+        rangedFighter.TryFire(aimDirection);
     }
 
     public void GetJumpInInput(InputAction.CallbackContext context)
@@ -255,6 +282,10 @@ public class PlayerController : MonoBehaviour
     public void GetLightAttack(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
+
+        //如果正在使用远程武器，不触发近战攻击
+        WeaponSwitcher switcher = GetComponent<WeaponSwitcher>();
+        if (switcher != null && switcher.IsUsingRanged) return;
 
         MeleeFighter targetFighter = null;
         if (isLocking && lockedEnemy != null)
@@ -671,5 +702,22 @@ public class PlayerController : MonoBehaviour
         {
             return transform.forward;
         }
+    }
+
+    public Vector3 GetAimDirection()
+    {
+        Camera cam = Camera.main;
+        if(cam == null) return transform.forward;
+
+        //从屏幕中心发射射线
+        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width/2f,Screen.height/2f,0));
+
+        // 如果有锁定目标，指向目标
+    if (isAiming && lockedEnemy != null)
+    {
+        return (lockedEnemy.transform.position - rangedFighter.transform.position).normalized;
+    }
+    
+    return ray.direction;
     }
 }

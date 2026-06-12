@@ -19,7 +19,7 @@ MonoBehaviour:
     type: 3}
   baseDamage: 15
   attackRange: 5
-  animOverride: {fileID: 0}
+  animOverride: {fileID: 9100000, guid: d0f15c3bd5771c9408446f6a2e1325dc, type: 2}
   isRanged: 1
   projectilePrefab: {fileID: 6675334135728681736, guid: 60feb7ea35f327a4f90fb0b7a18bb34c,
     type: 3}

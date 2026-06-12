@@ -207,7 +207,31 @@ public class MeleeFighter : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
-        Health = Mathf.Clamp(Health - damage, 0, Health); 
+        Health = Mathf.Clamp(Health - damage, 0, Health);
+    }
+
+    /// <summary>
+    /// 受到伤害（带攻击者信息，触发受击/死亡动画）
+    /// </summary>
+    public void TakeDamage(float damage, MeleeFighter attacker)
+    {
+        TakeDamage(damage);
+
+        //触发受击事件
+        OnGotHit?.Invoke(attacker);
+
+        //根据血量播放动画
+        if (Health > 0)
+        {
+            if (attacker != null)
+            {
+                StartCoroutine(PlayerHitReaction(attacker.transform));
+            }
+        }
+        else
+        {
+            PlayDeathAnimation(attacker);
+        }
     }
 
     IEnumerator PlayerHitReaction(Transform attacker)
@@ -216,7 +240,11 @@ public class MeleeFighter : MonoBehaviour
         IsAttackingHit = true;
         var dispVec = attacker.position - transform.position;
         dispVec.y = 0;
-        transform.rotation = Quaternion.LookRotation(dispVec);
+        //防止零向量报错
+        if (dispVec != Vector3.zero)
+        {
+            transform.rotation = Quaternion.LookRotation(dispVec);
+        }
 
         animator.CrossFade("SwordImpact", 0.2f);
 

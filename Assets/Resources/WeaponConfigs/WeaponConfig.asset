@@ -19,4 +19,11 @@ MonoBehaviour:
     type: 3}
   baseDamage: 10
   attackRange: 1.5
-  animOverride: {fileID: 0}
+  animOverride: {fileID: 9100000, guid: d0f15c3bd5771c9408446f6a2e1325dc, type: 2}
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  maxAmmo: 30
+  fireCooldown: 0.5
+  projectilleSpeed: 25
+  aimSpreadAngle: 1
+  hipFireSpreadAngle: 8

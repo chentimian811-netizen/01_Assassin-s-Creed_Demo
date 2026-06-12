@@ -89,10 +89,25 @@ public class WeaponPickup : MonoBehaviour
         if (!success)
         {
             ToastMessage.Show("装备失败！");
+            ClosePickupPopup();
             return;
         }
         equipped = true;
-        ClosePickupPopup();
+
+        // 【修复】先立刻清理玩家引用，防止碰撞体禁用后OnTriggerExit不触发导致残留
+        if (interactingPlayer != null)
+        {
+            interactingPlayer.SetNearestPickup(null);
+            interactingPlayer = null;
+        }
+
+        // 【修复】直接关闭面板（不走淡出协程），避免与后续Destroy竞态
+        if (activePopup != null)
+        {
+            activePopup = null;
+        }
+        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
+
         PlayPickupEffect();
     }
 
@@ -103,9 +118,13 @@ public class WeaponPickup : MonoBehaviour
             activePopup.ClosePopup();
             activePopup = null;
         }
+        // 保险：直接通知UIManager关闭面板
+        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
+
         if (interactingPlayer != null)
         {
             interactingPlayer.SetNearestPickup(null);
+            interactingPlayer = null;
         }
     }
 
@@ -119,9 +138,18 @@ public class WeaponPickup : MonoBehaviour
 
     void OnDisable()
     {
-        if (!equipped)
+        // 【修复】无论是否已装备，都清理玩家引用和弹窗
+        if (activePopup != null)
         {
-            ClosePickupPopup();
+            activePopup.ClosePopup();
+            activePopup = null;
+        }
+        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
+
+        if (interactingPlayer != null)
+        {
+            interactingPlayer.SetNearestPickup(null);
+            interactingPlayer = null;
         }
     }
 }

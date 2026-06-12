@@ -33,6 +33,30 @@ public class InventoryManager : MonoBehaviour
             Debug.LogError("WeaponManager not found in the scene.");
         }
         RestoreEquippedState();
+
+        // 初次游玩无装备时，自动装备默认近战武器
+        if (GetEquippedWeapon() == null)
+        {
+            EquipDefaultMeleeWeapon();
+        }
+    }
+
+    /// <summary>
+    /// 自动装备背包中第一把近战武器作为初始武器
+    /// </summary>
+    void EquipDefaultMeleeWeapon()
+    {
+        var allWeapons = GameManager.Instance.GetPackageDataByType(GameConst.PackageTypeWeapon);
+        foreach (var tableItem in allWeapons)
+        {
+            WeaponConfig config = weaponManager.GetWeaponConfig(tableItem.id);
+            if (config != null && !config.isRanged)
+            {
+                EquipFromGround(tableItem.id);
+                Debug.Log($"初始装备默认近战武器: {tableItem.name}");
+                return;
+            }
+        }
     }
     public string AddItem(int itemId, int count = 1)
     {

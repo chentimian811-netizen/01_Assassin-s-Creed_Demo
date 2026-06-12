@@ -70,6 +70,15 @@ public class WeaponManager : MonoBehaviour
         if (config.weaponPrefab != null)
         {
             targetSlot.currentModel = Instantiate(config.weaponPrefab, targetSlot.holdPoint);
+
+            // 防御性清理：销毁武器模型上可能残留的 WeaponPickup 组件
+            // 防止拾取脚本在装备到玩家身上后仍然响应触发器事件，导致错误弹出拾取UI
+            WeaponPickup residualPickup = targetSlot.currentModel.GetComponent<WeaponPickup>();
+            if (residualPickup != null)
+            {
+                Destroy(residualPickup);
+            }
+
             SetLayerRecursive(targetSlot.currentModel, gameObject.layer);
         }
 

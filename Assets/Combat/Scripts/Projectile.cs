@@ -57,6 +57,10 @@ public class Projectile : MonoBehaviour
         {
             col.enabled = true;
         }
+        else
+        {
+            Debug.LogWarning($"Projectile.Initialize: col 为 null！箭矢: {gameObject.name}，请检查预制体上是否有 Collider 组件");
+        }
     }
 
     void Update()
@@ -78,13 +82,19 @@ public class Projectile : MonoBehaviour
     //碰撞检测
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"Projectile.OnTriggerEnter 触发！碰撞对象: {other.name}, Layer: {other.gameObject.layer}, isActive: {isActive}");
+
         if(!isActive) return;
 
         //忽略发射着自己
         if(other.gameObject == owner) return;
 
         //检测是否在可碰撞层级内
-        if((hitLayers.value & (1 << other.gameObject.layer)) == 0) return;
+        if((hitLayers.value & (1 << other.gameObject.layer)) == 0)
+        {
+            Debug.Log($"Projectile: 层级不匹配，跳过。hitLayers={hitLayers.value}, 目标Layer={other.gameObject.layer}");
+            return;
+        }
 
         //对目标造成伤害
         DealDamage(other);
@@ -97,14 +107,21 @@ public class Projectile : MonoBehaviour
     }
 
     /// <summary>
-    /// 对目标造成伤害
+    /// 对目标造成伤害（触发受击/死亡动画）
     /// </summary>
     private void DealDamage(Collider target)
     {
         MeleeFighter fighter = target.GetComponentInParent<MeleeFighter>();
+        Debug.Log($"Projectile.DealDamage: 目标={target.name}, MeleeFighter={(fighter != null ? "找到" : "未找到")}, 伤害={damage}");
+
         if(fighter != null)
         {
-            fighter.TakeDamage(damage);
+            //获取发射者（玩家）的MeleeFighter，而非箭矢自身
+            MeleeFighter attacker = owner != null ? owner.GetComponent<MeleeFighter>() : null;
+            Debug.Log($"Projectile.DealDamage: attacker={(attacker != null ? attacker.name : "null")}");
+
+            //调用带攻击者的重载，触发受击/死亡动画
+            fighter.TakeDamage(damage, attacker);
         }
     }
 

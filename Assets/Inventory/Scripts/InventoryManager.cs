@@ -73,30 +73,32 @@ public class InventoryManager : MonoBehaviour
         if(tableItem == null || tableItem.type != GameConst.PackageTypeWeapon)return false;
         if(weaponManager == null)return false;
 
-        // 卸下同类型旧武器（动态获取类型，不硬编码）
-        PackageLocalItem oldEquipped = GetEquippedWeapon();
-        if (oldEquipped != null)
+        //获取新的武器WeaponConfig，用于判断武器类型
+        WeaponConfig newConfig = weaponManager.GetWeaponConfig(item.id);
+
+        //只卸下同类型的旧武器 不同类型的保留
+        if(newConfig != null)
         {
-            string oldUid = weaponManager.GetMainEquippedUid();
-            if (oldUid != null)
+            foreach(PackageLocalItem oldItem in PackageLocalData.Instance.items)
             {
-                //通过旧武器ID查询WeaponConfig，获取真实的武器类型
-                WeaponConfig oldCongig = weaponManager.GetWeaponConfig(oldEquipped.id);
-                if(oldCongig != null)
+                 if (oldItem == item || !oldItem.isEquipped) continue;
+                 WeaponConfig oldConfig = weaponManager.GetWeaponConfig(oldItem.id);
+                 if(oldConfig != null && oldConfig.weaponType == newConfig.weaponType)
                 {
-                    weaponManager.UnequipSlotByType(oldCongig.weaponType);//动态获取
+                    //同类型旧武器：卸下
+                    weaponManager.UnequipSlotByType(oldConfig.weaponType);
+                    oldItem.isEquipped = false;
+                    OnItemUnequipped?.Invoke(oldItem);
                 }
-                
             }
-            oldEquipped.isEquipped = false;
         }
+        
 
         bool success = weaponManager.EquipWeapon(uid);
         if(!success)return false;
 
         item.isEquipped = true;
         PackageLocalData.Instance.SavePackage();
-        if (oldEquipped != null)OnItemUnequipped?.Invoke(oldEquipped);
         OnItemEquipped?.Invoke(item);
         return true;
 

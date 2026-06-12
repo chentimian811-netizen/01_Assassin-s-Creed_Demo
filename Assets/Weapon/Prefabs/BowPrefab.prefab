@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 8351458951596162579}
   - component: {fileID: 4701220080472149100}
   - component: {fileID: 8785076964857022095}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BowPrefab
-  m_TagString: Untagged
+  m_TagString: Hitbox
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

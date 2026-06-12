@@ -19,7 +19,7 @@ MonoBehaviour:
     name: "\u65A9\u65AD-\u6781\u5BD2\u4E4B\u65F6"
     description: "\u5C18\u5C01\u5728\u51B0\u5C01\u4E0B\u4E0D\u77E5\u591A\u5C11\u5C81\u6708,\u6C38\u8FDC\u6563\u53D1\u7740\u5BD2\u5149\u548C\u51CC\u51BD\u7684\u5251\u6C14\u3002"
     skillDescription: "\u4F7F\u7528[\u65A9\u65AD-\u6781\u5BD2\u4E4B\u65F6]\u6280\u80FD\u80FD\u591F\u51BB\u7ED3\u65F6\u95F4."
-    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_01"
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_01.png"
     Num: 1
   - id: 2
     type: 1
@@ -27,7 +27,7 @@ MonoBehaviour:
     name: "\u7834\u9B54"
     description: "\u8EAB\u4E0A\u6563\u53D1\u7740\u4EE4\u4EBA\u4E0D\u5BD2\u800C\u6817\u7684\u9B54\u6C14,\u4F46\u53C8\u5374\u8BA9\u4EBA\u5341\u5206\u5B89\u5FC3..."
     skillDescription: "\u4F7F\u7528[\u7834\u9B54]\u53EF\u4EE5\u53D1\u5C04\u65E0\u6570<\u7834\u9B54\u7BAD\u77E2>\u7A7F\u900F\u654C\u4EBA"
-    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_02"
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_02.png"
     Num: 1
   - id: 3
     type: 1
@@ -35,37 +35,13 @@ MonoBehaviour:
     name: "\u5347\u9F99-\u62A2\u51FA\u60CA\u96F7"
     description: "\u5B55\u80B2\u5728\u96F7\u4E91\u4E4B\u4E0A\u7684\u957F\u67AA,\u6563\u53D1\u7740\u65E0\u4E0A\u7684\u6B63\u6C14,\u4EE4\u90AA\u6C14\u4E0D\u6562\u63A5\u8FD1"
     skillDescription: "\u4F7F\u7528[\u60CA\u96F7]\u751F\u6210\u96F7\u4E91,\u81EA\u52A8\u653B\u51FB\u6700\u8FD1\u7684\u654C\u4EBA\u76F4\u81F3\u6D88\u4EA1\u3002"
-    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_04"
-    Num: 1
-  - id: 1001
-    type: 2
-    star: 1
-    name: "\u9999\u714E\u9A9B\u9E1F\u86CB"
-    description: "\u6062\u590D50HP"
-    skillDescription: 
-    imagePath: "Sprites/UI/Food/\u98DF\u726902"
-    Num: 1
-  - id: 1002
-    type: 2
-    star: 1
-    name: "\u9999\u62E7\u9CB1\u9C7C"
-    description: "\u89E3\u9664\u4E2D\u6BD2\u72B6\u6001"
-    skillDescription: 
-    imagePath: "Sprites/UI/Food/\u98DF\u726912"
-    Num: 1
-  - id: 1003
-    type: 2
-    star: 5
-    name: "\u9999\u8349\u6811\u8393\u86CB\u7CD5"
-    description: "\u6062\u590D100HP"
-    skillDescription: 
-    imagePath: "Sprites/UI/Food/\u98DF\u726908"
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_04.png"
     Num: 1
   - id: 1111
     type: 1
     star: 5
-    name: "\u730E\u5F13"
-    description: "\u5F13\u7BAD"
-    skillDescription: 
-    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_08"
+    name: "\"\u730E\u5F13\""
+    description: "\u5B55\u80B2\u5728\u96F7\u4E91\u4E4B\u4E0A\u7684\u957F\u67AA,\u6563\u53D1\u7740\u65E0\u4E0A\u7684\u6B63\u6C14,\u4EE4\u90AA\u6C14\u4E0D\u6562\u63A5\u8FD1"
+    skillDescription: "\u4F7F\u7528[\u60CA\u96F7]\u751F\u6210\u96F7\u4E91,\u81EA\u52A8\u653B\u51FB\u6700\u8FD1\u7684\u654C\u4EBA\u76F4\u81F3\u6D88\u4EA1\u3002"
+    imagePath: "Sprites/UI/Weapon/\u6B66\u5668_08.png"
     Num: 1

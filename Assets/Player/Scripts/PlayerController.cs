@@ -287,6 +287,10 @@ public class PlayerController : MonoBehaviour
         WeaponSwitcher switcher = GetComponent<WeaponSwitcher>();
         if (switcher != null && switcher.IsUsingRanged) return;
 
+        //检查是否装备了近战武器，无武器的时候拦截攻击
+        WeaponManager weapManager = GetComponent<WeaponManager>();
+        if(weapManager == null || weapManager.GetSlotConfig(0) == null) return;
+
         MeleeFighter targetFighter = null;
         if (isLocking && lockedEnemy != null)
         {
@@ -389,6 +393,8 @@ public class PlayerController : MonoBehaviour
         //如果不在地面则切换成滞空状态
         if (!isGround)
         {
+            if(isLanding) return;
+
             //垂直速度大于0
             if (VerticalVelocity > 0)
             {
@@ -408,9 +414,16 @@ public class PlayerController : MonoBehaviour
 
         }
         //如果是处于跳跃
-        else if (PlayerPosture == E_PlayerPosture.Jumping)
+        else if (PlayerPosture == E_PlayerPosture.Jumping || PlayerPosture == E_PlayerPosture.Falling)
         {
-            StartCoroutine(CoolDownJump());
+            if(VerticalVelocity <= 0)
+            {
+                StartCoroutine(CoolDownJump());
+            }
+        }
+        else if(PlayerPosture == E_PlayerPosture.Landing)
+        {
+            
         }
 
         else if (isLanding)
@@ -463,6 +476,7 @@ public class PlayerController : MonoBehaviour
         PlayerPosture = E_PlayerPosture.Landing;
         yield return new WaitForSeconds(jumpCD);
         isLanding = false;
+        PlayerPosture = E_PlayerPosture.Stand;
     }
 
 
@@ -500,6 +514,8 @@ public class PlayerController : MonoBehaviour
         if (PlayerPosture == E_PlayerPosture.Stand && isJumping)
         {
             VerticalVelocity = MathF.Sqrt(-2 * gravity * maxHeight);
+
+            PlayerPosture = E_PlayerPosture.Jumping;
             //计算动画脚本混合值
             feetTween = Mathf.Repeat(Animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 1);
             feetTween = feetTween < 0.5 ? 1 : -1; // 0-0.5 前半步 左脚在前 1 ; 0.5-1 后半部 右脚在前 -1

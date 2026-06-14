@@ -167,6 +167,7 @@ GameObject:
   - component: {fileID: 8260249828332385932}
   - component: {fileID: 3710807192637758116}
   - component: {fileID: 4830808074516020066}
+  - component: {fileID: 7436992158068601978}
   m_Layer: 10
   m_Name: VisionSensor
   m_TagString: Untagged
@@ -222,6 +223,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b14e2d6e135c46342bc1e2c1b660e8fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7436992158068601978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 716067543818049375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a382d9e0c3842774a8e81b33d4a06a72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemy: {fileID: 8459159042029663231}
 --- !u!1 &765813698920464817
 GameObject:
   m_ObjectHideFlags: 0
@@ -1353,6 +1367,8 @@ GameObject:
   - component: {fileID: 8081065872394179666}
   - component: {fileID: 1614487551561762821}
   - component: {fileID: 4621072309094632632}
+  - component: {fileID: 7313202557231490922}
+  - component: {fileID: 4273704250487801590}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
@@ -1512,7 +1528,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
+  m_Speed: 2
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 750
@@ -1576,6 +1592,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2af3d7d299c3d554aa662355a7eb358a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7313202557231490922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769488866850045155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bba094b1e4f50514fa573b74907aa802, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  patrolSpeed: 2
+  patrolForwardAnimSpeed: 0.2
+  arrivalDistance: 0.5
+  patrolRoute: {fileID: 0}
+--- !u!114 &4273704250487801590
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769488866850045155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff3c960983bc1ad4c8f741da69d6e12a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  patrolPionts:
+  - {fileID: 0}
+  - {fileID: 0}
+  patrolMode: 0
 --- !u!1 &4997539610557008081
 GameObject:
   m_ObjectHideFlags: 0

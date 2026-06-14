@@ -11,17 +11,12 @@ public class PlayerController : MonoBehaviour
 {
     Transform PlayerTransform;
     Animator Animator;
-    Transform cameraTransform;
     CharacterController characterController;
     MeleeFighter meleeFighter;
     [Header("远程武器")]
     RangedFighter rangedFighter;
-    
 
     public EnemyController targetEnemy;
-
-    CinemachineFreeLook freeLook;
-    
 
     public enum E_PlayerPosture//玩家姿态枚举
     {
@@ -135,7 +130,6 @@ public class PlayerController : MonoBehaviour
     {
         PlayerTransform = transform;//获得玩家位置
         Animator = GetComponent<Animator>();//获取动画组件
-        cameraTransform = Camera.main.transform;//获得主相机位置
         characterController = GetComponent<CharacterController>();//获得角色组件
 
         postrueHash = Animator.StringToHash("PlayerState");//用哈希值存贮 资源占用更少
@@ -149,8 +143,6 @@ public class PlayerController : MonoBehaviour
         Animator.SetFloat(postrueHash, standThreshold);
         Animator.SetFloat(moveSpeedHash, 0f);
         Animator.SetFloat(turnSpeedHash, 0f);
-
-        freeLook = FindAnyObjectByType<CinemachineFreeLook>();
 
         Debug.Log("当前金币" + CurrencyManager.Instance.Gold);
 
@@ -334,11 +326,7 @@ public class PlayerController : MonoBehaviour
         targetEnemy = enemy;
         ArmState = E_ArmState.Lock;
 
-        if (freeLook != null)
-        {
-            freeLook.m_XAxis.m_InputAxisName = "";
-            freeLook.m_XAxis.m_InputAxisValue = 0f;
-        }
+        CameraManager.Instance.LockFreeLookXAxis();
 
         enemy.MeshHightlighter?.HighlightMesh(true);
     }
@@ -350,11 +338,7 @@ public class PlayerController : MonoBehaviour
         if (lockedEnemy != null)
             lockedEnemy.MeshHightlighter?.HighlightMesh(false);
 
-        if (freeLook != null)
-        {
-            freeLook.m_XAxis.m_InputAxisName = "Mouse X";
-            freeLook.m_YAxis.m_InputAxisName = "Mouse Y";
-        }
+        CameraManager.Instance.UnlockFreeLookAxes();
 
         lockedEnemy = null;
         targetEnemy = null;
@@ -551,8 +535,9 @@ public class PlayerController : MonoBehaviour
         else
         {
             // 正常模式：跟随摄像机方向
-            Vector3 cameraForward = new Vector3(cameraTransform.forward.x, 0, cameraTransform.forward.z).normalized;
-            playerMovement = cameraForward * moveInput.y + cameraTransform.right * moveInput.x;
+            Transform camTf = CameraManager.Instance.MainCameraTransform;
+            Vector3 caneraForward = new Vector3(camTf.forward.x,0,camTf.forward.z).normalized;
+            playerMovement = caneraForward * moveInput.y + camTf.right * moveInput.x;
             playerMovement = PlayerTransform.InverseTransformVector(playerMovement);
         }
     }
@@ -690,7 +675,7 @@ public class PlayerController : MonoBehaviour
     {
         if (!meleeFighter.inCounter && !isLocking)
         {
-            transform.position += Animator.deltaPosition;
+            
         }
 
         if (!isLocking)
@@ -706,11 +691,12 @@ public class PlayerController : MonoBehaviour
             Vector3 dir = lockedEnemy.transform.position - transform.position;
             dir.y = 0;
             return dir.normalized;
-        }
+        }  
 
-        if (targetEnemy != null && freeLook.m_LookAt != null)
+        Transform lookAt = CameraManager.Instance.freeLook.m_LookAt;
+        if (targetEnemy != null && lookAt != null)
         {
-            Vector3 VecFromCam = freeLook.m_LookAt.position - transform.position;
+            Vector3 VecFromCam = lookAt.position - transform.position;
             VecFromCam.y = 0;
             return VecFromCam.normalized;
         }
@@ -722,11 +708,9 @@ public class PlayerController : MonoBehaviour
 
     public Vector3 GetAimDirection()
     {
-        Camera cam = Camera.main;
-        if(cam == null) return transform.forward;
+        Transform camTf = CameraManager.Instance.MainCameraTransform;
 
-        //从屏幕中心发射射线
-        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width/2f,Screen.height/2f,0));
+        Ray ray = new Ray(camTf.position,camTf.forward);
 
         // 如果有锁定目标，指向目标
     if (isAiming && lockedEnemy != null)

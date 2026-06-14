@@ -32,6 +32,10 @@ public class CombatMovementStates : State<EnemyController>
         enemy.CombatMovementTimer = 0f;
 
         enemy.Animator.SetBool("combatMode", true);
+
+        // 重置内部子状态，确保每次进入时从干净状态开始
+        state = E_AICombatStates.idle;
+        timer = 0f;
     }
 
     public override void Execute()

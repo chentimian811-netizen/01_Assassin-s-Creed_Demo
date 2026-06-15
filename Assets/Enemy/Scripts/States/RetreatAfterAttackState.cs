@@ -26,10 +26,8 @@ public class RetreatAfterAttackState : State<EnemyController>
         }
 
         var vecToTarget = enemy.Target.transform.position - enemy.transform.position;
-
-        enemy.NavAgent.Move(-vecToTarget.normalized * backwardWalkSpeed * Time.deltaTime);
-
         vecToTarget.y = 0f; 
+        enemy.NavAgent.Move(-vecToTarget.normalized * backwardWalkSpeed * Time.deltaTime);
         transform.rotation=Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(vecToTarget),500 * Time.deltaTime);
     }
 

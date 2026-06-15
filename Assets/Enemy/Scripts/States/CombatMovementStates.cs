@@ -96,6 +96,7 @@ public class CombatMovementStates : State<EnemyController>
             }
             
             var vecToTarget = enemy.transform.position - enemy.Target.transform.position;
+            vecToTarget.y = 0f;
 
             var rotatePos = Quaternion.Euler(0, circlingSpeed * circlingDir * Time.deltaTime, 0) * vecToTarget;
 

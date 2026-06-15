@@ -1,4 +1,3 @@
-
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -38,9 +37,6 @@ public class EnemyController : MonoBehaviour
     public VisionSensor VisionSensor { get;  set; }
     public CharacterController character { get; private set; }
     public float CombatMovementTimer { get; set; } = 0f;
-
-
-
 
     Vector3 prevPos;
 
@@ -121,11 +117,11 @@ public class EnemyController : MonoBehaviour
     }
 
 
-    
 
     private void Update()
     {
         stateMachine.Execute();
+
 
         // 巡逻状态下由 PatrolState 自己控制动画，跳过这里的计算
         if (!IsInState(E_EnemyState.Patrol))
@@ -150,6 +146,9 @@ public class EnemyController : MonoBehaviour
             TargetsInRange.Remove(Target);
             EnemyManager.i.RemoveEnemyInRange(this);
         }
+
+        var euler = transform.eulerAngles;
+        transform.eulerAngles = new Vector3(0,euler.y,0);
 
         prevPos = transform.position;
 

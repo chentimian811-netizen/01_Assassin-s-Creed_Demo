@@ -206,6 +206,12 @@ public class MeleeFighter : MonoBehaviour
             //触发卡肉效果
             attacker.HitStop();
 
+            //触发屏幕震动效果
+            if (CompareTag("Player"))
+            {
+                CameraManager.Instance.ShakeScreen();
+            }
+
             if (Health > 0)
             {
                 StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeleeFighter>().transform));

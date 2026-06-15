@@ -21,6 +21,13 @@ public class CameraManager : MonoBehaviour
     //玩家模型Transform
     public Transform playerModel;
 
+    [Header("屏幕震动设置")]
+    [Tooltip("震动信号源（CinemachineImpulseSource组件）")]
+    [SerializeField] CinemachineImpulseSource impulseSource;
+
+    [Tooltip("默认震动强度")]
+    [SerializeField] float defaultForce = 1f;
+
     private void Awake()
     {
         if(Instance != null && Instance != this)
@@ -29,6 +36,11 @@ public class CameraManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        if(impulseSource == null)
+        {
+            impulseSource = GetComponent<CinemachineImpulseSource>();
+        }
     }
 
     /// <summary>
@@ -83,5 +95,41 @@ public class CameraManager : MonoBehaviour
 
         freeLook.Follow = target;
         freeLook.m_LookAt = target;
+    }
+
+    //触发屏幕震动效果
+    public void ShakeScreen()
+    {
+        ShakeScreen(defaultForce);
+    }
+
+    public void ShakeScreen(float force)
+    {
+        if(impulseSource == null)
+        {
+            return;
+        }
+
+        //生成震动信号 velocity表示震动方向和强度
+        Vector3 velocity = new Vector3(
+            Random.Range(-1f,1f),
+            Random.Range(-1,1f),
+            0f
+        ).normalized * force;
+
+        impulseSource.GenerateImpulse(velocity);
+    }
+
+    //在指定的位置触发屏幕震动效果
+    public void ShakeScreenAtPosition(Vector3 postion,float force = -1f)
+    {
+        if(impulseSource == null)
+        {
+            return;
+        }
+
+        float shakeForce = force > 0 ? force : defaultForce;
+
+        impulseSource.GenerateImpulseAt(postion,Vector3.one * shakeForce);
     }
 }

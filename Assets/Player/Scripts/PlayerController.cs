@@ -624,7 +624,10 @@ public class PlayerController : MonoBehaviour
         {
             float rad = Mathf.Atan2(playerMovement.x, playerMovement.z);
             Animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
-            PlayerTransform.Rotate(0, rad * 200 * Time.deltaTime, 0f);
+            if (!meleeFighter.inAction)
+            {
+                PlayerTransform.Rotate(0, rad * 200 * Time.deltaTime, 0f);
+            }
         }
     }
 
@@ -658,6 +661,11 @@ public class PlayerController : MonoBehaviour
             else
             {
                 Vector3 playerDelataMovement = Animator.deltaPosition;
+                if (meleeFighter.inAction)
+                {
+                    playerDelataMovement.x = 0;
+                    playerDelataMovement.y = 0;
+                }
                 playerDelataMovement.y = VerticalVelocity * Time.deltaTime;
                 characterController.Move(playerDelataMovement);
             }
@@ -678,7 +686,7 @@ public class PlayerController : MonoBehaviour
             
         }
 
-        if (!isLocking)
+        if (!isLocking && !meleeFighter.inAction)
         {
             transform.rotation *= Animator.deltaRotation;
         }

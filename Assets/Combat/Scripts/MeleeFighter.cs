@@ -15,6 +15,9 @@ public class MeleeFighter : MonoBehaviour
 {
     [field: SerializeField] public float Health { get; private set; } = 25f;
     [SerializeField] List<AttackData> attacks;
+    
+
+    
     [SerializeField] GameObject Sword;
 
     SphereCollider leftHandeConllider, rightHandeConllider, leftFootConllider, rightFootConllider;
@@ -259,7 +262,7 @@ public class MeleeFighter : MonoBehaviour
         inAction = false;
         IsAttackingHit = false;
     }
-    public IEnumerator PerformCounterAttack(EnemyController opponet)//实现反击
+    public IEnumerator PerformCounterAttack(EnemyController opponet)//实现反击动画
     {
         inAction = true;
 
@@ -273,7 +276,7 @@ public class MeleeFighter : MonoBehaviour
         transform.rotation = Quaternion.LookRotation(disVec);
         opponet.transform.rotation = Quaternion.LookRotation(-disVec);
 
-        var targetPos = opponet.transform.position - disVec.normalized * 2.7f;
+        var targetPos = opponet.transform.position - disVec.normalized * 2f;
 
         animator.CrossFade("CounterAttack", 0.2f);
         opponet.Animator.CrossFade("CounterAttackVictim", 0.2f);

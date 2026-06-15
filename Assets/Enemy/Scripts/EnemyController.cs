@@ -131,7 +131,9 @@ public class EnemyController : MonoBehaviour
         if (!IsInState(E_EnemyState.Patrol))
         {
             var deltaPos = Animator.applyRootMotion ? Vector3.zero : transform.position - prevPos;
-            var velocity = deltaPos / Time.deltaTime;
+
+
+            var velocity = Time.deltaTime > 0 ? deltaPos / Time.deltaTime : Vector3.zero;
 
             // 计算实际移动速度（不归一化，保留原始值）
             float forwardSpeed = Vector3.Dot(velocity, transform.forward);

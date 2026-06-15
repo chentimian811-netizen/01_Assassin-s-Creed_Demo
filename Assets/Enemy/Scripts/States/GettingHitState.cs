@@ -17,6 +17,7 @@ public class GettingHitState : State<EnemyController>
         enemy = owner;
         onHitCompleteHandler = () => StartCoroutine(GoToCombatMovement());
         enemy.Fighter.OnHitComplete += onHitCompleteHandler;
+        
     }
 
     IEnumerator GoToCombatMovement()

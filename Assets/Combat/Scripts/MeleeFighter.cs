@@ -16,8 +16,14 @@ public class MeleeFighter : MonoBehaviour
     [field: SerializeField] public float Health { get; private set; } = 25f;
     [SerializeField] List<AttackData> attacks;
     
+    [Header("攻击设置")]
+    [Tooltip("命中时暂停时间（秒）")]
+    public float hitStopDuration = 0.08f;
 
-    
+    [Tooltip("命中的时间缩放，0 = 完全赞同，0.1=慢动作")]
+    [Range(0f,1f)]
+    public float hitStopTimeScale = 0f;
+
     [SerializeField] GameObject Sword;
 
     SphereCollider leftHandeConllider, rightHandeConllider, leftFootConllider, rightFootConllider;
@@ -196,6 +202,10 @@ public class MeleeFighter : MonoBehaviour
             TakeDamage(5f);
             OnGotHit?.Invoke(attacker);
 
+            
+            //触发卡肉效果
+            attacker.HitStop();
+
             if (Health > 0)
             {
                 StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeleeFighter>().transform));
@@ -206,6 +216,24 @@ public class MeleeFighter : MonoBehaviour
             }
                 
         }
+    }
+
+    public void HitStop()
+    {
+        StartCoroutine(HitStopCoroution());
+    }
+
+    IEnumerator HitStopCoroution()
+    {
+        //保持原始时间缩放
+        float originalTimeScale = Time.timeScale;
+
+        //设置为卡肉时间缩放
+        Time.timeScale = hitStopTimeScale;
+
+        yield return new WaitForSecondsRealtime(hitStopDuration);
+
+        Time.timeScale = originalTimeScale;
     }
 
     public void TakeDamage(float damage)

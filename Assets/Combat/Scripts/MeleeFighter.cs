@@ -18,11 +18,13 @@ public class MeleeFighter : MonoBehaviour
     
     [Header("攻击设置")]
     [Tooltip("命中时暂停时间（秒）")]
-    public float hitStopDuration = 0.08f;
+    public float hitStopDuration = 0.1f;
 
     [Tooltip("命中的时间缩放，0 = 完全赞同，0.1=慢动作")]
     [Range(0f,1f)]
     public float hitStopTimeScale = 0f;
+
+    static bool isHitStopActive = false;
 
     [SerializeField] GameObject Sword;
 
@@ -226,11 +228,13 @@ public class MeleeFighter : MonoBehaviour
 
     public void HitStop()
     {
+        if(isHitStopActive) return;
         StartCoroutine(HitStopCoroution());
     }
 
     IEnumerator HitStopCoroution()
     {
+        isHitStopActive = true;
         //保持原始时间缩放
         float originalTimeScale = Time.timeScale;
 
@@ -240,6 +244,7 @@ public class MeleeFighter : MonoBehaviour
         yield return new WaitForSecondsRealtime(hitStopDuration);
 
         Time.timeScale = originalTimeScale;
+        isHitStopActive = false;
     }
 
     public void TakeDamage(float damage)

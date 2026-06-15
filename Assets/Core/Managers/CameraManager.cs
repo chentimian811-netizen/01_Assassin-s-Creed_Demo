@@ -28,6 +28,10 @@ public class CameraManager : MonoBehaviour
     [Tooltip("默认震动强度")]
     [SerializeField] float defaultForce = 1f;
 
+    [SerializeField] float shakeCooldown = 0.5f;
+
+    float lastShakeTime = -1f;
+
     private void Awake()
     {
         if(Instance != null && Instance != this)
@@ -99,7 +103,13 @@ public class CameraManager : MonoBehaviour
 
     //触发屏幕震动效果
     public void ShakeScreen()
-    {
+    {   
+        if(Time.time - lastShakeTime < shakeCooldown)
+        {
+            return;
+        }
+        lastShakeTime = Time.time;
+
         ShakeScreen(defaultForce);
     }
 

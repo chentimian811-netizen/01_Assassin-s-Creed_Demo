@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class AttackStates : State<EnemyController>
 {
-    [SerializeField] float attackDistance = 3.0f;
+    [SerializeField] float attackDistance = 2.5f;
 
     EnemyController enemy;
 

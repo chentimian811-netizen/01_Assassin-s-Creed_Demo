@@ -76,14 +76,32 @@ public class PackageDetail : MonoBehaviour
         this.packageTablesItem = GameManager.Instance.GetPackageItemById(packageLocalData.id);
         this.uiParent = uiParent;
 
+        // 检查 packageTablesItem 是否为 null
+        if (this.packageTablesItem == null)
+        {
+            Debug.LogError("找不到物品配置，id: " + packageLocalData.id);
+            return;
+        }
+
         UILeveText.GetComponent<Text>().text = string.Format("Lv.{0}/40", this.packageLocalData.level.ToString());
         UIDescription.GetComponent<Text>().text = this.packageTablesItem.description;
         UISkillDescription.GetComponent<Text>().text = this.packageTablesItem.skillDescription;
-        UITitle.GetComponent<Text>().text = this.packageTablesItem.name; // 修复：原代码用 .name 设置的是 GameObject 名称，应为 .text
+        UITitle.GetComponent<Text>().text = this.packageTablesItem.name;
 
-        Texture2D t = (Texture2D)Resources.Load(this.packageTablesItem.imagePath);
-        Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0, 0));
-        UIIcon.GetComponent<Image>().sprite = temp;
+        // 安全加载图片
+        if (!string.IsNullOrEmpty(this.packageTablesItem.imagePath))
+        {
+            Texture2D t = (Texture2D)Resources.Load(this.packageTablesItem.imagePath);
+            if (t != null)
+            {
+                Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0, 0));
+                UIIcon.GetComponent<Image>().sprite = temp;
+            }
+            else
+            {
+                Debug.LogError("加载图片失败: " + this.packageTablesItem.imagePath);
+            }
+        }
 
         RefreshStars();
         RefreshEquipButton();

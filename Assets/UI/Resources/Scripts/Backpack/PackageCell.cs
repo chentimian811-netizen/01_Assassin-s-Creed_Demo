@@ -50,13 +50,31 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         this.packageTablesItem = GameManager.Instance.GetPackageItemById(packageLocalData.id);
         this.uiParent = uiParent;
 
+        // 检查 packageTablesItem 是否为 null
+        if (this.packageTablesItem == null)
+        {
+            Debug.LogError("找不到物品配置，id: " + packageLocalData.id);
+            return;
+        }
+
         UILevel.GetComponent<Text>().text = "Lv." + this.packageLocalData.level.ToString();
         UINew.gameObject.SetActive(this.packageLocalData.isNew);
 
-        Texture2D t = (Texture2D)Resources.Load(this.packageTablesItem.imagePath);
-        Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0, 0));
-        UIIcon.GetComponent<Image>().sprite = temp;
-        
+        // 安全加载图片
+        if (!string.IsNullOrEmpty(this.packageTablesItem.imagePath))
+        {
+            Texture2D t = (Texture2D)Resources.Load(this.packageTablesItem.imagePath);
+            if (t != null)
+            {
+                Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0, 0));
+                UIIcon.GetComponent<Image>().sprite = temp;
+            }
+            else
+            {
+                Debug.LogError("加载图片失败: " + this.packageTablesItem.imagePath);
+            }
+        }
+
         if(UINumText != null)
         {
             UINumText.text = "x" + this.packageLocalData.num.ToString();

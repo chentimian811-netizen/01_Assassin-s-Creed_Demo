@@ -50,9 +50,30 @@ public class LotteryCell : MonoBehaviour
 
     private void RefreshImage()
     {
+        // 检查 packageTableItem 和 imagePath 是否有效
+        if (this.packageTableItem == null)
+        {
+            Debug.LogError("packageTableItem 为空");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(this.packageTableItem.imagePath))
+        {
+            Debug.LogError("imagePath 为空，id: " + this.packageTableItem.id);
+            return;
+        }
+
+        // 安全加载图片
         Texture2D t = (Texture2D)Resources.Load(this.packageTableItem.imagePath);
-        Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0f, 0f));
-        UIImage.GetComponent<Image>().sprite = temp;
+        if (t != null)
+        {
+            Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0f, 0f));
+            UIImage.GetComponent<Image>().sprite = temp;
+        }
+        else
+        {
+            Debug.LogError("加载图片失败: " + this.packageTableItem.imagePath);
+        }
     }
 
     public void RefreshStars()

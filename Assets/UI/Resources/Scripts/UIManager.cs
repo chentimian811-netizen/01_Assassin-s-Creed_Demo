@@ -79,10 +79,11 @@ public class UIManager
     public BasePanel OpenPanel(string name)
     {
         BasePanel panel = null;
-        
+
+        // 调试：检查面板是否已存在
         if(panelDict.TryGetValue(name,out panel))
         {
-            Debug.Log("面板已存在:"+name);
+            Debug.LogWarning("面板已存在，无法重复打开: " + name);
             return null;
         }
 
@@ -90,21 +91,24 @@ public class UIManager
         string path = "";
         if (!pathDict.TryGetValue(name, out path))
         {
-            Debug.Log("面板名称错误，或未配置路径: " + name);
+            Debug.LogError("面板名称错误，或未配置路径: " + name);
             return null;
         }
+
+        Debug.Log("正在打开面板: " + name + "，路径: " + path);
 
         // 使用缓存预制件
         GameObject panelPrefab = null;
         if (!prefabDict.TryGetValue(name, out panelPrefab))
         {
             string realPath = "Prefabs/Panels/"+ path;
+            Debug.Log("加载预制体: " + realPath);
 
             panelPrefab = Resources.Load<GameObject>(realPath) as GameObject;
 
             if(panelPrefab == null)
             {
-                Debug.Log("预制件加载失败: " + realPath);
+                Debug.LogError("预制件加载失败: " + realPath);
                 return null;
             }
             prefabDict.Add(name, panelPrefab);
@@ -118,10 +122,12 @@ public class UIManager
             Debug.LogError("预制件缺少BasePanel组件: " + name);
             return null;
         }
+
+        Debug.Log("面板打开成功: " + name);
         panelDict.Add(name, panel);
         panel.OpenPanel(name);
         return panel;
-   
+
     }
 
     public bool ClosePanel(string name)

@@ -10,7 +10,7 @@ Unity 2022.3 LTS 第三人称动作游戏 Demo（刺客信条风格）。包含�
 
 在 Unity Editor 2022.3.62f2c1 (LTS) 中打开项目，通过编辑器 Play 模式测试，无 CLI 构建/测试命令。
 
-- **唯一场景：** `Assets/Scenes/SampleScene.unity`
+- **唯一场景：** `Assets/Scenes/MainScene.unity`
 - **解决方案文件：** `01_Assassin's Creed_Demo.sln`（gitignore，Unity 自动生成）
 - **渲染管线：** URP 14.0.12，质量等级配置在 `Assets/Settings/`
 

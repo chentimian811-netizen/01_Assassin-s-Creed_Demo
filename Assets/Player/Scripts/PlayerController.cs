@@ -261,7 +261,7 @@ public class PlayerController : MonoBehaviour
         {
             Time.timeScale = 0f;//打开背包时暂停游戏
             Cursor.lockState = CursorLockMode.None;
-            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
             UIManager.Instance.OpenPanel(UIconst.MainPanel);
         }
         else

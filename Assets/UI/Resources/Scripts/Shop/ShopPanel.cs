@@ -18,6 +18,7 @@ public class ShopPanel : BasePanel
     private Transform UIDetailName;
     private Transform UIDetailDesc;
     private Transform UIConfirmBtn;
+    private Transform[] UIDetailStar = new Transform[5];
 
     private GameObject shopCellPrefab;
     private ShopConfig currentConfig;
@@ -60,11 +61,15 @@ public class ShopPanel : BasePanel
         //购买按钮
         UIConfirmBtn = transform.Find("Right_Low/Buy");
 
-
-        Debug.Log("UIDetailPanel = " + (UIDetailPanel != null ? "OK" : "NULL"));
-        Debug.Log("UIDetailIcon = " + (UIDetailIcon != null ? "OK" : "NULL"));
-        Debug.Log("UIDetailName = " + (UIDetailName != null ? "OK" : "NULL"));
-        Debug.Log("UIDetailDesc = " + (UIDetailDesc != null ? "OK" : "NULL"));
+        //武器星级
+        Transform starGroup = transform.Find("Center/DetailPanel/Center/StartLevel");
+        if(starGroup != null)
+        {
+            for(int i = 0 ; i <5 ; i++)
+            {
+                UIDetailStar[i] = starGroup.Find("Image" + (i +1));
+            }
+        }
     }
     private void InitClick()
     {
@@ -90,10 +95,6 @@ public class ShopPanel : BasePanel
             Destroy(content.GetChild(i).gameObject);
         }
 
-        //隐藏详情面板
-        if (UIDetailPanel != null)
-        UIDetailPanel.gameObject.SetActive(false);
-
         //刷新购买列表
         RefreshBuyList(content);
     }
@@ -106,11 +107,21 @@ public class ShopPanel : BasePanel
         if(currentConfig == null)return;
 
         List<ShopItemDisplay> items = ShopManager.Instance.GetShopItems(currentConfig);
+
+        //用一个列表记录所有实例化的格子
+        List<ShopCell> cells = new List<ShopCell>();
+
         foreach (ShopItemDisplay display in items)
         {
             Transform cell = Instantiate(shopCellPrefab.transform,content)as Transform;
             ShopCell shopcell = cell.GetComponent<ShopCell>();
             shopcell.Refresh(display,this);
+            cells.Add(shopcell);
+        }
+
+        if(cells.Count > 0)
+        {
+            OnCellClicked(cells[0]);
         }
     }
 
@@ -160,6 +171,17 @@ public class ShopPanel : BasePanel
             }
         }
 
+        //设置星级
+        if(tableItem != null)
+        {
+            for(int i = 0; i < 5; i++)
+            {
+                if(UIDetailStar[i] != null)
+                {
+                    UIDetailStar[i].gameObject.SetActive(i<tableItem.star);
+                }
+            }
+        }
         //保存选中数据
         selectedDisplay = display;
     }

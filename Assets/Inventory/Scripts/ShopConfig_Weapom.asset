@@ -21,11 +21,11 @@ MonoBehaviour:
     price: 500
     stock: 5
     discount: 1
-  - itemID: 1001
+  - itemID: 3
     price: 100
     stock: -1
     discount: 1
-  - itemID: 1002
+  - itemID: 1111
     price: 100
     stock: -1
     discount: 1

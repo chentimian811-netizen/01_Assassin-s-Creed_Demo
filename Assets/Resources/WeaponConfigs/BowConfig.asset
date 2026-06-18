@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BowConfig
   m_EditorClassIdentifier: 
   weaponID: 1111
-  weaponName: "\"\u730E\u5F13\""
+  weaponName: Hunting Bow
   weaponType: 3
   weaponPrefab: {fileID: 7037937364688556453, guid: 2a0335e280af7cf4a8fe28b49a3ac4e3,
     type: 3}

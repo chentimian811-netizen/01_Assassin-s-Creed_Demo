@@ -5,36 +5,23 @@ using UnityEngine.UI;
 using TMPro;
 
 ///<summary>
-///商店面板-支持购买和出售两种模式
+///商店面板-支持购买
 /// </summary>
 public class ShopPanel : BasePanel
 {
     private Transform UITitle;
     private Transform UIGoldDisplay;
-    private Transform UIBuyTab;
-    private Transform UISellTab;
     private Transform UIScrollView;
     private Transform UICloseBtn;
     private Transform UIDetailPanel;
     private Transform UIDetailIcon;
     private Transform UIDetailName;
     private Transform UIDetailDesc;
-    private Transform UIDetailPrice;
-    private Transform UIDetailStock;
-    private Transform UIDetailDiscount;
     private Transform UIConfirmBtn;
 
     private GameObject shopCellPrefab;
-
-    private enum _ShopMode
-    {
-        Buy,
-        Sell
-    }
-    private _ShopMode curMode = _ShopMode.Buy;
     private ShopConfig currentConfig;
     private ShopItemDisplay selectedDisplay;
-    private string selectedUid;
 
     protected override void Awake()
     {
@@ -54,88 +41,66 @@ public class ShopPanel : BasePanel
     
     private void InitUIName()
     {
-        
-        // --- 顶部 ---
-        Transform topBar = transform.Find("TopBar");
-        if(topBar != null)
-        {
-            Debug.Log("[ShopPanel] TopBar 子节点:");
-            foreach(Transform child in topBar) Debug.Log("  - [" + child.name + "]");
-        }
-        else
-        {
-            Debug.LogError("[ShopPanel] 缺失: TopBar");
-        }
-        UITitle = transform.Find("TopBar/Shop");
-        UIGoldDisplay = transform.Find("TopBar/GoldDisplay");
-        UIBuyTab = transform.Find("TopBar/BuyTab");
-        UISellTab = transform.Find("TopBar/SellTab");
+       //顶部
+        UITitle = transform.Find ("TopCenter/StoreName");
+        UIGoldDisplay = transform.Find("TopCenter/GoldNumber");
 
-        // --- 中部 Tab ---
-        UIScrollView = transform.Find("ItemGrid/ScrollView");
+        //物品滚动列表
+        UIScrollView = transform.Find("Center/Scroll View");
 
-        // --- 右上关闭 ---
-        UICloseBtn = transform.Find("CloseBtn/Close");
+        //关闭按钮
+        UICloseBtn = transform.Find("RightTop/Close/Icon");
 
-        // --- 详情面板 ---
-        UIDetailPanel = transform.Find("DetailPanel");
-        UIDetailIcon = transform.Find("DetailPanel/ItemIcon");
-        UIDetailName = transform.Find("DetailPanel/ItemName");
-        UIDetailDesc = transform.Find("DetailPanel/ItemDesc");
-        UIDetailPrice = transform.Find("DetailPanel/ItemPrice");
-        UIDetailStock = transform.Find("DetailPanel/ItemStock");
-        UIDetailDiscount = transform.Find("DetailPanel/ItemDiscount");
-        UIConfirmBtn = transform.Find("DetailPanel/ConfirmBtn");
+        //详情面板
+        UIDetailPanel = transform.Find("Center/DetailPanel");
+        UIDetailIcon = transform.Find("Center/DetailPanel/Center/Icon");
+        UIDetailName = transform.Find("Center/DetailPanel/Top/Bg/Title");
+        UIDetailDesc = transform.Find("Center/DetailPanel/Button/Description");
 
+        //购买按钮
+        UIConfirmBtn = transform.Find("Right_Low/Buy");
+
+
+        Debug.Log("UIDetailPanel = " + (UIDetailPanel != null ? "OK" : "NULL"));
+        Debug.Log("UIDetailIcon = " + (UIDetailIcon != null ? "OK" : "NULL"));
+        Debug.Log("UIDetailName = " + (UIDetailName != null ? "OK" : "NULL"));
+        Debug.Log("UIDetailDesc = " + (UIDetailDesc != null ? "OK" : "NULL"));
     }
     private void InitClick()
     {
-        UIBuyTab.GetComponent<Button>().onClick.AddListener(OnClickBuyTab);
-        UISellTab.GetComponent<Button>().onClick.AddListener(OnClickSellTab);
+        if (UICloseBtn != null)
         UICloseBtn.GetComponent<Button>().onClick.AddListener(OnClickClose);
+        if (UIConfirmBtn != null)
         UIConfirmBtn.GetComponent<Button>().onClick.AddListener(OnClickConfirm);
     }
 
     private void InitPrefab()
-    {
-        shopCellPrefab = Resources.Load("Prefabs/Panels/Shop/ShopCell")as GameObject;
-    }
-
-    private void OnClickBuyTab()
-    {
-        if(curMode == _ShopMode.Buy)return;//如果等于购买模式 就不处理
-        curMode = _ShopMode.Buy;
-        ClearSelection();
-        RefreshUI();
-    }
-
-    private void OnClickSellTab()
-    {
-        if(curMode == _ShopMode.Sell)return;
-        curMode = _ShopMode.Sell;
-        ClearSelection();
-        RefreshUI();
+    {   
+        //加载ShopCl作为物品的子预制体
+        shopCellPrefab = Resources.Load("Prefabs/Panels/Shop/ShopCl")as GameObject;
     }
 
     private void RefreshUI()
-    {
+    {   
+        if (UIScrollView == null) return;
+        //清空列表
         Transform content = UIScrollView.GetComponent<ScrollRect>().content;
-        for(int i = content.childCount - 1;i >= 0 ; i--)
+        for(int i = content.childCount - 1 ; i >= 0; i--)
         {
             Destroy(content.GetChild(i).gameObject);
         }
 
+        //隐藏详情面板
+        if (UIDetailPanel != null)
         UIDetailPanel.gameObject.SetActive(false);
 
-        if(curMode == _ShopMode.Buy)
-        {
-            RefreshBuyList(content);
-        }
-        else
-        {
-            RefreshSellList(content);
-        }
+        //刷新购买列表
+        RefreshBuyList(content);
     }
+
+    /// <summary>
+    /// 从 ShopManager 获取商品列表，逐个实例化 ShopCl 格子并填充数据
+    /// </summary>
     private void RefreshBuyList(Transform content)
     {
         if(currentConfig == null)return;
@@ -147,139 +112,62 @@ public class ShopPanel : BasePanel
             ShopCell shopcell = cell.GetComponent<ShopCell>();
             shopcell.Refresh(display,this);
         }
-
-    }
-    private void RefreshSellList(Transform content)
-    {
-        List<PackageLocalData.PackageLocalItem> localItems = PackageLocalData.Instance.LoadPackage();
-
-        foreach(PackageLocalData.PackageLocalItem localItem in localItems)
-        {
-            if(localItem.isEquipped)continue;
-            PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(localItem.id);
-            if(tableItem == null)continue;
-
-            ShopItemDisplay display = new ShopItemDisplay
-            {
-                itemData = new ShopItemData
-                {
-                    itemID = localItem.id,
-                    price = ShopManager.Instance.GetSellPrice(localItem.id),
-                    stock = -1,
-                    discount = 1f
-                },
-                currentStock = -1,
-                finalPrice = ShopManager.Instance.GetSellPrice(localItem.id),
-                uid = localItem.uid
-            };
-            Transform cell = Instantiate(shopCellPrefab.transform,content)as Transform;
-            ShopCell shopCell = cell.GetComponent<ShopCell>();
-            shopCell.Refresh(display,this);
-        }
     }
 
     private void RefreshGold()
     {
-        UIGoldDisplay.GetComponent<TextMeshProUGUI>().text = "Gold:" + CurrencyManager.Instance.Gold;
+        if(UIGoldDisplay != null)
+        {
+            UIGoldDisplay.GetComponent<TextMeshProUGUI>().text = 
+                CurrencyManager.Instance.Gold.ToString();
+        }
     }
 
     public void OnCellClicked(ShopCell clickedCell)
     {
-        ClearSelection();
+       //清除之前所有选中的状态
+       Transform content = UIScrollView.GetComponent<ScrollRect>().content;
 
-        clickedCell.SetSelected(true);
-
-        ShopItemDisplay display = clickedCell.GetDisplayData();
-
-        UIDetailPanel.gameObject.SetActive(true);
-
-        PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(display.itemData.itemID);
-        string itemName = tableItem != null ? tableItem.name : "未知";
-
-        UIDetailName.GetComponent<TextMeshProUGUI>().text = itemName;
-        UIDetailPrice.GetComponent<TextMeshProUGUI>().text = "价格: " + display.finalPrice;
-        UIConfirmBtn.GetComponentInChildren<TextMeshProUGUI>().text = curMode == _ShopMode.Buy ? "购买" : "出售";
-
-        // 描述
-        if(UIDetailDesc != null)
-        {
-            UIDetailDesc.GetComponent<TextMeshProUGUI>().text = tableItem != null ? tableItem.description : "";
-        }
-
-        // 库存
-        if(UIDetailStock != null)
-        {
-            if(curMode == _ShopMode.Buy)
-            {
-                UIDetailStock.gameObject.SetActive(true);
-                UIDetailStock.GetComponent<TextMeshProUGUI>().text =
-                    display.currentStock == -1 ? "库存: 无限" : "库存: " + display.currentStock;
-            }
-            else
-            {
-                UIDetailStock.gameObject.SetActive(false);
-            }
-        }
-
-        // 折扣
-        if(UIDetailDiscount != null)
-        {
-            if(display.itemData.discount < 1f)
-            {
-                UIDetailDiscount.gameObject.SetActive(true);
-                int discountDisplay = Mathf.RoundToInt(display.itemData.discount * 10);
-                UIDetailDiscount.GetComponent<TextMeshProUGUI>().text = discountDisplay + "折";
-            }
-            else
-            {
-                UIDetailDiscount.gameObject.SetActive(false);
-            }
-        }
-
-        // 保存选中数据
-        if(curMode == _ShopMode.Buy)
-        {
-            selectedDisplay = display;
-            selectedUid = null;
-        }
-        else
-        {
-            selectedDisplay = null;
-            selectedUid = display.uid;
-        }
-    }
-
-    private void ClearSelection()
-    {
-        Transform content = UIScrollView.GetComponent<ScrollRect>().content;
-        for(int i = 0;i < content.childCount; i++)
+       for(int i = 0;i < content.childCount; i++)
         {
             ShopCell cell = content.GetChild(i).GetComponent<ShopCell>();
-            if(cell != null)
+            if(cell != null) cell.SetSelected(false);
+        }
+
+        //选中当前点击的格子
+        clickedCell.SetSelected(true);
+        ShopItemDisplay display = clickedCell.GetDisplayData();
+
+        //显示详情面板
+        UIDetailPanel.gameObject.SetActive(true);
+
+        //从物品表获取名称和描述   
+        PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(display.itemData.itemID);
+
+        //设置详情面板内容
+        UIDetailName.GetComponent<Text>().text = 
+            tableItem != null ? tableItem.name:"未知";
+        UIDetailDesc.GetComponent<Text>().text =
+            tableItem != null ? tableItem.description:"";
+
+        //设置武器图标
+        if(tableItem != null && !string.IsNullOrEmpty(tableItem.imagePath))
+        {
+            Sprite icon = Resources.Load<Sprite>(tableItem.imagePath);
+            if(icon != null)
             {
-                cell.SetSelected(false);
+                UIDetailIcon.GetComponent<Image>().sprite = icon;
             }
         }
-        selectedDisplay = null;
-        selectedUid = null;
+
+        //保存选中数据
+        selectedDisplay = display;
     }
 
     //确认按钮
     private void OnClickConfirm()
     {
-        if(curMode == _ShopMode.Buy)
-        {
-            HandleBuy();
-        }
-        else
-        {
-            HandleSell();
-        }
-    }
-
-    private void HandleBuy()
-    {
-        if(selectedDisplay == null || currentConfig == null)return;
+        if(selectedDisplay == null || currentConfig == null) return;
 
         bool success = ShopManager.Instance.BuyItem(currentConfig,selectedDisplay.itemData.itemID);
         if (success)
@@ -287,33 +175,33 @@ public class ShopPanel : BasePanel
             RefreshGold();
             RefreshUI();
         }
+
     }
 
-    private void HandleSell()
-    {
-        if(string.IsNullOrEmpty(selectedUid))return;
-        bool success = ShopManager.Instance.SellItem(selectedUid);
 
-        if (success)
-        {
-            RefreshGold();
-            RefreshUI();
-        }
-    }
-
+    /// <summary>
+    /// 关闭按钮点击：退订金币事件 → 关闭面板
+    /// </summary>
     private void OnClickClose()
     {
         CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler;
         ClosePanel();
-        // UIManager.Instance.OpenPanel(UIconst.MainPanel);
+        
     }
 
+    //金币变化时的回调
     private void OnGoldChangeHandler(int newGold)
     {
-        UIGoldDisplay.GetComponent<TextMeshProUGUI>().text = "金币：" + newGold;
+        if(UIGoldDisplay != null)
+        {
+            UIGoldDisplay.GetComponent<TextMeshProUGUI>().text = newGold.ToString();
+        }
 
     }
 
+    /// <summary>
+    /// 打开面板时：解锁光标、暂停游戏、订阅金币事件
+    /// </summary>
     public override void OpenPanel(string name)
     {
         base.OpenPanel(name);
@@ -323,12 +211,15 @@ public class ShopPanel : BasePanel
         CurrencyManager.Instance.OnGoldChanged += OnGoldChangeHandler;
     }
 
+    
+    /// <summary>
+    /// 关闭面板时：退订事件、锁定光标、恢复游戏
+    /// </summary>
     public override void ClosePanel()
     {
         CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
         Time.timeScale = 1f;
         base.ClosePanel();
 

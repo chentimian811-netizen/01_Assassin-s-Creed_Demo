@@ -10,10 +10,10 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
 {
     private Transform UIIcon;
     private Transform UIQuantity;
-    private Transform UISelect;
-
+    private Transform UIName;
+    private Transform UIPrice;
     private ShopItemDisplay displayData;
-    private ShopPanel uiParent;
+    private ShopPanel UIParent;
 
 
     private void Awake()
@@ -23,23 +23,35 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
 
     private void InitUIName()
     {
-        UIIcon = transform.Find("Top/Icon");
-        UIQuantity = transform.Find("Quantity");
-        UISelect = transform.Find("Select");
-
-        UISelect.gameObject.SetActive(false);
+        UIIcon = transform.Find("Object_Icon/Icon");           // 图标
+        UIQuantity = transform.Find("Number");                 // 数量
+        UIName = transform.Find("Obj_Name_price/Name");        // 名称
+        UIPrice = transform.Find("Obj_Name_price/Price");      // 价格
     }
 
     public void Refresh(ShopItemDisplay data,ShopPanel parent)
     {
         this.displayData = data;
-        this.uiParent = parent;
+        this.UIParent = parent;
 
         PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(data.itemData.itemID);
 
-        RefreshIcon(tableItem);
+        RefreshIcon(tableItem);//刷新图标
 
-        // 显示数量：库存模式显示stock，出售模式显示1
+        //刷新名称
+        if(UIName != null)
+        {
+            UIName.GetComponent<TextMeshProUGUI>().text = 
+                tableItem != null ? tableItem.name : "未知";
+        }
+
+        //刷新价格
+        if(UIPrice != null)
+        {
+            UIPrice.GetComponent<TextMeshProUGUI>().text = data.finalPrice.ToString();
+        }
+
+        // 显示数量
         if(UIQuantity != null)
         {
             if(data.currentStock == -1)
@@ -53,8 +65,6 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
             }
         }
 
-        //默认取消选中
-        UISelect.gameObject.SetActive(false);
     }
 
     //刷新图标 从Resource加载图片
@@ -62,7 +72,7 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
     {
         if(tableItem == null || string.IsNullOrEmpty(tableItem.imagePath))return;
         Sprite icon = Resources.Load<Sprite>(tableItem.imagePath);
-        if(icon != null)
+        if(icon != null && UIIcon != null)
         {
             UIIcon.GetComponent<Image>().sprite = icon;
         }
@@ -71,13 +81,13 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
     //接口实现 玩家点击此格子时触发
     public void OnPointerClick(PointerEventData eventData)
     {
-        uiParent.OnCellClicked(this);
+        UIParent.OnCellClicked(this);
     }
 
     //设置选中/取消选中状态
     public void SetSelected(bool selected)
     {
-        UISelect.gameObject.SetActive(selected);
+        
     }
 
     //获取当前各自的展示数据

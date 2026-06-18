@@ -61,7 +61,7 @@ public class UIManager
             {UIconst.LotteryPanel,"Lottery/LotteryPanel" },
             {UIconst.MainPanel,"MainPanel" },
             {UIconst.PickupPopup, "PickupPopup" },
-            {UIconst.ShopPanel, "Shop/ShopPanel" },
+            {UIconst.ShopPanel, "Shop/ShopPe" },
         };
     }
 

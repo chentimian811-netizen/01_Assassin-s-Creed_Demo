@@ -262,7 +262,7 @@
                 {
                     "name": "",
                     "id": "ce4602fa-fa37-4559-af21-4341bd09d0fe",
-                    "path": "<Keyboard>/b",
+                    "path": "<Keyboard>/backquote",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",

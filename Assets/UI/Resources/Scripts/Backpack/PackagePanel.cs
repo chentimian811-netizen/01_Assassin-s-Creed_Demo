@@ -148,6 +148,8 @@ public class PackagePanel : BasePanel
             int startIndex = currentPage * pageSize;
             int endIndex = Mathf.Min(startIndex + pageSize,filteredItems.Count);
 
+            PackageCell firstCell = null;
+
             for(int i = startIndex; i < endIndex; i++)
         {
             //根据类型选择预制体
@@ -157,6 +159,16 @@ public class PackagePanel : BasePanel
             Transform PackageUIItem =  Instantiate(prefab.transform,scrollContent)as Transform;
             PackageCell packageCell = PackageUIItem.GetComponent<PackageCell>();
             packageCell.Refresh(filteredItems[i], this);
+
+            if(firstCell == null)
+            {
+                firstCell = packageCell;
+            }
+        }
+
+        if(firstCell != null)
+        {
+            ChooseUid = firstCell.GetUid();
         }
     }
 

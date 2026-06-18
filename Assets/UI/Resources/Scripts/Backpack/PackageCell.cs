@@ -138,4 +138,10 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         Debug.Log("OnPointerExit: " + eventData.ToString());
         UIMouseOverAni.GetComponent<Animator>().SetTrigger("Out");
     }
+
+    public string GetUid()
+    {
+        return packageLocalData.uid;
+    }
+
 }

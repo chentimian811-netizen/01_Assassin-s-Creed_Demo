@@ -1431,10 +1431,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad5306f128adaaf4b98fdbc6f409238e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Health>k__BackingField: 25
+  <Health>k__BackingField: 50
   attacks:
   - {fileID: 11400000, guid: ac0c29b7b65405247b8d850d08e98675, type: 2}
   - {fileID: 11400000, guid: 3c5b7744a4f889f47bf29fae2b0528d1, type: 2}
+  hitStopDuration: 0
+  hitStopTimeScale: 0
   Sword: {fileID: 3139722781369767024}
 --- !u!143 &8684321585978170563
 CharacterController:
@@ -1537,7 +1539,7 @@ NavMeshAgent:
   m_AutoBraking: 0
   m_AutoRepath: 1
   m_Height: 2
-  m_BaseOffset: 0.321
+  m_BaseOffset: 0.2
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!114 &1847130694280441761

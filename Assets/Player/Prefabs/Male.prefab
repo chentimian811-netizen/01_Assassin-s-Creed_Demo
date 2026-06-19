@@ -51,7 +51,7 @@ GameObject:
   - component: {fileID: 8429888561007281762}
   m_Layer: 6
   m_Name: Male
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -90,6 +90,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e2abf08d88207cc48ad8b09f66758426, type: 2}
   - {fileID: 11400000, guid: 9ffeb712fb5fd3a4aa7de97050feeae7, type: 2}
   - {fileID: 11400000, guid: 5e7a7b88e80657e45afc16636a80acc2, type: 2}
+  hitStopDuration: 0.09
+  hitStopTimeScale: 0
   Sword: {fileID: 0}
 --- !u!114 &1664160428647962579
 MonoBehaviour:
@@ -436,10 +438,45 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 211485049732546520}
     m_Modifications:
+    - target: {fileID: 2629751207999689257, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2923440857213105753, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2923440857213105753, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_TagString
+      value: Hitbox
+      objectReference: {fileID: 0}
+    - target: {fileID: 2982069422767653059, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.461
+      objectReference: {fileID: 0}
+    - target: {fileID: 2982069422767653059, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2982069422767653059, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.005
+      objectReference: {fileID: 0}
     - target: {fileID: 4061567243909081003, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5836507484954185949, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 7094620311760461776, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}
@@ -496,6 +533,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7892089959706496965, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 7892089959706496965, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -542,7 +589,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.2
+  m_Radius: 0.3
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1176333465599525210 stripped
 Transform:
@@ -635,5 +682,5 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.2
+  m_Radius: 0.3
   m_Center: {x: 0, y: 0, z: 0}

@@ -65,28 +65,28 @@ public class PlayerHealthBar : MonoBehaviour
             if(plyaerFighter != null)
             {
                 maxHealth = plyaerFighter.Health;
+
+                    //初始化血条
+                float initialPercet = plyaerFighter.Health / maxHealth;
+                targetHealthPercent = initialPercet;
+                currentDisplayPercent = initialPercet;
+
+                //初始化颜色
+                targetColor = GetHealthColor(initialPercet);
+                currentDisplayColor = targetColor;
+
+                if(healthSlider != null)
+                {
+                    healthSlider.value = initialPercet;
+                }
+                if(fillImage != null)
+                {
+                    fillImage.color = targetColor;
+                }
+
+                //订阅受击事件
+                plyaerFighter.OnGotHit += OnPlayerGoHit;
             }
-
-            //初始化血条
-            float initialPercet = plyaerFighter.Health / maxHealth;
-            targetHealthPercent = initialPercet;
-            currentDisplayPercent = initialPercet;
-
-            //初始化颜色
-            targetColor = GetHealthColor(initialPercet);
-            currentDisplayColor = targetColor;
-
-            if(healthSlider != null)
-            {
-                healthSlider.value = initialPercet;
-            }
-            if(fillImage != null)
-            {
-                fillImage.color = targetColor;
-            }
-
-            //订阅受击事件
-            plyaerFighter.OnGotHit += OnPlayerGoHit;
         }
     }
 

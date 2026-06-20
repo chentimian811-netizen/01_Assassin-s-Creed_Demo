@@ -81,7 +81,7 @@ public class AttackStates : State<EnemyController>
         attackCoroutine = null;
 
         if (enemy.IsInState(E_EnemyState.Attack))
-        {
+        {   
             enemy.ChangeState(E_EnemyState.RetreatAfterAttack);
         }
 

@@ -15,6 +15,10 @@ public class RetreatAfterAttackState : State<EnemyController>
     {
         enemy = owner;
         targetPos = enemy.Target.transform.position;
+
+        // 将NavAgent的内部位置同步到当前实际位置
+        // 防止updatePosition重新开启时NavAgent产生向前的位移修正
+        enemy.NavAgent.Warp(enemy.transform.position);
     }
 
     public override void Execute()

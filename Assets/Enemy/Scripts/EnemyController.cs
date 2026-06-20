@@ -135,11 +135,26 @@ public class EnemyController : MonoBehaviour
 
             // 计算实际移动速度（不归一化，保留原始值）
             float forwardSpeed = Vector3.Dot(velocity, transform.forward);
-            Animator.SetFloat("forwardSpeed", forwardSpeed, 0.2f, Time.deltaTime);
-
+            if (IsInState(E_EnemyState.RetreatAfterAttack))
+            {
+                Animator.SetFloat("forwardSpeed", forwardSpeed);
+            }
+            else
+            {
+                Animator.SetFloat("forwardSpeed", forwardSpeed, 0.2f, Time.deltaTime);
+            }
+            
             float angle = Vector3.SignedAngle(transform.forward, velocity, Vector3.up);
+            
             float strafeSpeed = Mathf.Sin(angle * Mathf.Deg2Rad);
-            Animator.SetFloat("strafeSpeed", strafeSpeed, 0.2f, Time.deltaTime);
+            if (IsInState(E_EnemyState.RetreatAfterAttack))
+            {
+                Animator.SetFloat("strafeSpeed", strafeSpeed);
+            }
+            else
+            {
+                Animator.SetFloat("strafeSpeed", strafeSpeed, 0.2f, Time.deltaTime);
+            }
         }
 
         if(Target?.Health <= 0)

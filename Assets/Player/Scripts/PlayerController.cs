@@ -290,6 +290,19 @@ public class PlayerController : MonoBehaviour
             targetFighter = lockedEnemy.Fighter;
         }
 
+        //攻击前平滑转向摄像机方向
+        if (!isLocking)
+        {
+            Transform camTf = CameraManager.Instance.MainCameraTransform;
+            Vector3 camForward = new Vector3(camTf.forward.x,0,camTf.forward.z).normalized;
+            if(camForward.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(camForward);
+                //用一个较大的Larp 系数实现"快速但不瞬间"的转向
+                PlayerTransform.rotation = Quaternion.Slerp(PlayerTransform.rotation,targetRot,10f * Time.deltaTime);
+            }
+        }
+
         var enemy = EnemyManager.i.GetAttackingEnemy();
 
         if (enemy != null && enemy.Fighter.IsCounterable && !meleeFighter.inAction && !meleeFighter.IsAttackingHit)

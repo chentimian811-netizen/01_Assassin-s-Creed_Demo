@@ -40,6 +40,7 @@ public class AttackStates : State<EnemyController>
     IEnumerator Attack( int comboCount = 1)
     {
         isAttacking = true;
+        enemy.NavAgent.updatePosition = false;
         enemy.Animator.applyRootMotion = true;
 
         // 防御：如果此时inAction为true（可能残留），先等待它变为false再发起攻击
@@ -50,6 +51,7 @@ public class AttackStates : State<EnemyController>
             if (!enemy.IsInState(E_EnemyState.Attack))
             {
                 enemy.Animator.applyRootMotion = false;
+                enemy.NavAgent.updatePosition = true;
                 isAttacking = false;
                 yield break;
             }
@@ -65,6 +67,7 @@ public class AttackStates : State<EnemyController>
             if (!enemy.IsInState(E_EnemyState.Attack))
             {
                 enemy.Animator.applyRootMotion = false;
+                enemy.NavAgent.updatePosition = true;
                 isAttacking = false;
                 yield break;
             }
@@ -96,6 +99,7 @@ public class AttackStates : State<EnemyController>
         isAttacking = false;
         // 确保RootMotion被关闭
         enemy.Animator.applyRootMotion = false;
+        enemy.NavAgent.updatePosition = true;
         enemy.NavAgent.ResetPath();
     }
 }

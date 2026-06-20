@@ -40,6 +40,9 @@ public class EnemyController : MonoBehaviour
 
     Vector3 prevPos;
 
+    [SerializeField] private float minSeparationDistance = 1.2f; // 与玩家的最小距离
+    [SerializeField] private float separationForce = 5f;         // 分离推力强度
+
     private void Start()
     {
         MeshHightlighter = GetComponent<SkinnedMeshHighlighter>();
@@ -100,6 +103,7 @@ public class EnemyController : MonoBehaviour
         };
     }
 
+      
     public void ReactToHit(E_EnemyState state)
     {
         ChangeState(E_EnemyState.GettingHit);
@@ -115,8 +119,6 @@ public class EnemyController : MonoBehaviour
     {
          return stateMachine.CurrentState == stateDict[state];
     }
-
-
 
     private void Update()
     {
@@ -145,7 +147,9 @@ public class EnemyController : MonoBehaviour
 
             TargetsInRange.Remove(Target);
             EnemyManager.i.RemoveEnemyInRange(this);
-        }
+        }  
+
+        EnforceSeparation();
 
         var euler = transform.eulerAngles;
         transform.eulerAngles = new Vector3(0,euler.y,0);
@@ -154,6 +158,40 @@ public class EnemyController : MonoBehaviour
 
     }
 
+    private void EnforceSeparation()
+    {
+        if(Target == null) return;
+        if(Fighter.Health <= 0)return;
+
+        Vector3 playerPos = Target.transform.position;
+        Vector3 diff = transform.position - playerPos;
+        diff.y = 0;
+        float dist = diff.magnitude;
+
+        if(dist<minSeparationDistance && dist > 0.01f)
+        {
+            Vector3 pushDir = diff.normalized;
+            float pushAmount = minSeparationDistance - dist;
+
+            if(NavAgent != null && NavAgent.enabled && NavAgent.isOnNavMesh)
+            {
+                NavAgent.Move(pushDir * pushAmount * separationForce *Time.deltaTime);
+
+            }
+            else
+            {
+                transform.position += pushDir * pushAmount * separationForce * Time.deltaTime;
+            }
+        }
+    }
+
+    //只保留旋转，不应用位移，防止攻击动画穿过敌人
+    private void OnAnimatorMove()
+    {
+        if(!Animator.applyRootMotion) return;
+
+        transform.rotation = Animator.rootRotation;
+    }
     public MeleeFighter FindTarget()
     {
         foreach (var target in TargetsInRange)

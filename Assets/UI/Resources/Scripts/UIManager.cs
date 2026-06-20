@@ -62,6 +62,7 @@ public class UIManager
             {UIconst.MainPanel,"MainPanel" },
             {UIconst.PickupPopup, "PickupPopup" },
             {UIconst.ShopPanel, "Shop/ShopPe" },
+            {UIconst.MainMenuPanel,"MainMenu/MainMenuPanel"}
         };
     }
 
@@ -157,4 +158,6 @@ public class UIconst
     public const string PickupPopup = "PickupPopup";
 
     public const string ShopPanel = "ShopPanel";
+
+    public const string MainMenuPanel = "MainMenuPanel";
 }

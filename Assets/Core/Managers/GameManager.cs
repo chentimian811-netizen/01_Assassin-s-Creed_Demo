@@ -4,15 +4,40 @@ using System.Xml.Serialization;
 using UnityEngine;
 using static PackageLocalData;
 
+
+/// <summary>
+/// 游戏管理器 - 全局单例，管理游戏状态和核心数据
+/// </summary>
 public class GameManager : MonoBehaviour
 {
+    [Header("主菜单设置")]
+    [SerializeField] private GameObject healthBarRoot;
+    [SerializeField] private GameObject minimapRoot;
+    [SerializeField] private GameObject menuCharacterPrefab;  // 主菜单展示模型预制体
+    [SerializeField] private Vector3 menuCharacterPosition;
+    [SerializeField] private Vector3 menuCharacterRotation = new Vector3(0, 30, 0); 
+    private GameObject menuCharacterInstance;                  // 场景中的实例
     private static GameManager _instance;
     private PackageTables packageTable;
 
+    [Header("游戏状态")]
+    [SerializeField] private bool isMainMenuActive = true;  // 是否在主菜单状态
+
     private void Awake()
     {
+        Debug.Log("GameManager.Awake 被调用, 当前 _instance=" + _instance + ", this=" + this);
+
+        // 如果已经有实例存在，销毁这个重复的
+        if(_instance != null && _instance != this)
+        {
+            Debug.LogWarning("发现重复的 GameManager，销毁: " + gameObject.name);
+            Destroy(gameObject);
+            return;
+        }
         _instance = this;
         DontDestroyOnLoad(gameObject);
+
+        Debug.Log("GameManager.Awake 完成, _instance=" + _instance);
     }
 
     public static GameManager Instance
@@ -25,8 +50,124 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        //UIManager.Instance.OpenPanel(UIconst.MainPanel);//游戏开始时自动打开主界面
+        Debug.Log("GameManager.Start 被调用, _instance=" + _instance);
+        // 游戏启动时打开主菜单
+        InitMainMenu();
     }
+
+    private void OnDestroy()
+    {
+        Debug.LogWarning("GameManager.OnDestroy 被调用！this=" + this + ", _instance=" + _instance);
+        // 如果销毁的是当前实例，清空静态引用
+        if(_instance == this)
+        {
+            _instance = null;
+            Debug.LogWarning("GameManager._instance 已清空！");
+        }
+    }
+
+    /// <summary>
+    /// 初始化主菜单状态
+    /// 禁用玩家输入，打开主菜单面板
+    /// </summary>
+    private void InitMainMenu()
+    {
+        isMainMenuActive = true;
+
+        //禁用玩家输入
+        PlayerController player = FindObjectOfType<PlayerController>();
+        if(player != null)
+        {
+            player.acceptInput = false;
+            // 隐藏游戏主角（可选）
+            player.gameObject.SetActive(false);
+        }
+
+        // 解锁鼠标，让主菜单按钮可以接收点击
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        // 禁用游戏 FreeLook 相机，让菜单相机控制画面
+        CameraManager camManager = FindObjectOfType<CameraManager>();
+        if(camManager != null && camManager.freeLook != null)
+        {
+            camManager.freeLook.gameObject.SetActive(false);
+        }
+
+
+        if(menuCharacterPrefab != null)
+        {
+            menuCharacterInstance = Instantiate(menuCharacterPrefab);
+        }
+
+         // 让菜单相机注视生成的角色
+        MainMenuCamera mainMenuCamera = FindObjectOfType<MainMenuCamera>();
+        if(mainMenuCamera != null && menuCharacterInstance != null)
+        {
+            mainMenuCamera.SetLookAtTarget(menuCharacterInstance.transform);
+        }
+
+        //隐藏游戏HUD
+        if(healthBarRoot != null) healthBarRoot.SetActive(false);
+        if(minimapRoot != null) minimapRoot.SetActive(false);
+
+        //打开主菜单面板
+        UIManager.Instance.OpenPanel(UIconst.MainMenuPanel);
+    }
+
+    /// <summary>
+    /// 游戏开始时调用 - 从主菜单过渡到游戏状态
+    /// </summary>
+    public void StartGame()
+    {
+        isMainMenuActive = false;
+
+        Debug.Log("StartGame 被调用了, menuCharacterInstance=" + menuCharacterInstance);
+
+        // 销毁主菜单展示模型
+        if (menuCharacterInstance != null)
+        {
+            Destroy(menuCharacterInstance);
+            menuCharacterInstance = null;
+            Debug.Log("预制体已销毁");
+        }
+        else
+        {
+             Debug.LogWarning("menuCharacterInstance 是 null，无法销毁！请检查 Inspector 中 Menu Character Prefab 是否拖了预制体");
+        }
+
+        // 启用游戏主角（includeInactive=true 确保能找到被禁用的玩家）
+        PlayerController player = FindObjectOfType<PlayerController>(true);
+        Debug.Log("StartGame: 查找玩家=" + player);
+        if (player != null)
+        {
+            player.gameObject.SetActive(true);
+            player.acceptInput = true;
+            Debug.Log("玩家已激活: " + player.gameObject.name);
+        }
+        else
+        {
+            Debug.LogError("找不到 PlayerController！请检查场景中是否有带 PlayerController 的物体");
+        }
+
+        // 重新锁定鼠标，进入游戏操作模式
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        // 激活 FreeLook 相机，让视角切换到玩家身上
+        CameraManager camManager = FindObjectOfType<CameraManager>();
+        if(camManager != null && camManager.freeLook != null)
+        {
+            camManager.freeLook.gameObject.SetActive(true);
+            // 重置视角到玩家背后
+            camManager.ResetFreeLookCamera();
+        }
+
+         //显示游戏HUD
+        if(healthBarRoot != null) healthBarRoot.SetActive(true);
+        if(minimapRoot != null) minimapRoot.SetActive(true);
+    }
+
 
     public void DeletePackageItem(List<string> uids)
     {

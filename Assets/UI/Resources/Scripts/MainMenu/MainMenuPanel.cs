@@ -21,78 +21,48 @@ public class MainMenuPanel : BasePanel
     [SerializeField] private float fadeInDuration = 1.5f;
     [SerializeField] private float buttonDelay = 0.3f;
 
-    private bool lastFrameInstanceValid = true; // 上一帧 GameManager.Instance 是否有效
-
     protected override void Awake()
     {
         base.Awake();
         InitUI();
     }
 
-    private void Update()
-    {
-        // 监控 GameManager.Instance 何时变成 null
-        bool currentValid = (GameManager.Instance != null);
-        if(lastFrameInstanceValid && !currentValid)
-        {
-            Debug.LogError("【监控】GameManager.Instance 在这一帧变成了 null！");
-        }
-        lastFrameInstanceValid = currentValid;
-    }
-
     /// <summary>
     /// 初始化UI组件和事件绑定
     /// </summary>
     private void InitUI()
-    {   
+    {
         // 检查是否在正确的 Canvas 下，如果不是，自动挂载到 MainMenuCanvas
         Transform currentCanvas = transform.parent;
         if(currentCanvas == null || currentCanvas.name != "MainMenuCanvas")
         {
-        GameObject mainMenuCanvas = GameObject.Find("MainMenuCanvas");
-        if(mainMenuCanvas != null)
-        {
-            transform.SetParent(mainMenuCanvas.transform, false);
-            Debug.Log("MainMenuPanel 已挂载到 MainMenuCanvas");
+            GameObject mainMenuCanvas = GameObject.Find("MainMenuCanvas");
+            if(mainMenuCanvas != null)
+            {
+                transform.SetParent(mainMenuCanvas.transform, false);
+            }
         }
-        }
-        
+
         canvasGroup = GetComponent<CanvasGroup>();
         if(canvasGroup == null)
         {
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        Debug.Log("InitUI: startGameBtn=" + startGameBtn + ", settingsBtn=" + settingsBtn + ", quitGameBtn=" + quitGameBtn);
-        Debug.Log("CanvasGroup.interactable=" + canvasGroup.interactable + ", CanvasGroup.blocksRaycasts=" + canvasGroup.blocksRaycasts);
-
         //绑定按钮事件
         if(startGameBtn != null)
         {
             startGameBtn.onClick.AddListener(OnStartGame);
-            Debug.Log("开始游戏按钮绑定成功");
-        }
-        else
-        {
-            Debug.LogError("startGameBtn 为 null！请在预制体 Inspector 中拖拽赋值");
         }
 
         if(settingsBtn != null)
         {
             settingsBtn.onClick.AddListener(OnSettings);
         }
-        else
-        {
-            Debug.LogError("settingsBtn 为 null！请在预制体 Inspector 中拖拽赋值");
-        }
 
         if(quitGameBtn != null)
         {
             quitGameBtn.onClick.AddListener(OnQuitGame);
-        }
-        else
-        {
-            Debug.LogError("quitGameBtn 为 null！请在预制体 Inspector 中拖拽赋值");
         }
 
         //初始隐藏所有按钮，等待淡入动画
@@ -147,8 +117,6 @@ public class MainMenuPanel : BasePanel
     /// </summary>
     private void OnStartGame()
     {
-        Debug.Log("OnStartGame 被点击了！");
-        //同一场景关闭主菜单，调用游戏逻辑
         StartCoroutine(StartGameTransition());
     }
 
@@ -171,41 +139,18 @@ public class MainMenuPanel : BasePanel
             yield return null;
         }
 
-        //通知GameManager游戏开始
+        // 通知菜单相机切换
         MainMenuCamera mainMenuCamera = FindObjectOfType<MainMenuCamera>();
         if(mainMenuCamera != null)
         {
             mainMenuCamera.TransitionToGameplay();
         }
 
-         // 通知 GameManager 游戏开始
-        // 如果 Instance 为 null，尝试在场景中重新查找（容错）
-        if(GameManager.Instance == null)
-        {
-            Debug.LogWarning("GameManager.Instance 为 null，尝试重新查找...");
-            GameManager found = FindObjectOfType<GameManager>();
-            if(found != null)
-            {
-                Debug.LogWarning("找到了 GameManager: " + found.gameObject.name + "，但 Instance 丢失");
-            }
-            else
-            {
-                Debug.LogError("场景中找不到任何 GameManager！请检查是否被销毁");
-            }
-        }
-
+        // 通知 GameManager 游戏开始
         if(GameManager.Instance != null)
         {
-            Debug.Log("正在调用 GameManager.StartGame()");
             GameManager.Instance.StartGame();
         }
-        else
-        {
-            Debug.LogError("GameManager.Instance 为 null！StartGame 未被调用！");
-        }
-
-        //显示游戏HUD
-        // UIManager.Instance.OpenPanel(UIconst.GameHUD);
 
         //关闭主菜单页面
         ClosePanel();

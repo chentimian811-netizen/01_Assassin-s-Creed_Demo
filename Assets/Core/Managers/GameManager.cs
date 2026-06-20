@@ -25,19 +25,14 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        Debug.Log("GameManager.Awake 被调用, 当前 _instance=" + _instance + ", this=" + this);
-
         // 如果已经有实例存在，销毁这个重复的
         if(_instance != null && _instance != this)
         {
-            Debug.LogWarning("发现重复的 GameManager，销毁: " + gameObject.name);
             Destroy(gameObject);
             return;
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
-
-        Debug.Log("GameManager.Awake 完成, _instance=" + _instance);
     }
 
     public static GameManager Instance
@@ -50,19 +45,15 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        Debug.Log("GameManager.Start 被调用, _instance=" + _instance);
-        // 游戏启动时打开主菜单
         InitMainMenu();
     }
 
     private void OnDestroy()
     {
-        Debug.LogWarning("GameManager.OnDestroy 被调用！this=" + this + ", _instance=" + _instance);
         // 如果销毁的是当前实例，清空静态引用
         if(_instance == this)
         {
             _instance = null;
-            Debug.LogWarning("GameManager._instance 已清空！");
         }
     }
 
@@ -122,32 +113,19 @@ public class GameManager : MonoBehaviour
     {
         isMainMenuActive = false;
 
-        Debug.Log("StartGame 被调用了, menuCharacterInstance=" + menuCharacterInstance);
-
         // 销毁主菜单展示模型
         if (menuCharacterInstance != null)
         {
             Destroy(menuCharacterInstance);
             menuCharacterInstance = null;
-            Debug.Log("预制体已销毁");
-        }
-        else
-        {
-             Debug.LogWarning("menuCharacterInstance 是 null，无法销毁！请检查 Inspector 中 Menu Character Prefab 是否拖了预制体");
         }
 
         // 启用游戏主角（includeInactive=true 确保能找到被禁用的玩家）
         PlayerController player = FindObjectOfType<PlayerController>(true);
-        Debug.Log("StartGame: 查找玩家=" + player);
         if (player != null)
         {
             player.gameObject.SetActive(true);
             player.acceptInput = true;
-            Debug.Log("玩家已激活: " + player.gameObject.name);
-        }
-        else
-        {
-            Debug.LogError("找不到 PlayerController！请检查场景中是否有带 PlayerController 的物体");
         }
 
         // 重新锁定鼠标，进入游戏操作模式

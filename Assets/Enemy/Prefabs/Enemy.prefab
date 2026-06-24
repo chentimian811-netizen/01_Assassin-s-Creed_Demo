@@ -1434,7 +1434,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad5306f128adaaf4b98fdbc6f409238e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Health>k__BackingField: 100
+  <Health>k__BackingField: 40
   attacks:
   - {fileID: 11400000, guid: ac0c29b7b65405247b8d850d08e98675, type: 2}
   - {fileID: 11400000, guid: 3c5b7744a4f889f47bf29fae2b0528d1, type: 2}

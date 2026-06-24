@@ -14,17 +14,19 @@ public class ShopNPC : MonoBehaviour
 
     void Start()
     {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if(player != null)
-        {
-            cachedPc = player.GetComponent<PlayerController>();
-        }
+        // cachedPc = FindObjectOfType<PlayerController>();
+
     }
 
     private void Update()
     {
-        if(cachedPc == null) return;
+        if(cachedPc == null)
+        {
+            cachedPc = FindObjectOfType<PlayerController>(true);
+            if(cachedPc == null) return;
 
+        }
+        
         float distance = Vector3.Distance(transform.position,cachedPc.transform.position);
 
         if(distance <= detectionRadius)

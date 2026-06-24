@@ -10,9 +10,9 @@ using UnityEngine.Rendering;
 public class PlayerController : MonoBehaviour
 {
     Transform PlayerTransform;
-    Animator Animator;
+    public Animator Animator;
     CharacterController characterController;
-    MeleeFighter meleeFighter;
+    public MeleeFighter meleeFighter;
     [Header("远程武器")]
     RangedFighter rangedFighter;
 
@@ -120,11 +120,16 @@ public class PlayerController : MonoBehaviour
     float jumpCD = 0.15f;
 
     // Start is called before the first frame update
+    [HideInInspector] public bool isDead = false;
+
+    [SerializeField] private float deathAnimWaitTime = 2f;//等待死亡动画
+
 
     public void Awake()
     {
         meleeFighter = GetComponent<MeleeFighter>();
         rangedFighter = GetComponent<RangedFighter>();
+        meleeFighter.OnGotHit += OnPlayerGotHit; 
     }
     void Start()
     {
@@ -332,6 +337,7 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
+
 
     void LockEnemy(EnemyController enemy)
     {
@@ -741,5 +747,21 @@ public class PlayerController : MonoBehaviour
     }
     
     return ray.direction;
+    }
+
+    
+    private void OnPlayerGotHit(MeleeFighter attacker)
+    {
+        if (meleeFighter.Health > 0 || isDead) return;
+        isDead = true;
+        StartCoroutine(DeathSequence());
+    }
+
+    private IEnumerator DeathSequence()
+    {
+        yield return new WaitForSeconds(deathAnimWaitTime);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        UIManager.Instance.OpenPanel(UIconst.DeathPanel);
     }
 }

@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03e65d06a6ce4ba428568ed7824afd9a, type: 3}
   m_Name: Boss Config
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 55
   summonHealthThresholds:
   - 0.33
-  minionPrefab: {fileID: 0}
+  minionPrefab: {fileID: 4769488866850045155, guid: bfa37c064e54d2b4ab4c04511b454caf,
+    type: 3}
   minionCount: 3
   summonRadius: 5
   summonAnimName: Summon

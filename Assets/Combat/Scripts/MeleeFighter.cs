@@ -18,7 +18,7 @@ public class MeleeFighter : MonoBehaviour
     
     [Header("攻击设置")]
     [Tooltip("命中时暂停时间（秒）")]
-    public float hitStopDuration = 0.1f;
+    public float hitStopDuration = 0.2f;
 
     [Tooltip("命中的时间缩放，0 = 完全赞同，0.1=慢动作")]
     [Range(0f,1f)]
@@ -216,19 +216,13 @@ public class MeleeFighter : MonoBehaviour
                 OnGotHit?.Invoke(attacker);
                 if (Health > 0)
                 {
-                StartCoroutine(PlayerHitReaction(a));
+                StartCoroutine(PlayerHitReaction(attacker.transform));
                 }
                 else
                 {
                 PlayDeathAnimation(attacker);
                 }
-            }
-            
-
-            
-
-            
-                
+            }   
         }
     }
 

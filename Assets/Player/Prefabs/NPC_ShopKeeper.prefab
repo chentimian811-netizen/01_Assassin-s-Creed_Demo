@@ -40,13 +40,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3613608019160172976}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2459121c5f734274c89e6bd63d76347b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   shopConfig: {fileID: 11400000, guid: 1b82edcd99091f64dbd9190c01961d64, type: 2}
   promptText: "\u6309E\u6253\u5F00\u5546\u5E97"
+  detectionRadius: 3
 --- !u!1 &8243858763972863766
 GameObject:
   m_ObjectHideFlags: 0

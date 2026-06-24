@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using UnityEngine;
 using static PackageLocalData;
+using UnityEngine.SceneManagement;
 
 
 /// <summary>
@@ -23,6 +24,9 @@ public class GameManager : MonoBehaviour
     [Header("游戏状态")]
     [SerializeField] private bool isMainMenuActive = true;  // 是否在主菜单状态
 
+    private Vector3 playerInitialPosition;      // 玩家初始位置
+    private Quaternion playerInitialRotation;   // 玩家初始旋转
+    private bool hasRecordedInitialPosition = false;  // 是否已记录
     private void Awake()
     {
         // 如果已经有实例存在，销毁这个重复的
@@ -126,6 +130,14 @@ public class GameManager : MonoBehaviour
         {
             player.gameObject.SetActive(true);
             player.acceptInput = true;
+
+            // 记录玩家初始位置（仅首次）
+            if (!hasRecordedInitialPosition)
+            {
+                playerInitialPosition = player.transform.position;
+                playerInitialRotation = player.transform.rotation;
+                hasRecordedInitialPosition = true;
+            }
         }
 
         // 重新锁定鼠标，进入游戏操作模式
@@ -280,6 +292,112 @@ public class GameManager : MonoBehaviour
         localItems.Sort(new PackageItemComparer());
         return localItems;
     }
+
+    //返回主菜单
+    public void ReturnToMainMenu()
+    {
+        UIManager.Instance.ClosePanel(UIconst.DeathPanel);
+        InitMainMenu();
+    }
+
+    /// <summary>
+    /// 重生玩家 - 传送到初始位置并重置状态
+    /// </summary>
+    public void RespawnPlayer()
+    {
+        // 关闭死亡面板
+        UIManager.Instance.ClosePanel(UIconst.DeathPanel);
+
+        Time.timeScale = 1f;
+        // 重置玩家
+        PlayerController player = FindObjectOfType<PlayerController>(true);
+        if (player != null)
+        {
+            // 传送到初始位置
+            CharacterController cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;  // 先禁用才能移动
+
+            player.transform.position = playerInitialPosition;
+            player.transform.rotation = playerInitialRotation;
+
+            if (cc != null) cc.enabled = true;   // 重新启用
+
+            // 重置玩家状态
+            player.gameObject.SetActive(true);
+            player.acceptInput = true;
+            player.isDead = false;
+            player.ForceUnlock();
+            player.meleeFighter.SetHealth(25f);
+            
+            // 重置动画
+            player.Animator.Rebind();  // 重置动画状态机
+            player.Animator.Update(0f);
+        }
+
+        // 重置所有活着的敌人
+        ResetAllEnemies();
+
+        // 锁定鼠标
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        // 相机
+        CameraManager camManager = FindObjectOfType<CameraManager>();
+        if (camManager != null && camManager.freeLook != null)
+        {
+            camManager.freeLook.gameObject.SetActive(true);
+            camManager.ResetFreeLookCamera();
+        }
+
+        // HUD
+        if (healthBarRoot != null) healthBarRoot.SetActive(true);
+        if (minimapRoot != null) minimapRoot.SetActive(true);
+    }
+
+    /// <summary>
+    /// 重置所有敌人 - 恢复到初始状态
+    /// </summary>
+    private void ResetAllEnemies()
+    {
+        EnemyController[] allEnemies = FindObjectsOfType<EnemyController>(true);
+        foreach (var enemy in allEnemies)
+        {
+            if (enemy == null) continue;
+        
+            // 先禁用再启用，强制重新初始化
+            enemy.gameObject.SetActive(false);
+            
+            // 重置血量
+            if (enemy.Fighter != null)
+            {
+                enemy.Fighter.SetHealth(25f);
+            }
+
+            // 清除战斗目标
+            enemy.Target = null;
+            enemy.TargetsInRange.Clear();
+
+            // 重新启用组件
+            if (enemy.NavAgent != null) 
+            {
+                enemy.NavAgent.enabled = true;
+                enemy.NavAgent.ResetPath();
+            }
+
+            if (enemy.character != null) 
+            {
+                enemy.character.enabled = true;
+            }
+            
+            if (enemy.VisionSensor != null) 
+            {
+                enemy.VisionSensor.gameObject.SetActive(true);
+            }
+            
+            // 重新启用敌人（会触发 Start 重新执行）
+            enemy.gameObject.SetActive(true);
+         }
+    }
 }
 
 public class PackageItemComparer : IComparer<PackageLocalItem>
@@ -302,6 +420,8 @@ public class PackageItemComparer : IComparer<PackageLocalItem>
         return starComparison;
     }
 }
+
+
 
 public class GameConst
 {

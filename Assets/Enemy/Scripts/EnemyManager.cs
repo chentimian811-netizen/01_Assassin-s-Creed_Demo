@@ -9,6 +9,7 @@ public class EnemyManager : MonoBehaviour
 
     [SerializeField] PlayerController Player;
 
+    [SerializeField] int maxSimultaneousAttacks = 2;
     [field: SerializeField] public LayerMask EnemyLayer { get; private set; }
     public static EnemyManager i { get; private set; }
 
@@ -64,13 +65,14 @@ public class EnemyManager : MonoBehaviour
     {
         if (enemiesInRange.Count == 0) return;
 
-        if (!enemiesInRange.Any(e => e.IsInState(E_EnemyState.Attack)))
+        int attackingCount = enemiesInRange.Count(e => e.IsInState(E_EnemyState.Attack));
+
+        if (attackingCount < maxSimultaneousAttacks)
         {
             if (notAttackingTimer > 0)
             {
                 notAttackingTimer -= Time.deltaTime;
             }
-
 
             if (notAttackingTimer <= 0)
             {

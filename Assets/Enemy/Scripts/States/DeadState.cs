@@ -5,7 +5,7 @@ using UnityEngine;
 public class DeadState : State<EnemyController>
 {   
 
-    [SerializeField] private float destroyDelay = 2f;
+    [SerializeField] private float destroyDelay = 5f;
 
 
     public override void Enter(EnemyController owner)
@@ -18,4 +18,5 @@ public class DeadState : State<EnemyController>
 
         Destroy(owner.gameObject,destroyDelay);
     }
+    
 }

@@ -34,7 +34,7 @@ namespace SunTemple
 
         void Start(){
             StartRotation = transform.localEulerAngles ;
-			DoorCollider = GetComponent<BoxCollider> ();
+			DoorCollider = GetComponent<Collider> ();
 
 			if (!DoorCollider) {
 				Debug.LogWarning (this.GetType ().Name + ".cs on " + gameObject.name + "door has no collider", gameObject);
@@ -90,6 +90,8 @@ namespace SunTemple
 
 
 		void TryToOpen(){
+			// Player 可能已被销毁，需要判空
+			if (Player == null) return;
 			if (Mathf.Abs(Vector3.Distance(transform.position, Player.transform.position)) <= MaxDistance){	
 
 				Ray ray = Cam.ScreenPointToRay (new Vector3 (Screen.width / 2, Screen.height / 2, 0));
@@ -106,6 +108,8 @@ namespace SunTemple
 
 
 		void CursorHint(){
+			// Player 可能已被销毁，需要判空
+			if (Player == null) return;
 			if (Mathf.Abs(Vector3.Distance(transform.position, Player.transform.position)) <= MaxDistance){	
 				Ray ray = Cam.ScreenPointToRay (new Vector3 (Screen.width / 2, Screen.height / 2, 0));
 				RaycastHit hit;

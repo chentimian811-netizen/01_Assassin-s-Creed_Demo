@@ -43,6 +43,11 @@ namespace SunTemple {
 	
 
 		void CheckForDistance(){
+			// Player 可能已被销毁，需要判空防止 MissingReferenceException
+			if (Player == null) {
+				CancelInvoke ("CheckForDistance");
+				return;
+			}
 			if (Mathf.Abs (Vector3.Distance (transform.position, Player.transform.position)) > distance) {
 				foreach (GameObject obj in objectsToDisable) {
 					if (obj && obj.transform) {

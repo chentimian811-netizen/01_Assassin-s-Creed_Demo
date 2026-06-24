@@ -1408,6 +1408,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Fov>k__BackingField: 180
   <AlertRange>k__BackingField: 20
+  minSeparationDistance: 1.2
+  separationForce: 5
 --- !u!114 &1342149859006696479
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1595,6 +1597,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2af3d7d299c3d554aa662355a7eb358a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  destroyDelay: 4
 --- !u!114 &7313202557231490922
 MonoBehaviour:
   m_ObjectHideFlags: 0

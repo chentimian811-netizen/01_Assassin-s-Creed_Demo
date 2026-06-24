@@ -122,7 +122,7 @@ public class PlayerHealthBar : MonoBehaviour
         }
     }
 
-    private void ODestroy()
+    private void OnDestroy()
     {
         if(plyaerFighter != null)
         {

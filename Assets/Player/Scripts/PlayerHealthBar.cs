@@ -86,6 +86,8 @@ public class PlayerHealthBar : MonoBehaviour
 
                 //订阅受击事件
                 plyaerFighter.OnGotHit += OnPlayerGoHit;
+                //订阅血量变化事件
+                plyaerFighter.OnHealthChanged += OnHealthChanged;
             }
         }
     
@@ -128,7 +130,14 @@ public class PlayerHealthBar : MonoBehaviour
         if(plyaerFighter != null)
         {
             plyaerFighter.OnGotHit -= OnPlayerGoHit;
+            plyaerFighter.OnHealthChanged -= OnHealthChanged;
         }
+    }
+
+    // 血量变化回调
+    private void OnHealthChanged(float newHealth)
+    {
+        UpdateHealthBar(newHealth);
     }
 
     //玩家受击反馈

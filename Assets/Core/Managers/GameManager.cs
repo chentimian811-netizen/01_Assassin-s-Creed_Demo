@@ -129,15 +129,7 @@ public class GameManager : MonoBehaviour
         if (player != null)
         {
             player.gameObject.SetActive(true);
-            player.acceptInput = true;
-
-            // 记录玩家初始位置（仅首次）
-            if (!hasRecordedInitialPosition)
-            {
-                playerInitialPosition = player.transform.position;
-                playerInitialRotation = player.transform.rotation;
-                hasRecordedInitialPosition = true;
-            }
+            player.ResetPlayerState();
         }
 
         // 重新锁定鼠标，进入游戏操作模式
@@ -313,25 +305,9 @@ public class GameManager : MonoBehaviour
         PlayerController player = FindObjectOfType<PlayerController>(true);
         if (player != null)
         {
-            // 传送到初始位置
-            CharacterController cc = player.GetComponent<CharacterController>();
-            if (cc != null) cc.enabled = false;  // 先禁用才能移动
-
-            player.transform.position = playerInitialPosition;
-            player.transform.rotation = playerInitialRotation;
-
-            if (cc != null) cc.enabled = true;   // 重新启用
-
-            // 重置玩家状态
             player.gameObject.SetActive(true);
-            player.acceptInput = true;
-            player.isDead = false;
-            player.ForceUnlock();
-            player.meleeFighter.SetHealth(25f);
-            
-            // 重置动画
-            player.Animator.Rebind();  // 重置动画状态机
-            player.Animator.Update(0f);
+
+            player.ResetPlayerState();
         }
 
         // 重置所有活着的敌人
@@ -353,6 +329,7 @@ public class GameManager : MonoBehaviour
         if (healthBarRoot != null) healthBarRoot.SetActive(true);
         if (minimapRoot != null) minimapRoot.SetActive(true);
     }
+
 
     /// <summary>
     /// 重置所有敌人 - 恢复到初始状态
@@ -377,11 +354,17 @@ public class GameManager : MonoBehaviour
             enemy.Target = null;
             enemy.TargetsInRange.Clear();
 
+            EnemyManager.i.RemoveEnemyInRange(enemy);
+
             // 重新启用组件
             if (enemy.NavAgent != null) 
             {
                 enemy.NavAgent.enabled = true;
-                enemy.NavAgent.ResetPath();
+                // 只有在 NavMesh 上才调用 ResetPath
+                if (enemy.NavAgent.isOnNavMesh)
+                {
+                    enemy.NavAgent.ResetPath();
+                }
             }
 
             if (enemy.character != null) 
@@ -389,14 +372,17 @@ public class GameManager : MonoBehaviour
                 enemy.character.enabled = true;
             }
             
-            if (enemy.VisionSensor != null) 
+            if (enemy.VisionSensor != null)
             {
                 enemy.VisionSensor.gameObject.SetActive(true);
             }
-            
-            // 重新启用敌人（会触发 Start 重新执行）
+
+            // 先激活敌人，再切换状态
             enemy.gameObject.SetActive(true);
-         }
+
+            // 切换到 Idle 状态
+            enemy.ChangeState(E_EnemyState.Idle);
+        }
     }
 }
 

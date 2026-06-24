@@ -140,7 +140,11 @@ public class PatrolState : State<EnemyController>
     public override void Exit()
     {
         EnemyController owner = GetComponent<EnemyController>();
-
+        // 添加空值和状态检查
+        if (owner.NavAgent == null || !owner.NavAgent.enabled || !owner.NavAgent.isOnNavMesh)
+        {
+            return;
+        }
         //恢复默认速度
         owner.NavAgent.speed = 3.5f;
         owner.NavAgent.isStopped = false;

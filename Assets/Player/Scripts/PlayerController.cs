@@ -701,6 +701,10 @@ public class PlayerController : MonoBehaviour
 
     private void OnAnimatorMove()
     {
+
+        if(Animator == null) return;
+
+
         if (!meleeFighter.inCounter && !isLocking)
         {
             
@@ -763,5 +767,43 @@ public class PlayerController : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         UIManager.Instance.OpenPanel(UIconst.DeathPanel);
+    }
+
+    /// <summary>
+    /// 重置玩家状态到初始值（用于重新开始游戏）
+    /// </summary>
+    public void ResetPlayerState()
+    {
+        // 重置姿态
+        PlayerPosture = E_PlayerPosture.Stand;
+        isCrouch = false;
+        isRunning = false;
+        isAiming = false;
+        isJumping = false;
+        
+        // 重置死亡状态
+        isDead = false;
+        
+        // 重置输入
+        moveInput = Vector2.zero;
+        acceptInput = true;
+        
+        // 重置血量
+        if (meleeFighter != null)
+        {
+            meleeFighter.SetHealth(25f);
+        }
+        
+        // 重置动画
+        if (Animator != null)
+        {
+            Animator.Rebind();
+            Animator.Update(0f);
+            Animator.SetFloat(postrueHash, standThreshold);
+            Animator.SetFloat(moveSpeedHash, 0f);
+        }
+        
+        // 解锁敌人
+        ForceUnlock();
     }
 }

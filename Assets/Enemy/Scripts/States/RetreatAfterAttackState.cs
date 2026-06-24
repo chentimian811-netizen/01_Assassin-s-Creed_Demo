@@ -14,15 +14,31 @@ public class RetreatAfterAttackState : State<EnemyController>
     public override void Enter(EnemyController owner)
     {
         enemy = owner;
+
+        if(enemy.Target == null)
+        {
+            enemy.ChangeState(E_EnemyState.Idle);
+            return;
+        }
+
         targetPos = enemy.Target.transform.position;
 
         // 将NavAgent的内部位置同步到当前实际位置
         // 防止updatePosition重新开启时NavAgent产生向前的位移修正
-        enemy.NavAgent.Warp(enemy.transform.position);
+        if(enemy.NavAgent != null && enemy.NavAgent.isOnNavMesh)
+        {
+            enemy.NavAgent.Warp(enemy.transform.position);
+        }
     }
 
     public override void Execute()
     {
+        if(enemy.Target == null)
+        {
+            enemy.ChangeState(E_EnemyState.Idle);
+            return;
+        }
+
         if(Vector3.Distance(enemy.transform.position,targetPos )>= distanceToRetreat)
         {
             enemy.ChangeState(E_EnemyState.CombatMovement);
@@ -31,7 +47,12 @@ public class RetreatAfterAttackState : State<EnemyController>
 
         var vecToTarget = enemy.Target.transform.position - enemy.transform.position;
         vecToTarget.y = 0f; 
-        enemy.NavAgent.Move(-vecToTarget.normalized * backwardWalkSpeed * Time.deltaTime);
+
+        // 空值检查：确保 NavAgent 可用
+        if (enemy.NavAgent != null && enemy.NavAgent.isOnNavMesh)
+        {
+            enemy.NavAgent.Move(-vecToTarget.normalized * backwardWalkSpeed * Time.deltaTime);
+        }
         transform.rotation=Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(vecToTarget),500 * Time.deltaTime);
     }
 

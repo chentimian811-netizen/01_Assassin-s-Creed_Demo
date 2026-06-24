@@ -45,6 +45,8 @@ public class MeleeFighter : MonoBehaviour
     bool doCombo;//连击标志
     int combocount = 0;//连技计数
 
+    // 添加血量变化事件（用于UI更新）
+    public event Action<float> OnHealthChanged;
 
     public bool IsStaggered {get;set;} = false;
     void Awake()
@@ -253,15 +255,6 @@ public class MeleeFighter : MonoBehaviour
     }
 
     /// <summary>
-    /// 直接设置血量（用于 Boss 初始化、回血等场景）
-    /// 不限制上限，允许超过默认的 25
-    /// </summary>
-    public void SetHealth(float newHealth)
-    {
-        Health = Mathf.Max(0f,newHealth);
-    }
-
-    /// <summary>
     /// 受到伤害（带攻击者信息，触发受击/死亡动画）
     /// </summary>
     public void TakeDamage(float damage, MeleeFighter attacker)
@@ -389,4 +382,15 @@ public class MeleeFighter : MonoBehaviour
     public List<AttackData> Attacks => attacks;
 
     public bool IsCounterable => AttackState == E_AttackState.Windup && combocount == 0;
+
+    /// <summary>
+    /// 直接设置血量（用于 Boss 初始化、回血等场景）
+    /// 不限制上限，允许超过默认的 25
+    /// </summary>
+    public void SetHealth(float newHealth)
+    {
+        Health = Mathf.Max(0f, newHealth);
+        // 触发血量变化事件
+        OnHealthChanged?.Invoke(Health);
+    }
 }

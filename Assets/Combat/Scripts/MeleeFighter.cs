@@ -45,6 +45,8 @@ public class MeleeFighter : MonoBehaviour
     bool doCombo;//连击标志
     int combocount = 0;//连技计数
 
+
+    public bool IsStaggered {get;set;} = false;
     void Awake()
     {
         animator = GetComponent<Animator>();
@@ -191,7 +193,7 @@ public class MeleeFighter : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Hitbox" && !IsAttackingHit && !inCounter)
+        if (other.tag == "Hitbox" && !IsAttackingHit && !inCounter && !IsStaggered )
         {
             var attacker = other.GetComponentInParent<MeleeFighter>();
             if (attacker == null || attacker == this) return;
@@ -202,26 +204,30 @@ public class MeleeFighter : MonoBehaviour
             }
 
             TakeDamage(5f);
-            OnGotHit?.Invoke(attacker);
-
-            
-            //触发卡肉效果
             attacker.HitStop();
-
             //触发屏幕震动效果
             if (CompareTag("Player"))
             {
                 CameraManager.Instance.ShakeScreen();
             }
 
-            if (Health > 0)
+            if (!IsStaggered)
             {
-                StartCoroutine(PlayerHitReaction(other.GetComponentInParent<MeleeFighter>().transform));
-            }
-            else
-            {
+                OnGotHit?.Invoke(attacker);
+                if (Health > 0)
+                {
+                StartCoroutine(PlayerHitReaction(a));
+                }
+                else
+                {
                 PlayDeathAnimation(attacker);
+                }
             }
+            
+
+            
+
+            
                 
         }
     }
@@ -250,6 +256,15 @@ public class MeleeFighter : MonoBehaviour
     public void TakeDamage(float damage)
     {
         Health = Mathf.Clamp(Health - damage, 0, Health);
+    }
+
+    /// <summary>
+    /// 直接设置血量（用于 Boss 初始化、回血等场景）
+    /// 不限制上限，允许超过默认的 25
+    /// </summary>
+    public void SetHealth(float newHealth)
+    {
+        Health = Mathf.Max(0f,newHealth);
     }
 
     /// <summary>

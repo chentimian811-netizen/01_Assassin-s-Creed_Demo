@@ -60,8 +60,8 @@ public class PlayerHealthBar : MonoBehaviour
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if(player != null)
-        {
-            plyaerFighter = player.GetComponent<MeleeFighter>();
+        {  
+            plyaerFighter = player.GetComponentInParent<MeleeFighter>();
             if(plyaerFighter != null)
             {
                 maxHealth = plyaerFighter.Health;
@@ -88,6 +88,7 @@ public class PlayerHealthBar : MonoBehaviour
                 plyaerFighter.OnGotHit += OnPlayerGoHit;
             }
         }
+    
     }
 
     private void Update()

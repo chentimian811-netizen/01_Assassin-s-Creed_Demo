@@ -13,8 +13,9 @@ public class GettingHitState : State<EnemyController>
     private System.Action onHitCompleteHandler;
 
     public override void Enter(EnemyController owner)
-    {
+    { 
         enemy = owner;
+        enemy.Fighter.IsStaggered = true;
         onHitCompleteHandler = () => StartCoroutine(GoToCombatMovement());
         enemy.Fighter.OnHitComplete += onHitCompleteHandler;
         
@@ -40,5 +41,6 @@ public class GettingHitState : State<EnemyController>
             enemy.Fighter.OnHitComplete -= onHitCompleteHandler;
             onHitCompleteHandler = null;
         }
+        enemy.Fighter.IsStaggered = false;
     }
 }

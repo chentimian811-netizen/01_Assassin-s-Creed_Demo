@@ -13,6 +13,8 @@ public enum E_EnemyState
     RetreatAfterAttack,
     Dead,
     GettingHit,
+    Sumon,//BOSS召唤状态
+
 }
 
 public class EnemyController : MonoBehaviour
@@ -43,7 +45,7 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float minSeparationDistance = 1.2f; // 与玩家的最小距离
     [SerializeField] private float separationForce = 5f;         // 分离推力强度
 
-    private void Start()
+    protected virtual void Start()
     {
         MeshHightlighter = GetComponent<SkinnedMeshHighlighter>();
 
@@ -74,8 +76,13 @@ public class EnemyController : MonoBehaviour
         stateMachine = new StateMachine<EnemyController>(this);
 
         // stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
-
-        if(GetComponent<PatrolPoute>() != null && GetComponent<PatrolPoute>().HasPoints)
+        if(Target!= null)
+        {
+            //已有目标(被boss召唤出来的小怪) 直接进入战斗
+            EnemyManager.i.AddEnemyInRange(this);
+            ChangeState(E_EnemyState.CombatMovement);
+        }
+        else if(GetComponent<PatrolPoute>() != null && GetComponent<PatrolPoute>().HasPoints)
         {
             ChangeState(E_EnemyState.Patrol);
         }
@@ -120,7 +127,7 @@ public class EnemyController : MonoBehaviour
          return stateMachine.CurrentState == stateDict[state];
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         stateMachine.Execute();
 
@@ -202,7 +209,8 @@ public class EnemyController : MonoBehaviour
 
     //只保留旋转，不应用位移，防止攻击动画穿过敌人
     private void OnAnimatorMove()
-    {
+    {  
+        if(Animator == null) return;
         if(!Animator.applyRootMotion) return;
 
         transform.rotation = Animator.rootRotation;
@@ -240,6 +248,17 @@ public class EnemyController : MonoBehaviour
                 naerbyEnemy.Target = Target;
                 naerbyEnemy.ChangeState(E_EnemyState.CombatMovement);
             }
+        }
+    }
+
+    /// <summary>
+    /// 注册一个新的状态到状态字典（供子类扩展状态时调用）
+    /// </summary>
+    protected void RegisterState(E_EnemyState state,State<EnemyController> stateObj)
+    {
+        if(stateObj != null)
+        {
+            stateDict[state] = stateObj;
         }
     }
 }

@@ -9,6 +9,8 @@ public class AttackData : ScriptableObject
     [field: SerializeField] public E_AttackHitbox HitboxToUse  { get; private set; }
     [field:SerializeField] public float ImpactStartTime {  get; private set; }
     [field:SerializeField] public float ImpactEndTime {  get; private set; }
+    
+    [field:SerializeField] public float Damage { get; private set; } = 5f;
 
     [Header("攻击音效")]
     [Tooltip("该攻击命中的音效（可选，为空则使用 AudioManager 默认音效）")]

@@ -16,7 +16,7 @@ public class DeadState : State<EnemyController>
         owner.NavAgent.enabled = false;
         owner.character.enabled = false;
 
-        Destroy(owner.gameObject,destroyDelay);
+        Destroy(owner.gameObject, destroyDelay);
     }
     
 }

@@ -109,6 +109,22 @@ public class BossController : EnemyController
         isSummoning = false;
     }
     
+    /// <summary>
+    /// 重置 Boss 状态（用于重新开始游戏）
+    /// </summary>
+    public void ResetBossState()
+    {
+        nextThresholdIndex = 0;
+        isSummoning = false;
+
+        // 重新设置血量
+        if (bossConfig != null && Fighter != null)
+        {
+            Fighter.SetHealth(bossConfig.maxHealth);
+            originalHealth = bossConfig.maxHealth;
+        }
+    }
+
     //获取第Index个小怪的生成位置
     public Vector3 GetSummonPostion(int index)
     {

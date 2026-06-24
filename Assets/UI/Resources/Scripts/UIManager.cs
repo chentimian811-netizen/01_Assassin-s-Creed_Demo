@@ -64,6 +64,8 @@ public class UIManager
             {UIconst.ShopPanel, "Shop/ShopPe" },
             {UIconst.MainMenuPanel,"MainMenu/MainMenuPanel"},
             {UIconst.DeathPanel, "Death/DeathPanel"},
+            {UIconst.VictoryPanel, "Victory/VictoryPanel"},
+            {UIconst.PausePanel, "Pause/PausePanel"},
         };
     }
 
@@ -163,4 +165,8 @@ public class UIconst
     public const string MainMenuPanel = "MainMenuPanel";
 
     public const string DeathPanel = "DeathPanel";
+
+    public const string VictoryPanel = "VictoryPanel";
+
+    public const string PausePanel = "PausePanel";
 }

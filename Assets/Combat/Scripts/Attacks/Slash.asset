@@ -16,3 +16,5 @@ MonoBehaviour:
   <HitboxToUse>k__BackingField: 4
   <ImpactStartTime>k__BackingField: 0.4
   <ImpactEndTime>k__BackingField: 0.65
+  <Damage>k__BackingField: 5
+  hitSound: {fileID: 0}

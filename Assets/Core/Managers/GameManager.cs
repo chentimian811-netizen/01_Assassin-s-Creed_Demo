@@ -117,6 +117,9 @@ public class GameManager : MonoBehaviour
     {
         isMainMenuActive = false;
 
+        // 确保时间缩放恢复正常（防止从暂停状态返回主菜单后 timeScale 仍为 0）
+        Time.timeScale = 1f;
+
         // 停止主菜单BGM
         if (AudioManager.Instance != null)
         {
@@ -137,6 +140,9 @@ public class GameManager : MonoBehaviour
             player.gameObject.SetActive(true);
             player.ResetPlayerState();
         }
+
+        // 重置所有敌人
+        ResetAllEnemies();
 
         // 重新锁定鼠标，进入游戏操作模式
         Cursor.lockState = CursorLockMode.Locked;
@@ -294,7 +300,11 @@ public class GameManager : MonoBehaviour
     //返回主菜单
     public void ReturnToMainMenu()
     {
+        // 确保时间缩放恢复正常（防止从暂停状态返回时 timeScale 仍为 0）
+        Time.timeScale = 1f;
+
         UIManager.Instance.ClosePanel(UIconst.DeathPanel);
+        UIManager.Instance.ClosePanel(UIconst.PausePanel);
         InitMainMenu();
 
         // 回到主菜单时播放主菜单BGM
@@ -354,14 +364,29 @@ public class GameManager : MonoBehaviour
         foreach (var enemy in allEnemies)
         {
             if (enemy == null) continue;
-        
+
             // 先禁用再启用，强制重新初始化
             enemy.gameObject.SetActive(false);
-            
-            // 重置血量
+
+            // 重置 Boss 特殊状态
+            BossController boss = enemy as BossController;
+            if (boss != null)
+            {
+                boss.ResetBossState();
+            }
+
+            // 重置血量（Boss 根据配置重置，普通敌人重置为 25）
             if (enemy.Fighter != null)
             {
-                enemy.Fighter.SetHealth(25f);
+                if (boss != null && boss.bossConfig != null)
+                {
+                    // Boss 使用配置的最大血量
+                    enemy.Fighter.SetHealth(boss.bossConfig.maxHealth);
+                }
+                else
+                {
+                    enemy.Fighter.SetHealth(25f);
+                }
             }
 
             // 清除战斗目标
@@ -371,7 +396,7 @@ public class GameManager : MonoBehaviour
             EnemyManager.i.RemoveEnemyInRange(enemy);
 
             // 重新启用组件
-            if (enemy.NavAgent != null) 
+            if (enemy.NavAgent != null)
             {
                 enemy.NavAgent.enabled = true;
                 // 只有在 NavMesh 上才调用 ResetPath
@@ -381,11 +406,11 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            if (enemy.character != null) 
+            if (enemy.character != null)
             {
                 enemy.character.enabled = true;
             }
-            
+
             if (enemy.VisionSensor != null)
             {
                 enemy.VisionSensor.gameObject.SetActive(true);
@@ -394,8 +419,15 @@ public class GameManager : MonoBehaviour
             // 先激活敌人，再切换状态
             enemy.gameObject.SetActive(true);
 
-            // 切换到 Idle 状态
-            enemy.ChangeState(E_EnemyState.Idle);
+            // 根据是否有巡逻路径决定初始状态
+            if (enemy.GetComponent<PatrolPoute>() != null && enemy.GetComponent<PatrolPoute>().HasPoints)
+            {
+                enemy.ChangeState(E_EnemyState.Patrol);
+            }
+            else
+            {
+                enemy.ChangeState(E_EnemyState.Idle);
+            }
         }
     }
 }

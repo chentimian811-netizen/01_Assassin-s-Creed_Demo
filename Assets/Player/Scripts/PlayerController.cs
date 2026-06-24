@@ -72,6 +72,8 @@ public class PlayerController : MonoBehaviour
 
     bool isMainMenuOpen;
 
+    bool isPaused; // 是否处于暂停状态
+
 
     int postrueHash;
     int moveSpeedHash;
@@ -122,6 +124,9 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     [HideInInspector] public bool isDead = false;
 
+    private Vector3 spawnPosition;       // 出生点位置
+    private Quaternion spawnRotation;    // 出生点朝向
+
     [SerializeField] private float deathAnimWaitTime = 2f;//等待死亡动画
 
 
@@ -151,6 +156,9 @@ public class PlayerController : MonoBehaviour
 
         Debug.Log("当前金币" + CurrencyManager.Instance.Gold);
 
+        // 记录出生点
+        spawnPosition = transform.position;
+        spawnRotation = transform.rotation;
     }
     // Update is called once per frame
     void Update()
@@ -158,6 +166,17 @@ public class PlayerController : MonoBehaviour
         if (meleeFighter.Health <= 0 || !acceptInput)
         {
             moveInput = Vector2.zero; // 清空移动输入
+            isRunning = false;
+            isCrouch = false;
+            isAiming = false;
+            isJumping = false;
+            return;
+        }
+
+        // 暂停状态下冻结玩家逻辑
+        if (isPaused)
+        {
+            moveInput = Vector2.zero;
             isRunning = false;
             isCrouch = false;
             isAiming = false;
@@ -261,6 +280,9 @@ public class PlayerController : MonoBehaviour
     {
         if(!context.performed) return;
 
+        // 暂停面板打开时不响应背包输入
+        if(isPaused) return;
+
         isMainMenuOpen = !isMainMenuOpen;
         if(isMainMenuOpen)
         {
@@ -275,6 +297,45 @@ public class PlayerController : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             UIManager.Instance.ClosePanel(UIconst.MainPanel);
         }
+    }
+
+    /// <summary>
+    /// ESC 暂停/恢复游戏
+    /// </summary>
+    public void GetPauseInput(InputAction.CallbackContext context)
+    {
+        if (!context.performed) return;
+
+        // 如果背包或商店面板已打开，不响应暂停
+        if (isMainMenuOpen) return;
+        if (UIManager.Instance.panelDict.ContainsKey(UIconst.ShopPanel)) return;
+
+        isPaused = !isPaused;
+        if (isPaused)
+        {
+            // 暂停游戏
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            UIManager.Instance.OpenPanel(UIconst.PausePanel);
+        }
+        else
+        {
+            // 恢复游戏
+            ResumeGame();
+        }
+    }
+
+    /// <summary>
+    /// 恢复游戏（供暂停面板的"继续"按钮调用）
+    /// </summary>
+    public void ResumeGame()
+    {
+        isPaused = false;
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        UIManager.Instance.ClosePanel(UIconst.PausePanel);
     }
 
     public void GetLightAttack(InputAction.CallbackContext context)
@@ -774,6 +835,12 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     public void ResetPlayerState()
     {
+        // 传送到出生点
+        if (characterController != null) characterController.enabled = false;
+        transform.position = spawnPosition;
+        transform.rotation = spawnRotation;
+        if (characterController != null) characterController.enabled = true;
+
         // 重置姿态
         PlayerPosture = E_PlayerPosture.Stand;
         isCrouch = false;
@@ -783,15 +850,18 @@ public class PlayerController : MonoBehaviour
         
         // 重置死亡状态
         isDead = false;
+
+        // 重置暂停状态
+        isPaused = false;
         
         // 重置输入
         moveInput = Vector2.zero;
         acceptInput = true;
         
-        // 重置血量
+        // 重置血量（使用 MeleeFighter 记录的最大血量，而非硬编码值）
         if (meleeFighter != null)
         {
-            meleeFighter.SetHealth(25f);
+            meleeFighter.SetHealth(meleeFighter.MaxHealth);
         }
         
         // 重置动画

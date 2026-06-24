@@ -13,7 +13,9 @@ public enum E_AttackState
 }
 public class MeleeFighter : MonoBehaviour
 {
-    [field: SerializeField] public float Health { get; private set; } = 25f;
+    [field: SerializeField] public float Health { get; private set; } = 100f;
+    // 最大血量，记录初始值，用于重生时恢复
+    public float MaxHealth { get; private set; }
     [SerializeField] List<AttackData> attacks;
     
     [Header("攻击设置")]
@@ -54,7 +56,7 @@ public class MeleeFighter : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         originalController = animator.runtimeAnimatorController;
-
+        MaxHealth = Health;  // 记录初始血量，用于重生时恢复
     }
     private void Start()
     {
@@ -253,7 +255,7 @@ public class MeleeFighter : MonoBehaviour
                 return;
             }
 
-            TakeDamage(5f);
+            TakeDamage(attacker.attacks[attacker.combocount].Damage);
             attacker.HitStop();
 
             // 标记攻击者命中了目标

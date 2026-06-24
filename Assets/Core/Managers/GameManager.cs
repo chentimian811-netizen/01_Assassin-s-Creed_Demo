@@ -117,6 +117,12 @@ public class GameManager : MonoBehaviour
     {
         isMainMenuActive = false;
 
+        // 停止主菜单BGM
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopMusic();
+        }
+
         // 销毁主菜单展示模型
         if (menuCharacterInstance != null)
         {
@@ -290,6 +296,12 @@ public class GameManager : MonoBehaviour
     {
         UIManager.Instance.ClosePanel(UIconst.DeathPanel);
         InitMainMenu();
+
+        // 回到主菜单时播放主菜单BGM
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayMusic();
+        }
     }
 
     /// <summary>
@@ -301,6 +313,8 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.ClosePanel(UIconst.DeathPanel);
 
         Time.timeScale = 1f;
+
+
         // 重置玩家
         PlayerController player = FindObjectOfType<PlayerController>(true);
         if (player != null)

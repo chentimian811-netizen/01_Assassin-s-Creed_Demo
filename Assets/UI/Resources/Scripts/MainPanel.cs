@@ -19,6 +19,20 @@ public class MainPanel : BasePanel
         InitUI();
     }
 
+    private void OnEnable()
+    {
+        // 面板打开时播放背景音乐
+        if (AudioManager.Instance != null)
+        {
+            Debug.Log("[MainPanel] 找到 AudioManager，准备播放 BGM");
+            AudioManager.Instance.PlayMusic();
+        }
+        else
+        {
+            Debug.LogWarning("[MainPanel] AudioManager.Instance 为 null！请检查场景中是否有 AudioManager 对象");
+        }
+    }
+
     private void InitUI()
     {
         // 查找按钮

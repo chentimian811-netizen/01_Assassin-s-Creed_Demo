@@ -27,6 +27,20 @@ public class MainMenuPanel : BasePanel
         InitUI();
     }
 
+    private void OnEnable()
+    {
+        // 面板打开时播放背景音乐
+        if (AudioManager.Instance != null)
+        {
+            Debug.Log("[MainMenuPanel] 播放主菜单 BGM");
+            AudioManager.Instance.PlayMusic();
+        }
+        else
+        {
+            Debug.LogWarning("[MainMenuPanel] AudioManager.Instance 为 null！");
+        }
+    }
+
     /// <summary>
     /// 初始化UI组件和事件绑定
     /// </summary>

@@ -22,6 +22,12 @@ public class DeathPanel : BasePanel
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         Time.timeScale = 0f;
+
+        // 玩家死亡时停止游戏BGM
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopMusic();
+        }
     }
 
     public override void ClosePanel()

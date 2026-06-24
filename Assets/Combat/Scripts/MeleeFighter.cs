@@ -44,6 +44,7 @@ public class MeleeFighter : MonoBehaviour
     public bool inCounter { get; set; } = false;//反击演出阶段
     bool doCombo;//连击标志
     int combocount = 0;//连技计数
+    bool hasHitTarget = false; //当前攻击是否命中目标
 
     // 添加血量变化事件（用于UI更新）
     public event Action<float> OnHealthChanged;
@@ -125,6 +126,7 @@ public class MeleeFighter : MonoBehaviour
     IEnumerator Attack(MeleeFighter target = null)
     {
         inAction = true;
+        hasHitTarget = false; // 重置命中标志
 
         currentTarget = target;
         AttackState = E_AttackState.Windup;
@@ -156,8 +158,6 @@ public class MeleeFighter : MonoBehaviour
                 {
                     AttackState = E_AttackState.Impact;
                     EnableHitbox(attacks[combocount]);
-
-                    //SwordCollider.enabled = true;
                 }
             }
             else if (AttackState == E_AttackState.Impact)
@@ -167,7 +167,11 @@ public class MeleeFighter : MonoBehaviour
                     AttackState = E_AttackState.Cooldown;
                     DisableAllHitxboxes();
 
-                    //SwordCollider.enabled = false;
+                    // Impact 结束时，如果没命中过，播放挥空音效
+                    if (!hasHitTarget)
+                    {
+                        PlayMissSound();
+                    }
                 }
             }
             else if (AttackState == E_AttackState.Cooldown)
@@ -187,10 +191,54 @@ public class MeleeFighter : MonoBehaviour
 
         AttackState = E_AttackState.idle;
 
-        //yield return new WaitForSeconds(animState.length);
         combocount = 0;
         inAction = false;
         currentTarget = null;
+    }
+
+    /// <summary>
+    /// 播放挥空音效（仅玩家播放，最后一段不播放）
+    /// 在 Impact 结束且未命中时调用
+    /// </summary>
+    private void PlayMissSound()
+    {
+        if (!CompareTag("Player")) return;
+        if (AudioManager.Instance == null) return;
+
+        // 最后一段攻击挥空时不播放音效
+        if (combocount >= attacks.Count - 1) return;
+
+        AudioManager.Instance.PlayPlayerAttackMissSFX();
+    }
+
+    /// <summary>
+    /// 播放命中音效（仅玩家播放）
+    /// </summary>
+    /// <param name="comboIndex">当前连击索引</param>
+    private void PlayHitSound(int comboIndex)
+    {
+        // 只有玩家才播放命中音效
+        if (!CompareTag("Player")) return;
+
+        if (AudioManager.Instance == null) return;
+
+        // 优先使用 AttackData 中配置的音效
+        AudioClip dataSound = attacks[comboIndex].HitSound;
+        if (dataSound != null)
+        {
+            AudioManager.Instance.PlaySFXClip(dataSound);
+            return;
+        }
+
+        // 否则使用默认逻辑：前两段普通命中音效，最后一段重攻击命中音效
+        if (comboIndex < attacks.Count - 1)
+        {
+            AudioManager.Instance.PlayPlayerNormalAttackSFX();
+        }
+        else
+        {
+            AudioManager.Instance.PlayPlayerHeavyAttackSFX();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -207,6 +255,11 @@ public class MeleeFighter : MonoBehaviour
 
             TakeDamage(5f);
             attacker.HitStop();
+
+            // 标记攻击者命中了目标
+            attacker.hasHitTarget = true;
+            // 播放命中音效
+            attacker.PlayHitSound(attacker.combocount);
             //触发屏幕震动效果
             if (CompareTag("Player"))
             {
@@ -307,6 +360,12 @@ public class MeleeFighter : MonoBehaviour
     {
         inAction = true;
 
+        // 播放处决音效
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayCounterAttackSFX();
+        }
+
         inCounter = true;
         opponet.Fighter.inCounter = true;
         opponet.ChangeState(E_EnemyState.Dead);
@@ -344,6 +403,18 @@ public class MeleeFighter : MonoBehaviour
     void PlayDeathAnimation(MeleeFighter attacker)
     {
         animator.CrossFade("FallBackDeath", 0.2f);
+
+        if (AudioManager.Instance == null) return;
+
+        // 根据标签播放不同的死亡音效
+        if (CompareTag("Player"))
+        {
+            AudioManager.Instance.PlayPlayerDeathSFX();
+        }
+        else if (CompareTag("Enemy"))
+        {
+            AudioManager.Instance.PlayEnemyDeathSFX();
+        }
     }
 
     void EnableHitbox(AttackData attack)

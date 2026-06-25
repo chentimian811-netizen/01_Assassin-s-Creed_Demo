@@ -51,7 +51,6 @@ public class MeleeFighter : MonoBehaviour
     // 添加血量变化事件（用于UI更新）
     public event Action<float> OnHealthChanged;
 
-    public bool IsStaggered {get;set;} = false;
     void Awake()
     {
         animator = GetComponent<Animator>();
@@ -245,7 +244,7 @@ public class MeleeFighter : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Hitbox" && !IsAttackingHit && !inCounter && !IsStaggered )
+        if (other.tag == "Hitbox" && !IsAttackingHit && !inCounter)
         {
             var attacker = other.GetComponentInParent<MeleeFighter>();
             if (attacker == null || attacker == this) return;
@@ -268,18 +267,18 @@ public class MeleeFighter : MonoBehaviour
                 CameraManager.Instance.ShakeScreen();
             }
 
-            if (!IsStaggered)
+            // 触发受击事件
+            OnGotHit?.Invoke(attacker);
+
+            // 根据血量播放受击/死亡动画
+            if (Health > 0)
             {
-                OnGotHit?.Invoke(attacker);
-                if (Health > 0)
-                {
                 StartCoroutine(PlayerHitReaction(attacker.transform));
-                }
-                else
-                {
+            }
+            else
+            {
                 PlayDeathAnimation(attacker);
-                }
-            }   
+            }
         }
     }
 
@@ -307,6 +306,8 @@ public class MeleeFighter : MonoBehaviour
     public void TakeDamage(float damage)
     {
         Health = Mathf.Clamp(Health - damage, 0, Health);
+        // 触发血量变化事件（UI更新）
+        OnHealthChanged?.Invoke(Health);
     }
 
     /// <summary>

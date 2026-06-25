@@ -55,7 +55,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad5306f128adaaf4b98fdbc6f409238e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Health>k__BackingField: 1000
+  <Health>k__BackingField: 100
   attacks:
   - {fileID: 11400000, guid: e2abf08d88207cc48ad8b09f66758426, type: 2}
   - {fileID: 11400000, guid: 9ffeb712fb5fd3a4aa7de97050feeae7, type: 2}

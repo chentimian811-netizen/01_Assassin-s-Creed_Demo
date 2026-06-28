@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4726453682975972946}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: 'MenuLookAtTarget '
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -74,7 +74,7 @@ GameObject:
   - component: {fileID: 7203364765567259905}
   m_Layer: 6
   m_Name: MenuCharacter
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

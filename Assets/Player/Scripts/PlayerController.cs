@@ -675,11 +675,11 @@ public class PlayerController : MonoBehaviour
             else
             {
                 Vector3 playerDelataMovement = Animator.deltaPosition;
-                if (meleeFighter.inAction)
-                {
-                    playerDelataMovement.x = 0;
-                    playerDelataMovement.y = 0;
-                }
+                // if (meleeFighter.inAction)
+                // {
+                //     playerDelataMovement.x = 0;
+                //     playerDelataMovement.y = 0;
+                // }
                 playerDelataMovement.y = VerticalVelocity * Time.deltaTime;
                 characterController.Move(playerDelataMovement);
             }

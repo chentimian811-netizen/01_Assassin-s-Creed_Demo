@@ -3,15 +3,15 @@ using UnityEngine;
 
 public class ShopManager : MonoBehaviour
 {
-    // ==================== 单例 ====================
+    // 单例 
     private static ShopManager _instance;
     public static ShopManager Instance => _instance;
 
-    // ==================== 库存追踪 ====================
+    // 库存追踪 
     private Dictionary<ShopConfig, Dictionary<int, int>> stockMap
         = new Dictionary<ShopConfig, Dictionary<int, int>>();
 
-    // ==================== 生命周期 ====================
+    // 生命周期 
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -22,7 +22,7 @@ public class ShopManager : MonoBehaviour
         _instance = this;
     }
 
-    // ==================== 核心方法 ====================
+    //核心方法
 
     /// <summary>
     /// 购买物品
@@ -128,7 +128,7 @@ public class ShopManager : MonoBehaviour
         return true;
     }
 
-    // ==================== 查询方法 ====================
+    // 查询方法 
 
     /// <summary>
     /// 获取某商店的商品列表（附带实时库存和折扣价）
@@ -208,7 +208,7 @@ public class ShopManager : MonoBehaviour
         return Mathf.Max(1, tableItem.star * 10);
     }
 
-    // ==================== 内部方法 ====================
+    //内部方法
 
     /// <summary>
     /// 扣减库存

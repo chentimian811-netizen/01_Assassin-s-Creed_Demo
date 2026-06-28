@@ -120,7 +120,7 @@ public class GameManager : MonoBehaviour
         // 确保时间缩放恢复正常（防止从暂停状态返回主菜单后 timeScale 仍为 0）
         Time.timeScale = 1f;
 
-        // 停止主菜单BGM
+        // 停止主菜单BGM（游戏场景暂无独立BGM，进入游戏后不播放音乐）
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.StopMusic();

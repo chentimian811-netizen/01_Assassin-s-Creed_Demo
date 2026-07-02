@@ -9,10 +9,8 @@ using UnityEngine.Rendering;
 
 public class PlayerController : MonoBehaviour
 {
-    Transform PlayerTransform;
-    Animator Animator;
-    CharacterController characterController;
-    MeleeFighter meleeFighter;
+    public  Transform PlayerTransform;
+    
     [Header("远程武器")]
     RangedFighter rangedFighter;
 
@@ -27,12 +25,6 @@ public class PlayerController : MonoBehaviour
         Landing//着陆
     }
     public E_PlayerPosture PlayerPosture = E_PlayerPosture.Stand;//规定玩家的初始姿态
-
-    float crouchThreshold = 0f;//姿态阈值设定
-    float standThreshold = 1f;
-    float midAirThreshold = 2.2f; //出现抖动可以调高阈值
-    float LandingThreshold = 1f;
-
     public enum E_LocomotionState//玩家行动状态枚举
     {
         Idle,
@@ -49,16 +41,12 @@ public class PlayerController : MonoBehaviour
     }
     public E_ArmState ArmState = E_ArmState.Normal;//初始攻击
 
-    public float crouchSpeed = 1.5f;
-    public float walkSpeed = 3f;
-    public float runSpeed = 6f;
 
-    Vector2 moveInput;//用二维值 存贮玩家输入的前后左右的值
 
-    bool isRunning;//是否处于奔跑状态
-    bool isCrouch;
+
+    
     bool isAiming = false;
-    bool isJumping;
+   
     public bool isLocking { get; private set; }
     EnemyController lockedEnemy;
     float lockRotateSpeed = 8f;
@@ -78,43 +66,23 @@ public class PlayerController : MonoBehaviour
     int turnSpeedHash;
     int jumpSpeedHash;
     int feetTweensHash;
-
-    Vector3 playerMovement = Vector3.zero;//玩家移动向量为(0,0,0)
+    
+    
 
     public float gravity = -9.8f;//重力
 
-    float VerticalVelocity;//垂直速度
+    
 
     //public float jumpedVelocity = 5f;//跳跃速度
 
     //最大的跳跃高度
     public float maxHeight = 1.5f;
 
-    static readonly int CACHE_SIZE = 3;//缓存三帧
-    Vector3[] velCache = new Vector3[CACHE_SIZE];
-    int currentChaCheIndex = 0;
-    Vector3 averageVel = Vector3.zero;
-
     //下落加速度的倍数
     float fallMultiplier = 1.5f;
 
     //玩家是否着地
-    bool isGround;
-
-    //是否处于CD中
-    bool isLanding;
-
-    //玩家是否跌落
-    bool couldFall;
-
-    //跌落的最小数值 如果低于此高度 就不会跌落
-    float fallHeight = 0.5f;
-
-    //地面检测射线的偏移量
-    float groundCheckOffset = 0.5f;
-
-    //滞空左右脚状态
-    float feetTween;
+   
 
     //跳跃CD
     float jumpCD = 0.15f;
@@ -205,19 +173,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void GetMoveInput(InputAction.CallbackContext context)
-    {
-        moveInput = context.ReadValue<Vector2>();//将输入原始数据转为二维向量 方便后续调取
-    }
-    public void GetRunInput(InputAction.CallbackContext context)
-    {
-        isRunning = context.ReadValueAsButton();
-    }
+    
 
-    public void GetCrouchInput(InputAction.CallbackContext context)
-    {
-        isCrouch = context.ReadValueAsButton();
-    }
+    
 
     public void GetAimInput(InputAction.CallbackContext context)
     {
@@ -247,10 +205,7 @@ public class PlayerController : MonoBehaviour
         rangedFighter.TryFire(aimDirection);
     }
 
-    public void GetJumpInInput(InputAction.CallbackContext context)
-    {
-        isJumping = context.ReadValueAsButton();
-    }
+   
 
     public void GetBackpackInput(InputAction.CallbackContext context)
     {
@@ -271,48 +226,7 @@ public class PlayerController : MonoBehaviour
             UIManager.Instance.ClosePanel(UIconst.MainPanel);
         }
     }
-
-    public void GetLightAttack(InputAction.CallbackContext context)
-    {
-        if (!context.performed) return;
-
-        //如果正在使用远程武器，不触发近战攻击
-        WeaponSwitcher switcher = GetComponent<WeaponSwitcher>();
-        if (switcher != null && switcher.IsUsingRanged) return;
-
-        //检查是否装备了近战武器，无武器的时候拦截攻击
-        WeaponManager weapManager = GetComponent<WeaponManager>();
-        if(weapManager == null || weapManager.GetSlotConfig(0) == null) return;
-
-        MeleeFighter targetFighter = null;
-        if (isLocking && lockedEnemy != null)
-        {
-            targetFighter = lockedEnemy.Fighter;
-        }
-
-        //攻击前平滑转向摄像机方向
-        if (!isLocking)
-        {
-            Transform camTf = CameraManager.Instance.MainCameraTransform;
-            Vector3 camForward = new Vector3(camTf.forward.x,0,camTf.forward.z).normalized;
-            if(camForward.sqrMagnitude > 0.01f)
-            {
-                Quaternion targetRot = Quaternion.LookRotation(camForward);
-                //用一个较大的Larp 系数实现"快速但不瞬间"的转向
-                PlayerTransform.rotation = Quaternion.Slerp(PlayerTransform.rotation,targetRot,10f * Time.deltaTime);
-            }
-        }
-
-        var enemy = EnemyManager.i.GetAttackingEnemy();
-
-        if (enemy != null && enemy.Fighter.IsCounterable && !meleeFighter.inAction && !meleeFighter.IsAttackingHit)
-        {
-            StartCoroutine(meleeFighter.PerformCounterAttack(enemy));
-        }
-        else
-        {
-            meleeFighter.ToTryAttack(targetFighter ?? targetEnemy?.Fighter);
-        }
+        
     }
 
     public void GetLockInput(InputAction.CallbackContext context)
@@ -368,88 +282,12 @@ public class PlayerController : MonoBehaviour
     }
     #endregion
 
-    void CheckGround()//地面检测
-    {
+    
 
-        if (Physics.SphereCast(PlayerTransform.position + (Vector3.up * groundCheckOffset), //球形检测射线从人物向上0.5米开始
-            characterController.radius,// 使用角色胶囊的半径, 
-            Vector3.down,//向下探测
-            out RaycastHit hit,//输入碰撞的信息
-            groundCheckOffset - characterController.radius + 2 * characterController.skinWidth))//检测距离
-        {
-            isGround = true;
-        }
-        else
-        {
-            isGround = false;
-            couldFall = !Physics.Raycast(PlayerTransform.position, Vector3.down, fallHeight);
-        }
-    }
-
-    void SwitchPlayerState()//状态切换
-    {
-        //如果不在地面则切换成滞空状态
-        if (!isGround)
-        {
-            if(isLanding) return;
-
-            //垂直速度大于0
-            if (VerticalVelocity > 0)
-            {
-                //在跳跃中
-                PlayerPosture = E_PlayerPosture.Jumping;
-            }
-            //如果不是处于坠落
-            else if (PlayerPosture != E_PlayerPosture.Falling)
-            {
-                //并且是跌落
-                if (couldFall)
-                {
-                    //在坠落中
-                    PlayerPosture = E_PlayerPosture.Falling;
-                }
-            }
-
-        }
-        //如果是处于跳跃
-        else if (PlayerPosture == E_PlayerPosture.Jumping || PlayerPosture == E_PlayerPosture.Falling)
-        {
-            if(VerticalVelocity <= 0)
-            {
-                StartCoroutine(CoolDownJump());
-            }
-        }
-        else if(PlayerPosture == E_PlayerPosture.Landing)
-        {
-            
-        }
-
-        else if (isLanding)
-        {
-            PlayerPosture = E_PlayerPosture.Landing;
-        }
-        else if (isCrouch)
-        {
-            PlayerPosture = E_PlayerPosture.Crouch;
-        }
-        else
-        {
-            PlayerPosture = E_PlayerPosture.Stand;
-        }
+    
 
 
-        if (moveInput.magnitude == 0)
-        {
-            LocomotionState = E_LocomotionState.Idle;
-        }
-        else if (isRunning)
-        {
-            LocomotionState = E_LocomotionState.Run;
-        }
-        else
-        {
-            LocomotionState = E_LocomotionState.Walk;
-        }
+       
 
         if (isLocking)
         {
@@ -465,96 +303,15 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    IEnumerator CoolDownJump()//计算落地动画的混合值
-    {
-        LandingThreshold = Mathf.Clamp(VerticalVelocity, -10, 0);
-        LandingThreshold /= 20f;//[-0.5,0]
-        LandingThreshold += 1f;//[0.5,1.0]
-        isLanding = true;
-        PlayerPosture = E_PlayerPosture.Landing;
-        yield return new WaitForSeconds(jumpCD);
-        isLanding = false;
-        PlayerPosture = E_PlayerPosture.Stand;
-    }
+    
 
 
-    void CaculateGravity()//重力
-    {
-        if (PlayerPosture != E_PlayerPosture.Jumping && PlayerPosture != E_PlayerPosture.Falling)
-        {
-            if (!isGround)
-            {
-                VerticalVelocity += gravity * fallMultiplier * Time.deltaTime;
-            }
-            else
-            {
-                //当在地面上时 给予一个向下的力 使得贴地面
-                VerticalVelocity = gravity * Time.deltaTime;
-            }
-        }
-        else
-        {
-            if (VerticalVelocity <= 0)
-            {
-                VerticalVelocity += gravity * fallMultiplier * Time.deltaTime;
-            }
-            else
-            {
-                //当不在地面上是 给予向下的力 实现自由落体
-                VerticalVelocity += gravity * Time.deltaTime;
-            }
-        }
-    }
+    
 
-    void Jump()//跳跃
-    {
-        //当角色在地面并且 按下跳跃 则获得一个瞬时向上的力
-        if (PlayerPosture == E_PlayerPosture.Stand && isJumping)
-        {
-            VerticalVelocity = MathF.Sqrt(-2 * gravity * maxHeight);
-
-            PlayerPosture = E_PlayerPosture.Jumping;
-            //计算动画脚本混合值
-            feetTween = Mathf.Repeat(Animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 1);
-            feetTween = feetTween < 0.5 ? 1 : -1; // 0-0.5 前半步 左脚在前 1 ; 0.5-1 后半部 右脚在前 -1
-            if (LocomotionState == E_LocomotionState.Run)
-            {
-                feetTween *= 3;
-            }
-            else if (LocomotionState == E_LocomotionState.Walk)
-            {
-                feetTween *= 2;
-            }
-            else
-            {
-                feetTween = UnityEngine.Random.Range(0.5f, 1f) * feetTween;
-            }
-        }
-    }
+    
 
 
-    void CaculateInputDirection()//输入方向的计算
-    {
-        if (isLocking && lockedEnemy != null)
-        {
-            // 索敌模式：以玩家到敌人的方向为前方向
-            Vector3 toEnemy = lockedEnemy.transform.position - PlayerTransform.position;
-            toEnemy.y = 0;
-            Vector3 forward = toEnemy.normalized;
-            Vector3 right = Vector3.Cross(Vector3.up, forward);
-
-            playerMovement = forward * moveInput.y + right * moveInput.x;
-            playerMovement = PlayerTransform.InverseTransformVector(playerMovement);
-        }
-        else
-        {
-            // 正常模式：跟随摄像机方向
-            Transform camTf = CameraManager.Instance.MainCameraTransform;
-            Vector3 caneraForward = new Vector3(camTf.forward.x,0,camTf.forward.z).normalized;
-            playerMovement = caneraForward * moveInput.y + camTf.right * moveInput.x;
-            playerMovement = PlayerTransform.InverseTransformVector(playerMovement);
-        }
-    }
+    
 
     void SetupAnimator()//动画状态更新
     {
@@ -659,52 +416,9 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    private void AnimatorMove()//动画驱动移动
-    {
-        if (PlayerPosture != E_PlayerPosture.Jumping && PlayerPosture != E_PlayerPosture.Falling)
-        {
-            if (isLocking)
-            {
-                // 索敌模式：禁用 root motion 水平移动，用代码控制 strafe 方向
-                Vector3 worldMove = PlayerTransform.TransformVector(playerMovement);
-                worldMove.y = 0;
-                float speed = (isRunning ? runSpeed : walkSpeed);
-                characterController.Move(worldMove * speed * Time.deltaTime);
-                characterController.Move(Vector3.up * VerticalVelocity * Time.deltaTime);
-            }
-            else
-            {
-                Vector3 playerDelataMovement = Animator.deltaPosition;
-                // if (meleeFighter.inAction)
-                // {
-                //     playerDelataMovement.x = 0;
-                //     playerDelataMovement.y = 0;
-                // }
-                playerDelataMovement.y = VerticalVelocity * Time.deltaTime;
-                characterController.Move(playerDelataMovement);
-            }
-            averageVel = AverageVel(Animator.velocity);
-        }
-        else
-        {
-            averageVel.y = VerticalVelocity;
-            Vector3 playerDelataMovement = averageVel * Time.deltaTime;
-            characterController.Move(playerDelataMovement);
-        }
-    }
+    
 
-    private void OnAnimatorMove()
-    {
-        if (!meleeFighter.inCounter && !isLocking)
-        {
-            
-        }
-
-        if (!isLocking && !meleeFighter.inAction)
-        {
-            transform.rotation *= Animator.deltaRotation;
-        }
-    }
+    
 
     public Vector3 GetTargetingDir()//获取目标方向
     {

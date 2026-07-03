@@ -7,16 +7,52 @@ using UnityEngine.InputSystem;
 using Cinemachine;
 using UnityEngine.Rendering;
 
+/// <summary>
+/// 玩家控制器协调奇
+/// 职责：持有子组件引用 管理acceptInput 协调Update顺序 转发输入
+/// 所有枚举和状态集中定义 子组件通过引用访问
+/// </summary>
 public class PlayerController : MonoBehaviour
 {
-    public  Transform PlayerTransform;
-    
+
+    [HideInInspector] public PlayerMovement playerMovement;
+    [HideInInspector] public PlayerCombat playerCombat;
+    [HideInInspector] public PlayerLockOn playerLockOn;
+    [HideInInspector] public PlayerAnimator playerAnimator;
+    // [HideInInspector] public PlayerDodge playerDodge;       // 翻滚组件（阶段2实现后取消注释）
+    // [HideInInspector] public PlayerStamina playerStamina;   // 耐力组件（阶段2实现后取消注释）
+
+    public Transform PlayerTransform { get; private set; }
+    public Animator Animator { get; private set; }
+    public CharacterController CharacterController { get; private set; }
+    public MeleeFighter MeleeFighter { get; private set; }
     [Header("远程武器")]
-    RangedFighter rangedFighter;
+    public RangedFighter RangedFighter;
 
-    public EnemyController targetEnemy;
+     /// <summary>是否正在锁定敌人</summary>
+    public bool IsLocking => playerLockOn.IsLocking;
 
-    public enum E_PlayerPosture//玩家姿态枚举
+    /// <summary>当前锁定的敌人</summary>
+    public EnemyController LockedEnemy => playerLockOn.LockedEnemy;
+
+    /// <summary>目标敌人（读写）</summary>
+    public EnemyController TargetEnemy
+    {
+         get => playerLockOn.TargetEnemy; 
+         set => playerLockOn.TargetEnemy = value;
+    }
+          
+    /// <summary>强制解锁</summary>
+    public void ForceUnlock() => playerLockOn.ForceUnlock();
+    /// <summary>获取目标方向</summary>
+    public Vector3 GetTargetingDir() => playerLockOn.GetTargetingDir();
+    /// <summary>重置垂直速度（翻滚时调用）</summary>
+    public void ResetVerticalVelocity() => playerMovement.ResetVerticalVelocity();
+
+    /// <summary>
+    /// 玩家姿态枚举
+    /// </summary>
+    public enum E_PlayerPosture
     {
         Crouch,//蹲下
         Falling,//下落
@@ -24,139 +60,101 @@ public class PlayerController : MonoBehaviour
         Jumping,//滞空
         Landing//着陆
     }
-    public E_PlayerPosture PlayerPosture = E_PlayerPosture.Stand;//规定玩家的初始姿态
-    public enum E_LocomotionState//玩家行动状态枚举
+    public E_PlayerPosture PlayerPosture = E_PlayerPosture.Stand;
+
+    /// <summary>
+    /// 玩家行动状态枚举
+    /// </summary>
+    public enum E_LocomotionState
     {
         Idle,
         Walk,
         Run
     }
-    public E_LocomotionState LocomotionState = E_LocomotionState.Idle;//规定玩家的初始动作
+    public E_LocomotionState LocomotionState = E_LocomotionState.Idle;
 
-    public enum E_ArmState//玩家瞄准状态枚举 
+    /// <summary>
+    /// 玩家手臂状态枚举
+    /// </summary>
+    public enum E_ArmState
     {
         Normal,
         Aim,
         Lock,
     }
-    public E_ArmState ArmState = E_ArmState.Normal;//初始攻击
+    public E_ArmState ArmState = E_ArmState.Normal;
 
+    [HideInInspector] public bool acceptInput = true;
+    bool  isMainMenuOpen;
 
-
-
-    
-    bool isAiming = false;
-   
-    public bool isLocking { get; private set; }
-    EnemyController lockedEnemy;
-    float lockRotateSpeed = 8f;
-    float lockDistance = 15f;
-    [HideInInspector] public bool acceptInput = true; //拾取时 冻结玩家输入
     WeaponPickup nearestPickup;
-    public void SetNearestPickup(WeaponPickup pickup) { nearestPickup = pickup; }
-
     ShopNPC nearestShopNPC;
-    public void SetNearestShopNPC(ShopNPC npc){nearestShopNPC = npc;}
+    public void SetNearestPickup(WeaponPickup pickup)
+    {
+        nearestPickup = pickup;
+    }
 
-    bool isMainMenuOpen;
-
-
-    int postrueHash;
-    int moveSpeedHash;
-    int turnSpeedHash;
-    int jumpSpeedHash;
-    int feetTweensHash;
-    
-    
-
-    public float gravity = -9.8f;//重力
-
-    
-
-    //public float jumpedVelocity = 5f;//跳跃速度
-
-    //最大的跳跃高度
-    public float maxHeight = 1.5f;
-
-    //下落加速度的倍数
-    float fallMultiplier = 1.5f;
-
-    //玩家是否着地
-   
-
-    //跳跃CD
-    float jumpCD = 0.15f;
-
-    // Start is called before the first frame update
-
+    public void SetNearestShopNPC(ShopNPC npc)
+    {
+        nearestShopNPC = npc;
+    }
     public void Awake()
     {
-        meleeFighter = GetComponent<MeleeFighter>();
-        rangedFighter = GetComponent<RangedFighter>();
+        MeleeFighter = GetComponent<MeleeFighter>();
+        RangedFighter = GetComponent<RangedFighter>();
     }
+
+    /// <summary>
+    /// 获得组件
+    /// </summary>
     void Start()
     {
-        PlayerTransform = transform;//获得玩家位置
-        Animator = GetComponent<Animator>();//获取动画组件
-        characterController = GetComponent<CharacterController>();//获得角色组件
+        PlayerTransform = transform;
+        Animator = GetComponent<Animator>();
+        CharacterController = GetComponent<CharacterController>();
 
-        postrueHash = Animator.StringToHash("PlayerState");//用哈希值存贮 资源占用更少
-        moveSpeedHash = Animator.StringToHash("MoveSpeed");
-        turnSpeedHash = Animator.StringToHash("TurnSpeed");
-        jumpSpeedHash = Animator.StringToHash("JumpSpeed");
-        feetTweensHash = Animator.StringToHash("FeetTween");
+         // ===== 添加这 6 行 GetComponent =====
+        playerMovement = GetComponent<PlayerMovement>();
+        playerCombat = GetComponent<PlayerCombat>();
+        playerLockOn = GetComponent<PlayerLockOn>();
+        playerAnimator = GetComponent<PlayerAnimator>();
+        // playerDodge = GetComponent<PlayerDodge>();       // 还没实现，先注释
+        // playerStamina = GetComponent<PlayerStamina>();   // 还没实现，先注释
 
-        Cursor.lockState = CursorLockMode.Locked;//隐藏玩家鼠标
+        playerMovement.Init(CharacterController , Animator ,MeleeFighter , this);
+        playerCombat.Init(MeleeFighter, playerLockOn, this);
+        playerLockOn.Init(this);
+        playerAnimator.Init(Animator, this, playerMovement);
+        // playerDodge.Init(Animator, MeleeFighter, this);
 
-        Animator.SetFloat(postrueHash, standThreshold);
-        Animator.SetFloat(moveSpeedHash, 0f);
-        Animator.SetFloat(turnSpeedHash, 0f);
-
+        Cursor.lockState = CursorLockMode.Locked;
         Debug.Log("当前金币" + CurrencyManager.Instance.Gold);
-
     }
-    // Update is called once per frame
+  
     void Update()
     {
-        if (meleeFighter.Health <= 0 || !acceptInput)
+        if (MeleeFighter.Health <= 0 || !acceptInput)
         {
-            moveInput = Vector2.zero; // 清空移动输入
-            isRunning = false;
-            isCrouch = false;
-            isAiming = false;
-            isJumping = false;
-            return;
+            ClearInput();
         }
 
         if (UIManager.Instance.panelDict.ContainsKey(UIconst.ShopPanel))
         {
-            moveInput = Vector2.zero; // 清空移动输入
-            isRunning = false;
-            isCrouch = false;
-            isAiming = false;
-            isJumping = false;
+            ClearInput();
             return;
         }
 
-        CheckGround();
-        SwitchPlayerState();
-        CaculateGravity();
-        Jump();
-        CaculateInputDirection();
-        SetupAnimator();
-        AnimatorMove();
-
-        if (isLocking && lockedEnemy != null)
-        {
-            float dist = Vector3.Distance(transform.position, lockedEnemy.transform.position);
-            if (dist > lockDistance)
-            {
-                UnlockEnemy();
-            }
-        }
+        //按顺序执行子组件逻辑
+        playerLockOn.Tick();        //先检查锁定距离
+        playerMovement.Tick();      //物理/重力/移动
+        playerAnimator.Tick();      //同步动画参数
     }
 
     #region 输入相关
+    /// <summary>
+    /// 拾取/商店交互输入
+    /// </summary>
+    /// <param name="context"></param>
     public void GetPickupInput(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
@@ -172,41 +170,71 @@ public class PlayerController : MonoBehaviour
             nearestPickup.TryEquip();
         }
     }
-
     
+    /// <summary>
+    /// 移动输入
+    /// </summary>
+    /// <param name="context"></param>
+    public void GetMoveInput(InputAction.CallbackContext context)
+    {
+        playerMovement.HandleMoveInput(context);
+    }
 
+    /// <summary>
+    /// 奔跑输入
+    /// </summary>
+    /// <param name="context"></param>
+    public void GetRunInput(InputAction.CallbackContext context)
+    {
+        playerMovement.HandleRunInput(context);
+    }  
     
-
+    /// <summary>
+    /// 蹲下输入
+    /// </summary>
+    /// <param name="context"></param>
+    public void GetCrouchInput(InputAction.CallbackContext context)
+    {
+        playerMovement.HandleCrouchInput(context);
+    }
+    
+    /// <summary>
+    /// 瞄准输入
+    /// </summary>
+    /// <param name="context"></param>
     public void GetAimInput(InputAction.CallbackContext context)
     {
-        if(rangedFighter == null) return;
+        if(RangedFighter == null) return;
         if (context.performed)
         {
-            //按下右键 开始瞄准
-            isAiming = true;
-            rangedFighter.SetAiming(true);
+            RangedFighter.SetAiming(true);
         }
         else if (context.canceled)
         {
-            isAiming = false;
-            rangedFighter.SetAiming(false);
+            RangedFighter.SetAiming(false);
         }
     }
 
+    /// <summary>
+    /// 射击输入
+    /// </summary>
+    /// <param name="context"></param>
     public void GetFireInput(InputAction.CallbackContext context)
     {
-        if(rangedFighter == null) return;
+        if(RangedFighter == null) return;
         if(!context.performed) return;
 
         //获取瞄准方向(从摄像机中心发射射线)
-        Vector3 aimDirection  = GetAimDirection();
+        Vector3 aimDirection  = playerLockOn.GetAimDirection();
 
         //尝试射击
-        rangedFighter.TryFire(aimDirection);
+        RangedFighter.TryFire(aimDirection);
     }
 
-   
-
+   /// <summary>
+   /// 背包输入
+   /// </summary>
+   /// <param name="context"></param>
     public void GetBackpackInput(InputAction.CallbackContext context)
     {
         if(!context.performed) return;
@@ -226,234 +254,43 @@ public class PlayerController : MonoBehaviour
             UIManager.Instance.ClosePanel(UIconst.MainPanel);
         }
     }
-        
+    
+    /// <summary>
+    /// 轻攻击输入
+    /// </summary>
+    /// <param name="context"></param>
+    public void GetLightAttack(InputAction.CallbackContext context)
+    {
+        playerCombat.HandleLightAttack(context);
     }
 
+    
+    /// <summary>
+    /// 锁定输入
+    /// </summary>
+    /// <param name="context"></param>
     public void GetLockInput(InputAction.CallbackContext context)
     {
-        if (!context.performed) return;
-
-        if (isLocking)
-        {
-            UnlockEnemy();
-        }
-        else
-        {
-            var enemy = EnemyManager.i.GetClosesEnemyToPlayerDir();
-            if (enemy != null)
-            {
-                LockEnemy(enemy);
-            }
-        }
+        playerLockOn.HandleLockInput(context);
     }
 
-    void LockEnemy(EnemyController enemy)
+    /// <summary>
+    /// 翻滚输入（阶段2实现）
+    /// </summary>
+    public void GetDodgeInput(InputAction.CallbackContext context)
     {
-        isLocking = true;
-        lockedEnemy = enemy;
-        targetEnemy = enemy;
-        ArmState = E_ArmState.Lock;
-
-        CameraManager.Instance.LockFreeLookXAxis();
-
-        enemy.MeshHightlighter?.HighlightMesh(true);
+        // if (!context.performed) return;
+        // playerDodge?.TryDodge(playerMovement.GetMoveInputRaw());
     }
 
-    void UnlockEnemy()
+    /// <summary>
+    /// 清空所有输入状态
+    /// </summary>
+    void ClearInput()
     {
-        isLocking = false;
-
-        if (lockedEnemy != null)
-            lockedEnemy.MeshHightlighter?.HighlightMesh(false);
-
-        CameraManager.Instance.UnlockFreeLookAxes();
-
-        lockedEnemy = null;
-        targetEnemy = null;
-        ArmState = E_ArmState.Normal;
+        playerMovement?.ClearInput();
     }
-
-    public void ForceUnlock()
-    {
-        if (isLocking)
-        {
-            UnlockEnemy();
-        }
-    }
-    #endregion
-
-    
-
-    
-
-
-       
-
-        if (isLocking)
-        {
-            ArmState = E_ArmState.Lock;
-        }
-        else if (isAiming)
-        {
-            ArmState = E_ArmState.Aim;
-        }
-        else
-        {
-            ArmState = E_ArmState.Normal;
-        }
-    }
-
-    
-
-
-    
-
-    
-
-
-    
-
-    void SetupAnimator()//动画状态更新
-    {
-        if (PlayerPosture == E_PlayerPosture.Stand)
-        {
-            //0.1f(dampTime)表示:从当前值 过渡到standThreshold 需要0.1f 使得动画过渡更加自然
-            Animator.SetFloat(postrueHash, standThreshold, 0.1f, Time.deltaTime);
-
-            switch (LocomotionState)//切换行动状态
-            {
-                case E_LocomotionState.Idle:
-                    Animator.SetFloat(moveSpeedHash, 0f, 0.1f, Time.deltaTime);
-                    break;
-                case E_LocomotionState.Walk:
-                    Animator.SetFloat(moveSpeedHash, playerMovement.magnitude * walkSpeed, 0.1f, Time.deltaTime);
-                    break;
-                case E_LocomotionState.Run:
-                    Animator.SetFloat(moveSpeedHash, playerMovement.magnitude * runSpeed, 0.1f, Time.deltaTime);
-                    break;
-            }
-        }
-        else if (PlayerPosture == E_PlayerPosture.Crouch)
-        {
-            Animator.SetFloat(postrueHash, crouchThreshold, 0.1f, Time.deltaTime);
-
-            switch (LocomotionState)
-            {
-                case E_LocomotionState.Idle:
-                    Animator.SetFloat(moveSpeedHash, 0f, 0.1f, Time.deltaTime);
-                    break;
-                default:
-                    Animator.SetFloat(moveSpeedHash, playerMovement.magnitude * crouchSpeed, 0.1f, Time.deltaTime);
-                    break;
-            }
-
-        }
-        else if (PlayerPosture == E_PlayerPosture.Jumping)
-        {
-            Animator.SetFloat(postrueHash, midAirThreshold, 0.1f, Time.deltaTime);
-            Animator.SetFloat(jumpSpeedHash, VerticalVelocity, 0.1f, Time.deltaTime);
-            Animator.SetFloat("FeetTween", feetTween);
-        }
-        else if (PlayerPosture == E_PlayerPosture.Landing)
-        {
-            Animator.SetFloat(postrueHash, LandingThreshold, 0.08f, Time.deltaTime);
-
-            switch (LocomotionState)
-            {
-                case E_LocomotionState.Idle:
-                    Animator.SetFloat(moveSpeedHash, 0f, 0.1f, Time.deltaTime);
-                    break;
-                case E_LocomotionState.Walk:
-                    Animator.SetFloat(moveSpeedHash, playerMovement.magnitude * walkSpeed, 0.1f, Time.deltaTime);
-                    break;
-                case E_LocomotionState.Run:
-                    Animator.SetFloat(moveSpeedHash, playerMovement.magnitude * runSpeed, 0.1f, Time.deltaTime);
-                    break;
-            }
-        }
-        else if (PlayerPosture == E_PlayerPosture.Falling)
-        {
-            Animator.SetFloat(postrueHash, midAirThreshold, 0.1f, Time.deltaTime);
-            Animator.SetFloat(jumpSpeedHash, VerticalVelocity, 0.1f, Time.deltaTime);
-
-        }
-
-        if (ArmState == E_ArmState.Lock && lockedEnemy != null)
-        {
-            Vector3 dirToEnemy = lockedEnemy.transform.position - PlayerTransform.position;
-            dirToEnemy.y = 0;
-            if (dirToEnemy.sqrMagnitude > 0.01f)
-            {
-                Quaternion targetRot = Quaternion.LookRotation(dirToEnemy);
-                PlayerTransform.rotation = Quaternion.Slerp(PlayerTransform.rotation, targetRot, lockRotateSpeed * Time.deltaTime);
-            }
-            // turnSpeed 设为移动方向角度，供 Blend Tree 混合 strafe 动画
-            float rad = Mathf.Atan2(playerMovement.x, playerMovement.z);
-            Animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
-        }
-        else if (ArmState == E_ArmState.Normal)
-        {
-            float rad = Mathf.Atan2(playerMovement.x, playerMovement.z);
-            Animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
-            if (!meleeFighter.inAction)
-            {
-                PlayerTransform.Rotate(0, rad * 200 * Time.deltaTime, 0f);
-            }
-        }
-    }
-
-    Vector3 AverageVel(Vector3 newVel)//评价速度计算
-    {
-        velCache[currentChaCheIndex] = newVel;
-        currentChaCheIndex++;
-        currentChaCheIndex %= CACHE_SIZE;
-        Vector3 average = Vector3.zero;
-        foreach (Vector3 vel in velCache)
-        {
-            average += vel;
-        }
-        return average / CACHE_SIZE;
-
-    }
-
-    
-
-    
-
-    public Vector3 GetTargetingDir()//获取目标方向
-    {
-        if (isLocking && lockedEnemy != null)
-        {
-            Vector3 dir = lockedEnemy.transform.position - transform.position;
-            dir.y = 0;
-            return dir.normalized;
-        }  
-
-        Transform lookAt = CameraManager.Instance.freeLook.m_LookAt;
-        if (targetEnemy != null && lookAt != null)
-        {
-            Vector3 VecFromCam = lookAt.position - transform.position;
-            VecFromCam.y = 0;
-            return VecFromCam.normalized;
-        }
-        else
-        {
-            return transform.forward;
-        }
-    }
-
-    public Vector3 GetAimDirection()
-    {
-        Transform camTf = CameraManager.Instance.MainCameraTransform;
-
-        Ray ray = new Ray(camTf.position,camTf.forward);
-
-        // 如果有锁定目标，指向目标
-    if (isAiming && lockedEnemy != null)
-    {
-        return (lockedEnemy.transform.position - rangedFighter.transform.position).normalized;
-    }
-    
-    return ray.direction;
-    }
+     #endregion
+     
 }
+ 

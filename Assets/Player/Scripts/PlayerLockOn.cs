@@ -14,7 +14,7 @@ public class PlayerLockOn : MonoBehaviour
 
     //锁定参数
     float lockRotateSpeed = 8f;     //锁定时转向敌人的速度
-    float lockDistanc = 10f;        //锁定最大距离 超出范围自动解锁
+    float lockDistance = 15f;       //锁定最大距离 超出范围自动解锁
 
     //是否正在锁定敌人
     public bool IsLocking {get;private set;}
@@ -39,7 +39,7 @@ public class PlayerLockOn : MonoBehaviour
         if(IsLocking && LockedEnemy != null)
         {
             float dist = Vector3.Distance(transform.position,LockedEnemy.transform.position);
-            if(dist > lockDistanc)
+            if(dist > lockDistance)
             {
                 UnlockEnemy();
             }
@@ -132,7 +132,7 @@ public class PlayerLockOn : MonoBehaviour
         }
     }
 
-    public Vector3 GetAimDir()
+    public Vector3 GetAimDirection()
     {
         Transform camTf = CameraManager.Instance.MainCameraTransform;
         Ray ray = new Ray(camTf.position,camTf.forward);

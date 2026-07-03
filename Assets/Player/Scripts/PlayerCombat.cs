@@ -22,7 +22,7 @@ public class PlayerCombat : MonoBehaviour
         weapManager = GetComponent<WeaponManager>();
     }
 
-    public void GetLightAttack(InputAction.CallbackContext context)
+    public void HandleLightAttack(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
         
@@ -34,13 +34,13 @@ public class PlayerCombat : MonoBehaviour
 
         //获取锁定目标
         MeleeFighter targetFighter = null;
-        if(playerController.isLocking && playerController.LockedEnemy != null)
+        if(playerController.IsLocking && playerController.LockedEnemy != null)
         {
             targetFighter = playerController.LockedEnemy.Fighter;
         }
 
         //攻击前平滑转向摄像机方向
-        if (!playerController.isLocking)
+        if (!playerController.IsLocking)
         {
             Transform camTf = CameraManager.Instance.MainCameraTransform;
             Vector3 camForward = new Vector3(camTf.forward.x,0,camTf.forward.z).normalized;
@@ -61,7 +61,7 @@ public class PlayerCombat : MonoBehaviour
         }
         else
         {
-            meleeFighter.ToTryAttack(targetFighter ?? playerController.targetEnemy?.Fighter);
+            meleeFighter.ToTryAttack(targetFighter ?? playerController.TargetEnemy?.Fighter);
         }
     }
 }

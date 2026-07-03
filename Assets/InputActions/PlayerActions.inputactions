@@ -61,15 +61,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "HeavyAttack",
-                    "type": "Button",
-                    "id": "a018b9b4-196f-4ca8-809c-ea9fecc8aa14",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "LockEnemy",
                     "type": "Button",
                     "id": "ca5abfc6-63ca-4d6f-9afc-93d39f90df6b",
@@ -234,17 +225,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "LightAttack",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b28a8c0f-0db7-48ad-81f6-00d38008cb45",
-                    "path": "<Mouse>/rightButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "HeavyAttack",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

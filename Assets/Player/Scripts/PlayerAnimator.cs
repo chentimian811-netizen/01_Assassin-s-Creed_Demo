@@ -21,8 +21,9 @@ public class PlayerAnimator : MonoBehaviour
     float crouchThreshold = 0f;         //蹲下状态阈值
     float standThreshold = 1f;          //站立状态阈值
     float midAirThreshold = 2.2f;       //滞空状态阈值
+    float lockRotateSpeed = 8f;         //锁定时旋转速度
 
-    public void Init(PlayerController pc,Animator anim,PlayerMovement pm)
+    public void Init(Animator anim, PlayerController pc, PlayerMovement pm)
     {
         animator = anim;
         playerController = pc;
@@ -48,12 +49,13 @@ public class PlayerAnimator : MonoBehaviour
 
     void SetupAnimator()
     {
-        if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
+        // 翻滚期间不更新BlendTree参数（阶段2实现PlayerDodge后取消注释）
+        // if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
 
         PlayerController.E_PlayerPosture posture = playerController.PlayerPosture;
         PlayerController.E_LocomotionState loco = playerController.LocomotionState;
         PlayerController.E_ArmState arm = playerController.ArmState;
-        Vector3 movement = playerController.GetPlayerMovement();
+        Vector3 movement = playerMovement.GetPlayerMovement();
 
         // --- 姿态参数设置 ---
         if (posture == PlayerController.E_PlayerPosture.Stand)

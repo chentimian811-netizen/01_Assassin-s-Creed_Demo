@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4144294906276984144}
   m_Layer: 6
   m_Name: FirePoint
-  m_TagString: Player
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -40,16 +40,20 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 211485049732546520}
+  - component: {fileID: 3405350071860709212}
+  - component: {fileID: 8412632077482004886}
+  - component: {fileID: 6954042794036192151}
   - component: {fileID: 3246548708418615150}
-  - component: {fileID: 1664160428647962579}
-  - component: {fileID: 7203364765567259905}
-  - component: {fileID: 195394216387546571}
+  - component: {fileID: 8402597464197582587}
+  - component: {fileID: 5980062562779889427}
   - component: {fileID: 8263473428715915652}
   - component: {fileID: 722878919831647827}
   - component: {fileID: 3212753953874977613}
   - component: {fileID: 3513949970784844484}
   - component: {fileID: 8429888561007281762}
   - component: {fileID: 5816512091976594474}
+  - component: {fileID: 7203364765567259905}
+  - component: {fileID: 195394216387546571}
   m_Layer: 6
   m_Name: Male
   m_TagString: Player
@@ -74,6 +78,56 @@ Transform:
   - {fileID: 4144294906276984144}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3405350071860709212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1599c5079f5814469eab0e20a31488d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerMovement: {fileID: 0}
+  playerCombat: {fileID: 0}
+  playerLockOn: {fileID: 0}
+  playerAnimator: {fileID: 0}
+  RangedFighter: {fileID: 0}
+  PlayerPosture: 2
+  LocomotionState: 0
+  ArmState: 0
+  acceptInput: 1
+--- !u!114 &8412632077482004886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c212f253fe9bdb14a8b0584475450cdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crouchSpeed: 1.5
+  walkSpeed: 3
+  runSpeed: 6
+  gravity: -9.8
+  maxHeight: 1.5
+--- !u!114 &6954042794036192151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b816cd8efaa7ed546ae3d6e986ea947d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &3246548708418615150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94,7 +148,7 @@ MonoBehaviour:
   hitStopDuration: 0.09
   hitStopTimeScale: 0
   Sword: {fileID: 0}
---- !u!114 &1664160428647962579
+--- !u!114 &8402597464197582587
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -103,66 +157,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 7962487104537891693}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1599c5079f5814469eab0e20a31488d, type: 3}
+  m_Script: {fileID: 11500000, guid: 6c1dc636a482dee41bd7b8c5407d850d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetEnemy: {fileID: 0}
-  PlayerPosture: 1
-  LocomotionState: 0
-  ArmState: 0
-  crouchSpeed: 1.5
-  walkSpeed: 3
-  runSpeed: 6
-  acceptInput: 1
-  gravity: -12
-  maxHeight: 0.8
---- !u!95 &7203364765567259905
-Animator:
-  serializedVersion: 5
+--- !u!114 &5980062562779889427
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7962487104537891693}
   m_Enabled: 1
-  m_Avatar: {fileID: 9000000, guid: b549692f7f04c6c409ff3e2bf2f5e3a7, type: 3}
-  m_Controller: {fileID: 9100000, guid: d0f15c3bd5771c9408446f6a2e1325dc, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 1
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
---- !u!143 &195394216387546571
-CharacterController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7962487104537891693}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Height: 1.85
-  m_Radius: 0.31
-  m_SlopeLimit: 45
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.1
-  m_MinMoveDistance: 0
-  m_Center: {x: 0, y: 0.93, z: 0}
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5efbf06a3501b7347ab610c19482ac5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &8263473428715915652
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -218,7 +227,7 @@ MonoBehaviour:
   m_ActionEvents:
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetMoveInput
         m_Mode: 0
@@ -238,7 +247,7 @@ MonoBehaviour:
     m_ActionName: Player/Look[/Mouse/delta]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetRunInput
         m_Mode: 0
@@ -254,7 +263,7 @@ MonoBehaviour:
     m_ActionName: Player/Run[/Keyboard/shift]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetCrouchInput
         m_Mode: 0
@@ -270,7 +279,7 @@ MonoBehaviour:
     m_ActionName: Player/Crouch[/Keyboard/ctrl]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetJumpInInput
         m_Mode: 0
@@ -286,7 +295,7 @@ MonoBehaviour:
     m_ActionName: Player/Jump[/Keyboard/space]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetLightAttack
         m_Mode: 0
@@ -306,7 +315,7 @@ MonoBehaviour:
     m_ActionName: Player/HeavyAttack[/Mouse/rightButton]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetLockInput
         m_Mode: 0
@@ -322,7 +331,7 @@ MonoBehaviour:
     m_ActionName: Player/LockEnemy[/Keyboard/f]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetBackpackInput
         m_Mode: 0
@@ -338,7 +347,7 @@ MonoBehaviour:
     m_ActionName: Player/OpenBackpack[/Keyboard/b]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetPickupInput
         m_Mode: 0
@@ -354,7 +363,7 @@ MonoBehaviour:
     m_ActionName: Player/Pickup[/Keyboard/e]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetAimInput
         m_Mode: 0
@@ -370,7 +379,7 @@ MonoBehaviour:
     m_ActionName: Player/Aim[/Mouse/rightButton]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1664160428647962579}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetFireInput
         m_Mode: 0
@@ -450,6 +459,53 @@ MonoBehaviour:
   markerColor: {r: 0.037280794, g: 0.6696145, b: 0.91194963, a: 1}
   markerYOffset: 9.5
   markerSize: 1
+--- !u!95 &7203364765567259905
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: b549692f7f04c6c409ff3e2bf2f5e3a7, type: 3}
+  m_Controller: {fileID: 9100000, guid: d0f15c3bd5771c9408446f6a2e1325dc, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 1
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!143 &195394216387546571
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.85
+  m_Radius: 0.31
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.1
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 0.93, z: 0}
 --- !u!1001 &2414941953244394479
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -796,7 +852,7 @@ PrefabInstance:
     - target: {fileID: 7094620311760461776, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}
       propertyPath: m_TagString
-      value: Player
+      value: Untagged
       objectReference: {fileID: 0}
     - target: {fileID: 7406166041191370847, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}

@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// 玩家移动与物理组件
@@ -24,6 +24,11 @@ public class PlayerMovement : MonoBehaviour
     #endregion
 
     #region 重力与跳跃参数
+    
+    public float gravity = -9.8f;        // 重力加速度
+    public float maxHeight = 1.5f;       // 最大跳跃高度
+    float fallMultiplier = 1.5f;         // 下落加速度倍数
+    float jumpCD = 0.15f;                // 跳跃冷却时间
     float groundCheckOffset = 0.5f;  //地面检测射线的偏移量
     float fallHeight = 0.5f; //跌落的最小阈值
     #endregion
@@ -37,7 +42,6 @@ public class PlayerMovement : MonoBehaviour
     bool couldFall;        //是否可能跌落
     float feetTween;       //滞空左右脚动画混合值
     float LandingThreshold;//着陆动画混合值
-
     //输入标记
     bool isRunning;//是否处于奔跑状态
     bool isCrouch;
@@ -53,9 +57,9 @@ public class PlayerMovement : MonoBehaviour
     
     #region 对外暴露(给playercontroller读取)
     /// <summary>当前移动向量（本地空间）</summary>
-    public Vector3 GetPlayerMovement() => playerMovementVector;
+    public Vector3 GetPlayerMovement() => playerMovement;
     /// <summary>当前垂直速度</summary>
-    public float GetVerticalVelocity => VerticalVelocity;
+    public float GetVerticalVelocity() => VerticalVelocity;
 
     /// <summary>当前着陆混合值</summary>
     public float GetLandingThreshold() => LandingThreshold;
@@ -69,9 +73,9 @@ public class PlayerMovement : MonoBehaviour
     public Vector2 GetMoveInputRaw() => moveInput;
     
     ///<summary>
-    /// 重置垂直速度(翻滚开始是调用，防止空中翻滚继承下落速度)
+    /// 重置垂直速度（翻滚开始时调用，防止空中翻滚继承下落速度）
     /// </summary>
-    public void RestVerticalVelocity()
+    public void ResetVerticalVelocity()
     {
         VerticalVelocity = 0f;
     }
@@ -121,7 +125,7 @@ public class PlayerMovement : MonoBehaviour
         isCrouch = context.ReadValueAsButton();
     }
 
-    public void HandleJumpInInput(InputAction.CallbackContext context)
+    public void HandleJumpInput(InputAction.CallbackContext context)
     {
         isJumping = context.ReadValueAsButton();
     }
@@ -285,7 +289,7 @@ public class PlayerMovement : MonoBehaviour
         //当角色在地面并且 按下跳跃 则获得一个瞬时向上的力
         if (playerController.PlayerPosture == PlayerController.E_PlayerPosture.Stand && isJumping)
         {
-            VerticalVelocity = MathF.Sqrt(-2 * gravity * maxHeight);
+            VerticalVelocity = Mathf.Sqrt(-2 * gravity * maxHeight);
 
             playerController.PlayerPosture = PlayerController.E_PlayerPosture.Jumping;
             //计算动画脚本混合值
@@ -312,10 +316,10 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     void CaculateInputDirection()
     {
-        if (playerController.isLocking && playerController.lockedEnemy != null)
+        if (playerController.IsLocking && playerController.LockedEnemy != null)
         {
             // 索敌模式：以玩家到敌人的方向为前方向
-            Vector3 toEnemy = playerController.lockedEnemy.transform.position - transform.position;
+            Vector3 toEnemy = playerController.LockedEnemy.transform.position - transform.position;
             toEnemy.y = 0;
             Vector3 forward = toEnemy.normalized;
             Vector3 right = Vector3.Cross(Vector3.up, forward);
@@ -338,19 +342,19 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     void AnimatorMove()//动画驱动移动
     {
-        //翻滚期间完全由Root Motion驱动位移 跳过所有代码移动
-        if(playerController.playerDodge != null && playerController.playerDodge.IsDodging)
-        {
-            Vector3 dogeDelta = Animator.deltaPosition;
-            dogeDelta.y = VerticalVelocity * Time.deltaTime;
-            characterController.Move(dogeDelta);
-            return;
-        }
+        // 翻滚期间完全由Root Motion驱动位移 跳过所有代码移动（阶段2实现PlayerDodge后取消注释）
+        // if(playerController.playerDodge != null && playerController.playerDodge.IsDodging)
+        // {
+        //     Vector3 dogeDelta = Animator.deltaPosition;
+        //     dogeDelta.y = VerticalVelocity * Time.deltaTime;
+        //     characterController.Move(dogeDelta);
+        //     return;
+        // }
 
         if (playerController.PlayerPosture != PlayerController.E_PlayerPosture.Jumping 
             && playerController.PlayerPosture != PlayerController.E_PlayerPosture.Falling)
         {
-            if (playerController.isLocking)
+            if (playerController.IsLocking)
             {
                 // 索敌模式：禁用 root motion 水平移动，用代码控制 strafe 方向
                 Vector3 worldMove = transform.TransformVector(playerMovement);
@@ -398,15 +402,15 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void OnAnimatorMove()
     {
-        if (!meleeFighter.inCounter && !playerController.isLocking)
+        if (!meleeFighter.inCounter && !playerController.IsLocking)
         {
             
         }
 
-        //翻滚期间不应用Root Motion旋转(由翻滚协程控制朝向)
-        if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
+        //翻滚期间不应用Root Motion旋转(由翻滚协程控制朝向)（阶段2实现PlayerDodge后取消注释）
+        // if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
 
-        if (!playerController.isLocking && !meleeFighter.inAction)
+        if (!playerController.IsLocking && !meleeFighter.inAction)
         {
             transform.rotation *= Animator.deltaRotation;
         }

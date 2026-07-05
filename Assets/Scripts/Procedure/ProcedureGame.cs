@@ -44,6 +44,11 @@ public class ProcedureGame : ProcedureBase
         base.OnLeave(procedureOwner, isShutdown);
     }
 
+    /// <summary>
+    /// 处理菜单命令事件
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void OnMenuCommand(object sender, GameFramework.Event.GameEventArgs e)
     {
         MenuCommandEventArgs args = e as MenuCommandEventArgs;

@@ -14,7 +14,7 @@ public class ProcedureMainMenu : ProcedureBase
 
     private int? m_MainMenuFormId = null;
 
-    protected override void OEnter(ProcedureOwner procedureOwner)
+    protected override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
 
@@ -25,7 +25,7 @@ public class ProcedureMainMenu : ProcedureBase
         GameEntry.Event.Subscribe(LoginSuccessEventArgs.EventId,OnLoginSuccess);
     }
 
-    protected override void OLeave(ProcedureOwner procedureOwner, bool isShutdown)
+    protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
         //取消订阅 防止内存泄露
         GameEntry.Event.Unsubscribe(LoginSuccessEventArgs.EventId, OnLoginSuccess);

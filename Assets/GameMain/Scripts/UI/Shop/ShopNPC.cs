@@ -20,13 +20,9 @@ public class ShopNPC : MonoBehaviour
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if(player != null)
             {
-                Debug.Log("找到Player");
                 cachedPC = player.GetComponent<PlayerController>();
             }
-            else
-            {
-                Debug.LogError("未找到Player");
-            }
+
             if(cachedPC == null)return;
         }
 

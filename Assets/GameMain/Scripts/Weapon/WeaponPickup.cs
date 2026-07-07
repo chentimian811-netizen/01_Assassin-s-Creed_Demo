@@ -94,14 +94,14 @@ public class WeaponPickup : MonoBehaviour
         }
         equipped = true;
 
-        // 【修复】先立刻清理玩家引用，防止碰撞体禁用后OnTriggerExit不触发导致残留
+        
         if (interactingPlayer != null)
         {
             interactingPlayer.SetNearestPickup(null);
             interactingPlayer = null;
         }
 
-        // 【修复】直接关闭面板（不走淡出协程），避免与后续Destroy竞态
+       
         if (activePopup != null)
         {
             activePopup = null;

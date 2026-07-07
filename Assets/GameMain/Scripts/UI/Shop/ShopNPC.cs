@@ -10,29 +10,34 @@ public class ShopNPC : MonoBehaviour
     [SerializeField] private string promptText = "按E打开商店";
     [SerializeField] private float detectionRadius = 3f; 
     private bool playerInRange =  false;
-    private PlayerController cachedPc;
+    private PlayerController cachedPC;
 
-    void Start()
-    {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if(player != null)
-        {
-            cachedPc = player.GetComponent<PlayerController>();
-        }
-    }
 
     private void Update()
     {
-        if(cachedPc == null) return;
+        if(cachedPC == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if(player != null)
+            {
+                Debug.Log("找到Player");
+                cachedPC = player.GetComponent<PlayerController>();
+            }
+            else
+            {
+                Debug.LogError("未找到Player");
+            }
+            if(cachedPC == null)return;
+        }
 
-        float distance = Vector3.Distance(transform.position,cachedPc.transform.position);
+        float distance = Vector3.Distance(transform.position,cachedPC.transform.position);
 
         if(distance <= detectionRadius)
         {
             if (!playerInRange)
             {
                 playerInRange = true;
-                cachedPc.SetNearestShopNPC(this);
+                cachedPC.SetNearestShopNPC(this);
                 ToastMessage.Show(promptText);
             }
         }
@@ -41,7 +46,7 @@ public class ShopNPC : MonoBehaviour
             if (playerInRange)
             {
                 playerInRange = false;
-                cachedPc.SetNearestShopNPC(null);
+                cachedPC.SetNearestShopNPC(null);
             }
         }
     }

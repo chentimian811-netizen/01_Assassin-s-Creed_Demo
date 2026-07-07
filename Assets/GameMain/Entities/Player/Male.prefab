@@ -115,7 +115,7 @@ MonoBehaviour:
   walkSpeed: 3
   runSpeed: 6
   gravity: -9.8
-  maxHeight: 1.5
+  maxHeight: 1
 --- !u!114 &6954042794036192151
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -227,7 +227,7 @@ MonoBehaviour:
   m_ActionEvents:
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetMoveInput
         m_Mode: 0
@@ -247,7 +247,7 @@ MonoBehaviour:
     m_ActionName: Player/Look[/Mouse/delta]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetRunInput
         m_Mode: 0
@@ -263,7 +263,7 @@ MonoBehaviour:
     m_ActionName: Player/Run[/Keyboard/shift]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetCrouchInput
         m_Mode: 0
@@ -279,9 +279,9 @@ MonoBehaviour:
     m_ActionName: Player/Crouch[/Keyboard/ctrl]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
-        m_MethodName: GetJumpInInput
+      - m_Target: {fileID: 8412632077482004886}
+        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
+        m_MethodName: HandleJumpInput
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -295,7 +295,7 @@ MonoBehaviour:
     m_ActionName: Player/Jump[/Keyboard/space]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetLightAttack
         m_Mode: 0
@@ -310,12 +310,8 @@ MonoBehaviour:
     m_ActionId: b6a30237-46e0-4eda-bd7e-40ec405b299f
     m_ActionName: Player/LightAttack[/Mouse/leftButton]
   - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: a018b9b4-196f-4ca8-809c-ea9fecc8aa14
-    m_ActionName: Player/HeavyAttack[/Mouse/rightButton]
-  - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetLockInput
         m_Mode: 0
@@ -331,7 +327,7 @@ MonoBehaviour:
     m_ActionName: Player/LockEnemy[/Keyboard/f]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetBackpackInput
         m_Mode: 0
@@ -347,7 +343,7 @@ MonoBehaviour:
     m_ActionName: Player/OpenBackpack[/Keyboard/b]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetPickupInput
         m_Mode: 0
@@ -363,7 +359,7 @@ MonoBehaviour:
     m_ActionName: Player/Pickup[/Keyboard/e]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetAimInput
         m_Mode: 0
@@ -379,7 +375,7 @@ MonoBehaviour:
     m_ActionName: Player/Aim[/Mouse/rightButton]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 3405350071860709212}
         m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
         m_MethodName: GetFireInput
         m_Mode: 0

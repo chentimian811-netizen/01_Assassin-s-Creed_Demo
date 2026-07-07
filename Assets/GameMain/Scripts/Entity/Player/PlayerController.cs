@@ -29,7 +29,7 @@ public class PlayerController : MonoBehaviour
     [Header("远程武器")]
     public RangedFighter RangedFighter;
 
-     /// <summary>是否正在锁定敌人</summary>
+    /// <summary>是否正在锁定敌人</summary>
     public bool IsLocking => playerLockOn.IsLocking;
 
     /// <summary>当前锁定的敌人</summary>
@@ -44,8 +44,10 @@ public class PlayerController : MonoBehaviour
           
     /// <summary>强制解锁</summary>
     public void ForceUnlock() => playerLockOn.ForceUnlock();
+
     /// <summary>获取目标方向</summary>
     public Vector3 GetTargetingDir() => playerLockOn.GetTargetingDir();
+
     /// <summary>重置垂直速度（翻滚时调用）</summary>
     public void ResetVerticalVelocity() => playerMovement.ResetVerticalVelocity();
 
@@ -113,7 +115,7 @@ public class PlayerController : MonoBehaviour
         Animator = GetComponent<Animator>();
         CharacterController = GetComponent<CharacterController>();
 
-         // ===== 添加这 6 行 GetComponent =====
+        
         playerMovement = GetComponent<PlayerMovement>();
         playerCombat = GetComponent<PlayerCombat>();
         playerLockOn = GetComponent<PlayerLockOn>();
@@ -155,7 +157,7 @@ public class PlayerController : MonoBehaviour
     /// 拾取/商店交互输入
     /// </summary>
     /// <param name="context"></param>
-    public void GetPickupInput(InputAction.CallbackContext context)
+    public void GetPickup_ShopInput(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
 

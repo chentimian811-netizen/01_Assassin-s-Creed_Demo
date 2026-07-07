@@ -79,7 +79,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Pickup",
+                    "name": "GetPickup_ShopInput",
                     "type": "Button",
                     "id": "b2222318-a6ad-441f-9d6f-3639d61d0939",
                     "expectedControlType": "",
@@ -257,7 +257,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "Pickup",
+                    "action": "GetPickup_ShopInput",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

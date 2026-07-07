@@ -10,13 +10,18 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureMainMenu : ProcedureBase
 {
-    public override bool UseNativeDialog =>false;
-
     private int? m_MainMenuFormId = null;
-
+    private ProcedureOwner m_ProcedureOwner = null;
+    private bool m_IsTransitioning = false;
     protected override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
+        m_ProcedureOwner = procedureOwner;
+        m_IsTransitioning = false;
+
+        //主菜单需要鼠标操作
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
         //打开主菜单界面（Page组 全屏覆盖）
         m_MainMenuFormId = GameEntry.UI.OpenUIForm(UIPaths.MainMenuForm,"Page");
@@ -29,12 +34,20 @@ public class ProcedureMainMenu : ProcedureBase
     {
         //取消订阅 防止内存泄露
         GameEntry.Event.Unsubscribe(LoginSuccessEventArgs.EventId, OnLoginSuccess);
-
+    
         if (m_MainMenuFormId.HasValue)
         {
             GameEntry.UI.CloseUIForm(m_MainMenuFormId.Value);
         }
 
+        // 相机过渡：禁用主菜单相机，为游戏相机让路
+        MainMenuCamera menuCamera = Object.FindObjectOfType<MainMenuCamera>();
+        if (menuCamera != null)
+        {
+            menuCamera.TransitionToGameplay();
+        }
+
+        m_ProcedureOwner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
     /// <summary>
@@ -43,6 +56,14 @@ public class ProcedureMainMenu : ProcedureBase
     /// </summary>
     private void OnLoginSuccess(object sender, GameFramework.Event.GameEventArgs e)
     {
-        ChangeState<ProcedureLoading>(null);
+        // 防重入：防止快速双击触发两次 ChangeState
+        if (m_IsTransitioning) return;
+        m_IsTransitioning = true;
+
+        // 设置加载目标：主菜单 → 游戏关卡
+        ProcedureLoading.TargetScene = ScenePaths.MainScene;
+        ProcedureLoading.NextProcedureType = typeof(ProcedureGame).Name;
+
+        ChangeState<ProcedureLoading>(m_ProcedureOwner);
     }
 }

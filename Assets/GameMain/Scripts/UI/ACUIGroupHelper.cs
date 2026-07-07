@@ -24,28 +24,27 @@ public class ACUIGroupHelper : UIGroupHelperBase
     /// <exception cref="System.NotImplementedException"></exception>
     public override void SetDepth(int depth)
     {
-        m_Depth = depth;
+        // 延迟初始化：Awake 时 Canvas 可能还未创建（由 UIGroupHelperBase 管理生命周期）
+        if (m_CachedCanvas == null)
+        {
+            m_CachedCanvas = gameObject.GetOrAddComponent<Canvas>();
+            gameObject.GetOrAddComponent<GraphicRaycaster>();
+        }
         m_CachedCanvas.overrideSorting = true;
         m_CachedCanvas.sortingOrder = DepthFactor * depth;
     }
 
     private void Awake()
     {
-        m_CachedCanvas = gameObject.GetOrAddComponent<Canvas>();
-        gameObject.GetOrAddComponent<GraphicRaycaster>();
-    }
-
-    private void Start()
-    {
-        //设置Canvas为全屏拉伸
-        m_CachedCanvas.overrideSorting = true;
-        m_CachedCanvas.sortingOrder = DepthFactor * m_Depth;
-
+        // 设置 Canvas 为全屏拉伸（与父容器一致）
         RectTransform rectTransform = GetComponent<RectTransform>();
-        rectTransform.anchorMin = Vector2.zero;
-        rectTransform.anchorMax = Vector2.one;
-        rectTransform.anchoredPosition = Vector2.zero;
-        rectTransform.sizeDelta = Vector2.zero;
-        
+        if (rectTransform != null)
+        {
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.sizeDelta = Vector2.zero;
+        }
     }
+
 }

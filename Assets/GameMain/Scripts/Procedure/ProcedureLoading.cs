@@ -1,3 +1,4 @@
+using GameFramework;
 using GameFramework.Event;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
@@ -8,16 +9,24 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureLoading : ProcedureBase
 {
-    public override bool UseNativeDialog => false;
+    public static string TargetScene { get; set; } = string.Empty;
 
-    private string m_TargetScene = string.Empty;
+    public static string NextProcedureType { get; set; } = typeof(ProcedureGame).Name;
     private int? m_LoadingFormId = null;
 
+    private ProcedureOwner m_ProcedureOwner = null;
     protected override void OnEnter(ProcedureOwner procedureOwner)
     {
         base.OnEnter(procedureOwner);
 
-        m_TargetScene = "Assets/Scenes/MainScene.unity";
+        m_ProcedureOwner = procedureOwner;
+
+        // 校验目标场景（防御性编程）
+        if (string.IsNullOrEmpty(TargetScene))
+        {
+            Log.Error("ProcedureLoading: TargetScene is not set.");
+            TargetScene = ScenePaths.MainScene;
+        }
 
         // 打开加载界面（Loading 组，盖住一切）
         m_LoadingFormId = GameEntry.UI.OpenUIForm(UIPaths.LoadingForm, "Loading");
@@ -27,7 +36,7 @@ public class ProcedureLoading : ProcedureBase
         GameEntry.Event.Subscribe(LoadSceneSuccessEventArgs.EventId, OnLoadSceneSuccess);
 
         // 异步加载场景
-        GameEntry.Scene.LoadScene(m_TargetScene, this);
+        GameEntry.Scene.LoadScene(TargetScene, this);
     }
 
     protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
@@ -39,7 +48,14 @@ public class ProcedureLoading : ProcedureBase
         if (m_LoadingFormId.HasValue)
         {
             GameEntry.UI.CloseUIForm(m_LoadingFormId.Value);
+            m_LoadingFormId = null;
         }
+
+        // 清理静态状态，防止下次误用
+        TargetScene = string.Empty;
+        NextProcedureType = typeof(ProcedureGame).Name;
+
+        m_ProcedureOwner = null;
 
         base.OnLeave(procedureOwner, isShutdown);
     }
@@ -59,6 +75,9 @@ public class ProcedureLoading : ProcedureBase
     /// </summary>
     private void OnLoadSceneSuccess(object sender, GameEventArgs e)
     {
-        ChangeState<ProcedureGame>(null);
+        if (NextProcedureType == typeof(ProcedureMainMenu).Name)
+            ChangeState<ProcedureMainMenu>(m_ProcedureOwner);
+        else
+            ChangeState<ProcedureGame>(m_ProcedureOwner);
     }
 }

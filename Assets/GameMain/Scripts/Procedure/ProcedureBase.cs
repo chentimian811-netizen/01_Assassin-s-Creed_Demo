@@ -9,9 +9,6 @@ using GameFramework.Procedure;
 /// </summary>
 public abstract class ProcedureBase : GameFramework.Procedure.ProcedureBase
 {
-    /// <summary>
-    /// 获取流程是否使用原生对话框。
-    /// 在资源更新完成前的特殊流程中，可返回 true 使用原生对话框提示消息。
-    /// </summary>
-    public abstract bool UseNativeDialog { get; }
+     // 当前无需额外抽象成员。
+    // 如需项目级公共逻辑（如 ChangeState 包装），在此添加。
 }

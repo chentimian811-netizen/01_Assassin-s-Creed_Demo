@@ -21,8 +21,6 @@ public class PickupPopup : BasePanel
 
     private bool isClosing = false;
     private bool isShowing = false;
-
-    private static Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
     private static Dictionary<int, Sprite> weaponIconCache = new Dictionary<int, Sprite>();
 
     protected override void Awake()
@@ -34,37 +32,18 @@ public class PickupPopup : BasePanel
     public static void PreloadWeaponIcons()
     {
         if (weaponIconCache.Count > 0) return;
-        PackageTables table = GameManager.Instance.GetPackageTable();
-        if (table == null || table.DataList == null) return;
-        foreach (PackageTableItem item in table.DataList)
+        foreach (var kv in DataRepository.ItemTable)
         {
-            if (item.type != GameConst.PackageTypeWeapon) continue;
-            if (string.IsNullOrEmpty(item.imagePath)) continue;
-            Sprite sprite = LoadSpriteCached(item.imagePath);
-            if (sprite != null)
-                weaponIconCache[item.id] = sprite;
+            if (kv.Value.Type != GameConst.PackageTypeWeapon) continue;
+            var icon = DataRepository.GetItemIcon(kv.Key);
+            if (icon != null)
+                weaponIconCache[kv.Key] = icon;
         }
     }
 
     public static void ClearCache()
     {
-        spriteCache.Clear();
         weaponIconCache.Clear();
-    }
-
-    static Sprite LoadSpriteCached(string path)
-    {
-        if (string.IsNullOrEmpty(path)) return null;
-        Sprite cached;
-        if (spriteCache.TryGetValue(path, out cached))
-            return cached;
-        Texture2D tex = Resources.Load<Texture2D>(path);
-        if (tex == null) return null;
-        Sprite sprite = Sprite.Create(tex,
-            new Rect(0, 0, tex.width, tex.height),
-            new Vector2(0.5f, 0.5f));
-        spriteCache[path] = sprite;
-        return sprite;
     }
 
     public void ShowPopup(PickupPopupData data)
@@ -74,20 +53,18 @@ public class PickupPopup : BasePanel
 
         titleText.text = data.weaponName;
 
-        Sprite icon;
-        if (weaponIconCache.TryGetValue(data.weaponId, out icon))
+        if (weaponIconCache.TryGetValue(data.weaponId, out Sprite icon))
         {
             iconImage.sprite = icon;
             iconImage.gameObject.SetActive(true);
         }
         else
-        {
             iconImage.gameObject.SetActive(false);
-        }
 
         gameObject.SetActive(true);
         StartCoroutine(FadeIn());
     }
+
 
     public void ClosePopup()
     {

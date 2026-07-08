@@ -18,7 +18,6 @@ public class PackageDetail : MonoBehaviour
     [SerializeField] private Text equipBtnText;
 
     private PackageLocalItem packageLocalData;
-    private PackageTableItem packageTablesItem;
     private PackagePanel uiParent;
     private bool isEquipped = false;
     private InventoryManager inventoryManager; // 缓存引用，用于 OnDestroy 取消订阅
@@ -52,7 +51,7 @@ public class PackageDetail : MonoBehaviour
         }
     }
 
-        void OnInventoryChanged(PackageLocalItem item)
+    void OnInventoryChanged(PackageLocalItem item)
         {
             RefreshEquipButton();
             // 通知 PackagePanel 刷新列表（显示装备状态图标）
@@ -73,51 +72,35 @@ public class PackageDetail : MonoBehaviour
     public void Refresh(PackageLocalItem packageLocalData, PackagePanel uiParent)
     {
         this.packageLocalData = packageLocalData;
-        this.packageTablesItem = GameManager.Instance.GetPackageItemById(packageLocalData.id);
         this.uiParent = uiParent;
 
-        // 检查 packageTablesItem 是否为 null
-        if (this.packageTablesItem == null)
+        DataRepository.ItemTable.TryGetValue(packageLocalData.id, out var item);
+        if(item == null)
         {
             Debug.LogError("找不到物品配置，id: " + packageLocalData.id);
             return;
         }
 
-        UILeveText.GetComponent<Text>().text = string.Format("Lv.{0}/40", this.packageLocalData.level.ToString());
-        UIDescription.GetComponent<Text>().text = this.packageTablesItem.description;
-        UISkillDescription.GetComponent<Text>().text = this.packageTablesItem.skillDescription;
-        UITitle.GetComponent<Text>().text = this.packageTablesItem.name;
+        UILeveText.GetComponent<Text>().text
+            = string.Format("Lv.{0}/40", this.packageLocalData.level.ToString());
+        UIDescription.GetComponent<Text>().text = item.Description;
+        UISkillDescription.GetComponent<Text>().text = item.SkillDescription;
+        UITitle.GetComponent<Text>().text = item.Name;
 
-        // 安全加载图片
-        if (!string.IsNullOrEmpty(this.packageTablesItem.imagePath))
-        {
-            Texture2D t = (Texture2D)Resources.Load(this.packageTablesItem.imagePath);
-            if (t != null)
-            {
-                Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0, 0));
-                UIIcon.GetComponent<Image>().sprite = temp;
-            }
-            else
-            {
-                Debug.LogError("加载图片失败: " + this.packageTablesItem.imagePath);
-            }
-        }
+        var icon = DataRepository.GetItemIcon(item.Id);
+        if (icon != null)
+            UIIcon.GetComponent<Image>().sprite = icon;
 
-        RefreshStars();
+        RefreshStars(item.Star);
         RefreshEquipButton();
     }
 
-    public void RefreshStars()
+    public void RefreshStars(int star)
     {
         for (int i = 0; i < UIStars.childCount; i++)
-        {
-            Transform star = UIStars.GetChild(i);
-            if (this.packageTablesItem.star > i)
-                star.gameObject.SetActive(true);
-            else
-                star.gameObject.SetActive(false);
-        }
+            UIStars.GetChild(i).gameObject.SetActive(i < star);
     }
+
 
     void OnEquipClick()
     {
@@ -132,7 +115,10 @@ public class PackageDetail : MonoBehaviour
         {
             bool success = InventoryManager.Instance.EquipWeapon(packageLocalData.uid);
             if (success)
-                ToastMessage.Show($"已装备: {packageTablesItem.name}");
+            {
+                DataRepository.ItemTable.TryGetValue(packageLocalData.id, out var item);
+                ToastMessage.Show("已装备: " + (item?.Name ?? ""));
+            }
             else
                 ToastMessage.Show("装备失败");
         }

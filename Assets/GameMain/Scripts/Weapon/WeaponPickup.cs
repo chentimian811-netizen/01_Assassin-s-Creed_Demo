@@ -64,11 +64,11 @@ public class WeaponPickup : MonoBehaviour
     {
         UIManager.Instance.ClosePanel(UIconst.PickupPopup);
 
-        PackageTableItem item = GameManager.Instance.GetPackageItemById(weaponId);
+        var item = GameManager.Instance.GetPackageItemById(weaponId);
         PickupPopupData data = new PickupPopupData
         {
             weaponId = weaponId,
-            weaponName = item?.name ?? "Unknown"
+            weaponName = item?.Name ?? "Unknown"
         };
 
         activePopup = UIManager.Instance.OpenPanel(UIconst.PickupPopup) as PickupPopup;

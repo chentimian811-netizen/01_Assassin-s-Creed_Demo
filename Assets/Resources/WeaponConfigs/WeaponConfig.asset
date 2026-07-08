@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05c76ee6f7ca9104a8a44d83a69f74a1, type: 3}
   m_Name: WeaponConfig
   m_EditorClassIdentifier: 
-  weaponID: 1
+  weaponID: 10001
   weaponName: Sword
   weaponType: 0
   weaponPrefab: {fileID: 1725509709468344114, guid: b21ed3581a87c834eb6947da7a8c7dc2,

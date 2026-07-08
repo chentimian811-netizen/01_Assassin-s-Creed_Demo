@@ -130,8 +130,8 @@ public class PackagePanel : BasePanel
             if(CurrentFilterType >= 0)
             {
                 //根据id查询配置表判断逻辑
-                PackageTableItem config = GameManager.Instance.GetPackageItemById(localData.id);
-                if(config != null && config.type != CurrentFilterType)
+                var config = GameManager.Instance.GetPackageItemById(localData.id);
+                if(config != null && config.Type != CurrentFilterType)
                 {
                     continue;//跳过不符合类型的物品
                 }
@@ -153,8 +153,8 @@ public class PackagePanel : BasePanel
             for(int i = startIndex; i < endIndex; i++)
         {
             //根据类型选择预制体
-            PackageTableItem config = GameManager.Instance.GetPackageItemById(filteredItems[i].id);
-            GameObject prefab = (config != null && config.type == GameConst.PackageTypeFood)
+            var config = GameManager.Instance.GetPackageItemById(filteredItems[i].id);
+            GameObject prefab = (config != null && config.Type == GameConst.PackageTypeFood)
                 ?packageCellPrefab_Food:packageCellPrefab;
             Transform PackageUIItem =  Instantiate(prefab.transform,scrollContent)as Transform;
             PackageCell packageCell = PackageUIItem.GetComponent<PackageCell>();
@@ -310,8 +310,8 @@ public class PackagePanel : BasePanel
         {
             if(CurrentFilterType >= 0)
             {
-                PackageTableItem config = GameManager.Instance.GetPackageItemById(localData.id);
-                if(config != null && config.type != CurrentFilterType)
+                var config = GameManager.Instance.GetPackageItemById(localData.id);
+                if(config != null && config.Type != CurrentFilterType)
                     continue;
             }
             count++;

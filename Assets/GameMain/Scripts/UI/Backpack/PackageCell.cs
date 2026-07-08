@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -17,7 +18,6 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     private Text UINumText;
 
     private PackageLocalItem packageLocalData;
-    private PackageTableItem packageTablesItem;
     private PackagePanel uiParent;
 
     private void Awake()
@@ -47,11 +47,11 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     public void Refresh(PackageLocalItem packageLocalData, PackagePanel uiParent)
     {
         this.packageLocalData = packageLocalData;
-        this.packageTablesItem = GameManager.Instance.GetPackageItemById(packageLocalData.id);
         this.uiParent = uiParent;
 
+        DataRepository.ItemTable.TryGetValue(packageLocalData.id, out var item);
         // 检查 packageTablesItem 是否为 null
-        if (this.packageTablesItem == null)
+        if (item == null)
         {
             Debug.LogError("找不到物品配置，id: " + packageLocalData.id);
             return;
@@ -60,41 +60,22 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         UILevel.GetComponent<Text>().text = "Lv." + this.packageLocalData.level.ToString();
         UINew.gameObject.SetActive(this.packageLocalData.isNew);
 
-        // 安全加载图片
-        if (!string.IsNullOrEmpty(this.packageTablesItem.imagePath))
-        {
-            Texture2D t = (Texture2D)Resources.Load(this.packageTablesItem.imagePath);
-            if (t != null)
-            {
-                Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0, 0));
-                UIIcon.GetComponent<Image>().sprite = temp;
-            }
-            else
-            {
-                Debug.LogError("加载图片失败: " + this.packageTablesItem.imagePath);
-            }
-        }
+        var icon = DataRepository.GetItemIcon(item.Id);
+        if (icon != null)
+            UIIcon.GetComponent<Image>().sprite = icon;
 
-        if(UINumText != null)
-        {
+        if (UINumText != null)
             UINumText.text = "x" + this.packageLocalData.num.ToString();
-        }
-        RefreshStars();
+
+        RefreshStars(item.Star);
     }
 
-    public void RefreshStars()
+
+    public void RefreshStars(int star)
     {
         for (int i = 0; i < UIStars.childCount; i++)
         {
-            Transform star = UIStars.GetChild(i);
-            if (this.packageTablesItem.star > i)
-            {
-                star.gameObject.SetActive(true);
-            }
-            else
-            {
-                star.gameObject.SetActive(false);
-            }
+           UIStars.GetChild(i).gameObject.SetActive(i < star);
         }
     }
 

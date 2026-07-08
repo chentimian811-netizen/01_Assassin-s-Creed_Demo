@@ -1,20 +1,17 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
-public class ShopCell : MonoBehaviour,IPointerClickHandler
+public class ShopCell : MonoBehaviour, IPointerClickHandler
 {
     private Transform UIIcon;
     private Transform UIQuantity;
     private Transform UIName;
     private Transform UIPrice;
-    private ShopItemDisplay displayData;
+    private DRShop shopData;
+    private int shopKeeperId;
     private ShopPanel UIParent;
-
 
     private void Awake()
     {
@@ -23,77 +20,58 @@ public class ShopCell : MonoBehaviour,IPointerClickHandler
 
     private void InitUIName()
     {
-        UIIcon = transform.Find("Object_Icon/Icon");           // 图标
-        UIQuantity = transform.Find("Number");                 // 数量
-        UIName = transform.Find("Obj_Name_price/Name");        // 名称
-        UIPrice = transform.Find("Obj_Name_price/Price");      // 价格
+        UIIcon = transform.Find("Object_Icon/Icon");
+        UIQuantity = transform.Find("Number");
+        UIName = transform.Find("Obj_Name_price/Name");
+        UIPrice = transform.Find("Obj_Name_price/Price");
     }
 
-    public void Refresh(ShopItemDisplay data,ShopPanel parent)
+    public void Refresh(DRShop data, int keeperId, ShopPanel parent)
     {
-        this.displayData = data;
+        this.shopData = data;
+        this.shopKeeperId = keeperId;
         this.UIParent = parent;
 
-        PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(data.itemData.itemID);
+        DRItem item = DataRepository.GetItemByAssetId(data.ItemAssetId);
 
-        RefreshIcon(tableItem);//刷新图标
+        if (UIName != null)
+            UIName.GetComponent<TextMeshProUGUI>().text = item?.Name ?? "未知";
 
-        //刷新名称
-        if(UIName != null)
+        if (UIPrice != null)
         {
-            UIName.GetComponent<TextMeshProUGUI>().text = 
-                tableItem != null ? tableItem.name : "未知";
+            int finalPrice = Mathf.RoundToInt(data.Price * data.Discount);
+            UIPrice.GetComponent<TextMeshProUGUI>().text = finalPrice.ToString();
         }
 
-        //刷新价格
-        if(UIPrice != null)
+        if (UIQuantity != null)
         {
-            UIPrice.GetComponent<TextMeshProUGUI>().text = data.finalPrice.ToString();
-        }
-
-        // 显示数量
-        if(UIQuantity != null)
-        {
-            if(data.currentStock == -1)
-            {
+            int stock = ShopManager.Instance.GetStock(keeperId, data.ItemAssetId);
+            if (stock == -1)
                 UIQuantity.gameObject.SetActive(false);
-            }
             else
             {
                 UIQuantity.gameObject.SetActive(true);
-                UIQuantity.GetComponent<TextMeshProUGUI>().text = "x" + data.currentStock;
+                UIQuantity.GetComponent<TextMeshProUGUI>().text = "x" + stock;
             }
         }
 
+        RefreshIcon();
     }
 
-    //刷新图标 从Resource加载图片
-    private void RefreshIcon(PackageTableItem tableItem)
+    private void RefreshIcon()
     {
-        if(tableItem == null || string.IsNullOrEmpty(tableItem.imagePath))return;
-        Sprite icon = Resources.Load<Sprite>(tableItem.imagePath);
-        if(icon != null && UIIcon != null)
-        {
+        if (UIIcon == null) return;
+        var icon = DataRepository.GetItemIcon(shopData.ItemAssetId);
+        if (icon != null)
             UIIcon.GetComponent<Image>().sprite = icon;
-        }
     }
 
-    //接口实现 玩家点击此格子时触发
     public void OnPointerClick(PointerEventData eventData)
     {
         UIParent.OnCellClicked(this);
     }
 
-    //设置选中/取消选中状态
-    public void SetSelected(bool selected)
-    {
-        
-    }
+    public void SetSelected(bool selected) { }
 
-    //获取当前各自的展示数据
-    public ShopItemDisplay GetDisplayData()
-    {
-        return displayData;
-    }
-
+    public DRShop GetShopData() => shopData;
 }

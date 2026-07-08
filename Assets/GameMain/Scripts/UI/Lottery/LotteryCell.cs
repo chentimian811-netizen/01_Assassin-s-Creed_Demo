@@ -17,8 +17,6 @@ public class LotteryCell : MonoBehaviour
 
     private PackageLocalItem packageLocalItem;
 
-    private PackageTableItem packageTableItem;
-
     private LotteryPanel uiParent;
 
     private void Awake()
@@ -31,7 +29,6 @@ public class LotteryCell : MonoBehaviour
         UIImage = transform.Find("Center/Image");
         UIStars = transform.Find("Bottom/StartLevel");
         UINew = transform.Find("Top/New");
-
         UINew.gameObject.SetActive(false);
     }
 
@@ -39,7 +36,6 @@ public class LotteryCell : MonoBehaviour
     {
         //数据初始化
         this.packageLocalItem = pckageLocalItem;
-        this.packageTableItem = GameManager.Instance.GetPackageItemById(this.packageLocalItem.id);
         this.uiParent = uiParent;
 
         //刷新UI信息
@@ -50,46 +46,25 @@ public class LotteryCell : MonoBehaviour
 
     private void RefreshImage()
     {
-        // 检查 packageTableItem 和 imagePath 是否有效
-        if (this.packageTableItem == null)
+        DataRepository.ItemTable.TryGetValue(packageLocalItem.id, out var item);
+        if (item == null)
         {
-            Debug.LogError("packageTableItem 为空");
+            Debug.LogError("找不到物品配置，id: " + packageLocalItem.id);
             return;
         }
 
-        if (string.IsNullOrEmpty(this.packageTableItem.imagePath))
-        {
-            Debug.LogError("imagePath 为空，id: " + this.packageTableItem.id);
-            return;
-        }
-
-        // 安全加载图片
-        Texture2D t = (Texture2D)Resources.Load(this.packageTableItem.imagePath);
-        if (t != null)
-        {
-            Sprite temp = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0f, 0f));
-            UIImage.GetComponent<Image>().sprite = temp;
-        }
+        var icon = DataRepository.GetItemIcon(item.Id);
+        if (icon != null)
+            UIImage.GetComponent<Image>().sprite = icon;
         else
-        {
-            Debug.LogError("加载图片失败: " + this.packageTableItem.imagePath);
-        }
+            Debug.LogError("加载图片失败，id: " + packageLocalItem.id);
     }
 
     public void RefreshStars()
     {
-        for (int i = 0;i < UIStars.childCount; i++)
-        {
-            Transform star = UIStars.GetChild(i);
-            if(this.packageTableItem.star > i)
-            {
-                star.gameObject.SetActive(true);
-            }
-            else
-            {
-                star.gameObject.SetActive(false);
-            }
-
-        }
+        DataRepository.ItemTable.TryGetValue(packageLocalItem.id, out var item);
+        int star = item?.Star ?? 0;
+        for (int i = 0; i < UIStars.childCount; i++)
+            UIStars.GetChild(i).gameObject.SetActive(i < star);
     }
 }

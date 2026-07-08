@@ -49,18 +49,18 @@ public class InventoryManager : MonoBehaviour
         var allWeapons = GameManager.Instance.GetPackageDataByType(GameConst.PackageTypeWeapon);
         foreach (var tableItem in allWeapons)
         {
-            WeaponConfig config = weaponManager.GetWeaponConfig(tableItem.id);
+            WeaponConfig config = weaponManager.GetWeaponConfig(tableItem.Id);
             if (config != null && !config.isRanged)
             {
-                EquipFromGround(tableItem.id);
-                Debug.Log($"初始装备默认近战武器: {tableItem.name}");
+                EquipFromGround(tableItem.Id);
+                Debug.Log($"初始装备默认近战武器: {tableItem.Name}");
                 return;
             }
         }
     }
     public string AddItem(int itemId, int count = 1)
     {
-        PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(itemId);
+        var tableItem = GameManager.Instance.GetPackageItemById(itemId); 
         if(tableItem == null) return null;
         PackageLocalItem item = new PackageLocalItem
         {
@@ -92,9 +92,9 @@ public class InventoryManager : MonoBehaviour
         PackageLocalItem item = GameManager.Instance.GetPackageLocalItemByUid(uid);
         if (item == null) return false;
 
-        PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(item.id);
+        var tableItem = GameManager.Instance.GetPackageItemById(item.id); 
 
-        if(tableItem == null || tableItem.type != GameConst.PackageTypeWeapon)return false;
+        if(tableItem == null || tableItem.Type != GameConst.PackageTypeWeapon)return false;
         if(weaponManager == null)return false;
 
         //获取新的武器WeaponConfig，用于判断武器类型

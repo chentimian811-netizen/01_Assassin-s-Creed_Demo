@@ -12,43 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bbfc1ec9cbb1ff4b9e737a186416827, type: 3}
   m_Name: PackageTable
   m_EditorClassIdentifier: 
-  DataList:
-  - id: 1
-    type: 1
-    star: 5
-    name: Sever
-    description: Sealed under ice for countless years, forever emitting a cold glint
-      and piercing sword aura.
-    skillDescription: Using the [Sever - Moment of Extreme Cold] skill can freeze
-      time.
-    imagePath: Sprites/UI/Weapon/weapon_01
-    Num: 1
-  - id: 2
-    type: 1
-    star: 4
-    name: Demon Breaker
-    description: Emitting a chilling demonic aura that makes one shiver, yet somehow
-      brings a profound sense of peace...
-    skillDescription: Use [Demon Breaker] to fire countless that pierce through enemies.
-    imagePath: Sprites/UI/Weapon/weapon_02
-    Num: 1
-  - id: 3
-    type: 1
-    star: 5
-    name: Ascending Dragon
-    description: A spear nurtured above thunderclouds, radiating supreme righteousness
-      that keeps evil at bay.
-    skillDescription: Use [Thunder Shock] to generate thunderclouds that automatically
-      attack the nearest enemy until they perish.
-    imagePath: Sprites/UI/Weapon/weapon_04
-    Num: 1
-  - id: 1111
-    type: 1
-    star: 3
-    name: Hunting Bow
-    description: A spear nurtured above the thunderclouds, emitting supreme righteousness
-      that keeps evil at bay.
-    skillDescription: Use [Thunderclap] to generate thunderclouds that automatically
-      attack the nearest enemy until they perish.
-    imagePath: Sprites/UI/Weapon/weapon_08
-    Num: 1
+  DataList: []

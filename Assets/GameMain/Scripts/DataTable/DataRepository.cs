@@ -42,6 +42,19 @@ public static class DataRepository
         return item != null ? GetItemConfig(item.Id) : null;
     }
 
+    public static Sprite GetItemIcon(int id)
+    {
+        if (ItemTable.TryGetValue(id, out var item) && !string.IsNullOrEmpty(item.ImagePath))
+            return Resources.Load<Sprite>(item.ImagePath);
+        return null;
+    }
+
+    public static Sprite GetItemIcon(string assetId)
+    {
+        var item = GetItemByAssetId(assetId);
+        return item != null ? GetItemIcon(item.Id) : null;
+    }
+
     public static DRItem GetItemByAssetId(string assetId)
         => ItemByAssetId.TryGetValue(assetId, out var item) ? item : null;
 
@@ -61,7 +74,8 @@ public static class DataRepository
                 Name = cols[3],
                 Description = cols[4],
                 SkillDescription = cols[5],
-                AssetId = cols[6]
+                ImagePath = cols[6],
+                AssetId = cols[7]
 
             };
             dict[item.Id] = item;

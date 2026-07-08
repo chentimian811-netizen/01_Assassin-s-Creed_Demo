@@ -1,12 +1,8 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-///<summary>
-///商店面板-支持购买
-/// </summary>
 public class ShopPanel : BasePanel
 {
     private Transform UITitle;
@@ -21,8 +17,8 @@ public class ShopPanel : BasePanel
     private Transform[] UIDetailStar = new Transform[5];
 
     private GameObject shopCellPrefab;
-    private ShopConfig currentConfig;
-    private ShopItemDisplay selectedDisplay;
+    private int currentShopKeeperId;
+    private DRShop selectedShopData;
 
     protected override void Awake()
     {
@@ -32,198 +28,133 @@ public class ShopPanel : BasePanel
         InitPrefab();
     }
 
-    public void OpenWithConfig(string name,ShopConfig config)
+    public void OpenWithConfig(string name, int shopKeeperId)
     {
-        this.currentConfig = config;
+        this.currentShopKeeperId = shopKeeperId;
         OpenPanel(name);
         RefreshGold();
         RefreshUI();
     }
-    
+
     private void InitUIName()
     {
-       //顶部
-        UITitle = transform.Find ("TopCenter/StoreName");
+        UITitle = transform.Find("TopCenter/StoreName");
         UIGoldDisplay = transform.Find("TopCenter/GoldNumber");
-
-        //物品滚动列表
         UIScrollView = transform.Find("Center/Scroll View");
-
-        //关闭按钮
         UICloseBtn = transform.Find("RightTop/Close/Icon");
-
-        //详情面板
         UIDetailPanel = transform.Find("Center/DetailPanel");
         UIDetailIcon = transform.Find("Center/DetailPanel/Center/Icon");
         UIDetailName = transform.Find("Center/DetailPanel/Top/Bg/Title");
         UIDetailDesc = transform.Find("Center/DetailPanel/Button/Description");
-
-        //购买按钮
         UIConfirmBtn = transform.Find("Right_Low/Buy");
 
-        //武器星级
         Transform starGroup = transform.Find("Center/DetailPanel/Center/StartLevel");
-        if(starGroup != null)
+        if (starGroup != null)
         {
-            for(int i = 0 ; i <5 ; i++)
-            {
-                UIDetailStar[i] = starGroup.Find("Image" + (i +1));
-            }
+            for (int i = 0; i < 5; i++)
+                UIDetailStar[i] = starGroup.Find("Image" + (i + 1));
         }
     }
+
     private void InitClick()
     {
         if (UICloseBtn != null)
-        UICloseBtn.GetComponent<Button>().onClick.AddListener(OnClickClose);
+            UICloseBtn.GetComponent<Button>().onClick.AddListener(OnClickClose);
         if (UIConfirmBtn != null)
-        UIConfirmBtn.GetComponent<Button>().onClick.AddListener(OnClickConfirm);
+            UIConfirmBtn.GetComponent<Button>().onClick.AddListener(OnClickConfirm);
     }
 
     private void InitPrefab()
-    {   
-        //加载ShopCl作为物品的子预制体
-        shopCellPrefab = Resources.Load("Prefabs/Panels/Shop/ShopCl")as GameObject;
+    {
+        shopCellPrefab = Resources.Load("Prefabs/Panels/Shop/ShopCl") as GameObject;
     }
 
     private void RefreshUI()
-    {   
+    {
         if (UIScrollView == null) return;
-        //清空列表
         Transform content = UIScrollView.GetComponent<ScrollRect>().content;
-        for(int i = content.childCount - 1 ; i >= 0; i--)
-        {
+        for (int i = content.childCount - 1; i >= 0; i--)
             Destroy(content.GetChild(i).gameObject);
-        }
-
-        //刷新购买列表
         RefreshBuyList(content);
     }
 
-    /// <summary>
-    /// 从 ShopManager 获取商品列表，逐个实例化 ShopCl 格子并填充数据
-    /// </summary>
     private void RefreshBuyList(Transform content)
     {
-        if(currentConfig == null)return;
-
-        List<ShopItemDisplay> items = ShopManager.Instance.GetShopItems(currentConfig);
-
-        //用一个列表记录所有实例化的格子
+        List<DRShop> items = DataRepository.GetShopItems(currentShopKeeperId);
         List<ShopCell> cells = new List<ShopCell>();
 
-        foreach (ShopItemDisplay display in items)
+        foreach (DRShop shopData in items)
         {
-            Transform cell = Instantiate(shopCellPrefab.transform,content)as Transform;
-            ShopCell shopcell = cell.GetComponent<ShopCell>();
-            shopcell.Refresh(display,this);
-            cells.Add(shopcell);
+            Transform cell = Instantiate(shopCellPrefab.transform, content) as Transform;
+            ShopCell shopCell = cell.GetComponent<ShopCell>();
+            shopCell.Refresh(shopData, currentShopKeeperId, this);
+            cells.Add(shopCell);
         }
 
-        if(cells.Count > 0)
-        {
-            OnCellClicked(cells[0]);
-        }
+        if (cells.Count > 0) OnCellClicked(cells[0]);
     }
 
     private void RefreshGold()
     {
-        if(UIGoldDisplay != null)
-        {
-            UIGoldDisplay.GetComponent<TextMeshProUGUI>().text = 
-                CurrencyManager.Instance.Gold.ToString();
-        }
+        if (UIGoldDisplay != null)
+            UIGoldDisplay.GetComponent<TextMeshProUGUI>().text
+                = CurrencyManager.Instance.Gold.ToString();
     }
 
     public void OnCellClicked(ShopCell clickedCell)
     {
-       //清除之前所有选中的状态
-       Transform content = UIScrollView.GetComponent<ScrollRect>().content;
-
-       for(int i = 0;i < content.childCount; i++)
+        Transform content = UIScrollView.GetComponent<ScrollRect>().content;
+        for (int i = 0; i < content.childCount; i++)
         {
             ShopCell cell = content.GetChild(i).GetComponent<ShopCell>();
-            if(cell != null) cell.SetSelected(false);
+            if (cell != null) cell.SetSelected(false);
         }
 
-        //选中当前点击的格子
         clickedCell.SetSelected(true);
-        ShopItemDisplay display = clickedCell.GetDisplayData();
-
-        //显示详情面板
+        DRShop shopData = clickedCell.GetShopData();
         UIDetailPanel.gameObject.SetActive(true);
 
-        //从物品表获取名称和描述   
-        PackageTableItem tableItem = GameManager.Instance.GetPackageItemById(display.itemData.itemID);
+        DRItem item = DataRepository.GetItemByAssetId(shopData.ItemAssetId);
 
-        //设置详情面板内容
-        UIDetailName.GetComponent<Text>().text = 
-            tableItem != null ? tableItem.name:"未知";
-        UIDetailDesc.GetComponent<Text>().text =
-            tableItem != null ? tableItem.description:"";
+        UIDetailName.GetComponent<Text>().text = item?.Name ?? "未知";
+        UIDetailDesc.GetComponent<Text>().text = item?.Description ?? "";
 
-        //设置武器图标
-        if(tableItem != null && !string.IsNullOrEmpty(tableItem.imagePath))
+        var icon = DataRepository.GetItemIcon(shopData.ItemAssetId);
+        if (icon != null)
+            UIDetailIcon.GetComponent<Image>().sprite = icon;
+
+        if (item != null)
         {
-            Sprite icon = Resources.Load<Sprite>(tableItem.imagePath);
-            if(icon != null)
+            for (int i = 0; i < 5; i++)
             {
-                UIDetailIcon.GetComponent<Image>().sprite = icon;
+                if (UIDetailStar[i] != null)
+                    UIDetailStar[i].gameObject.SetActive(i < item.Star);
             }
         }
 
-        //设置星级
-        if(tableItem != null)
-        {
-            for(int i = 0; i < 5; i++)
-            {
-                if(UIDetailStar[i] != null)
-                {
-                    UIDetailStar[i].gameObject.SetActive(i<tableItem.star);
-                }
-            }
-        }
-        //保存选中数据
-        selectedDisplay = display;
+        selectedShopData = shopData;
     }
 
-    //确认按钮
     private void OnClickConfirm()
     {
-        if(selectedDisplay == null || currentConfig == null) return;
-
-        bool success = ShopManager.Instance.BuyItem(currentConfig,selectedDisplay.itemData.itemID);
-        if (success)
-        {
-            RefreshGold();
-            RefreshUI();
-        }
-
+        if (selectedShopData == null) return;
+        bool success = ShopManager.Instance.BuyItem(
+            currentShopKeeperId, selectedShopData.ItemAssetId);
+        if (success) { RefreshGold(); RefreshUI(); }
     }
 
-
-    /// <summary>
-    /// 关闭按钮点击：退订金币事件 → 关闭面板
-    /// </summary>
     private void OnClickClose()
     {
         CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler;
         ClosePanel();
-        
     }
 
-    //金币变化时的回调
     private void OnGoldChangeHandler(int newGold)
     {
-        if(UIGoldDisplay != null)
-        {
+        if (UIGoldDisplay != null)
             UIGoldDisplay.GetComponent<TextMeshProUGUI>().text = newGold.ToString();
-        }
-
     }
 
-    /// <summary>
-    /// 打开面板时：解锁光标、暂停游戏、订阅金币事件
-    /// </summary>
     public override void OpenPanel(string name)
     {
         base.OpenPanel(name);
@@ -233,10 +164,6 @@ public class ShopPanel : BasePanel
         CurrencyManager.Instance.OnGoldChanged += OnGoldChangeHandler;
     }
 
-    
-    /// <summary>
-    /// 关闭面板时：退订事件、锁定光标、恢复游戏
-    /// </summary>
     public override void ClosePanel()
     {
         CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler;
@@ -244,6 +171,5 @@ public class ShopPanel : BasePanel
         Cursor.visible = false;
         Time.timeScale = 1f;
         base.ClosePanel();
-
     }
 }

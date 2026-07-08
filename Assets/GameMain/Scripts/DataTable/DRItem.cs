@@ -6,5 +6,6 @@ public class DRItem
     public string Name { get; set; }
     public string Description { get; set; }
     public string SkillDescription { get; set; }
+    public string ImagePath { get; set; }
     public string AssetId { get; set; }
 }

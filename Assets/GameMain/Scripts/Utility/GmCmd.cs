@@ -14,10 +14,9 @@ public class GmCmd
     #endif
     public static void ReadTable()
     {
-        PackageTables packageTables = Resources.Load<PackageTables>("TableDate/PackageTable");
-        foreach (PackageTableItem packageItem in packageTables.DataList)
+        foreach (var kv in DataRepository.ItemTable)
         {
-            Debug.Log(string.Format("【id】: {0},【name】:{1}", packageItem.id, packageItem.name));
+           Debug.Log($"【id】: {kv.Key},【name】:{kv.Value.Name}");
         }
     }
     #if UNITY_EDITOR

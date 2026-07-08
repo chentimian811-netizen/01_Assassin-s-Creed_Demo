@@ -45,6 +45,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f16deb8228ebef4ca5afb3c3ade85a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  healthBarRoot: {fileID: 0}
+  minimapRoot: {fileID: 0}
+  menuCharacterPrefab: {fileID: 7962487104537891693, guid: 14600a7c66b44ee478166cdf35157220,
+    type: 3}
+  menuCharacterPosition: {x: 0, y: 0, z: 0}
+  menuCharacterRotation: {x: 0, y: 30, z: 0}
+  isMainMenuActive: 1
 --- !u!114 &7540375361310376621
 MonoBehaviour:
   m_ObjectHideFlags: 0

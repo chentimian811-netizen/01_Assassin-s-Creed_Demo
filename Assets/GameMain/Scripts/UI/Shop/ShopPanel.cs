@@ -14,6 +14,7 @@ public class ShopPanel : BasePanel
     private Transform UIDetailName;
     private Transform UIDetailDesc;
     private Transform UIConfirmBtn;
+    private Transform UIWeaponSkillDesc;
     private Transform[] UIDetailStar = new Transform[5];
 
     private GameObject shopCellPrefab;
@@ -45,7 +46,8 @@ public class ShopPanel : BasePanel
         UIDetailPanel = transform.Find("Center/DetailPanel");
         UIDetailIcon = transform.Find("Center/DetailPanel/Center/Icon");
         UIDetailName = transform.Find("Center/DetailPanel/Top/Bg/Title");
-        UIDetailDesc = transform.Find("Center/DetailPanel/Button/Description");
+        UIDetailDesc = transform.Find("Center/DetailPanel/Center/Description");
+        UIWeaponSkillDesc = transform.Find("Center/DetailPanel/Button/SkillDescription");
         UIConfirmBtn = transform.Find("Right_Low/Buy");
 
         Transform starGroup = transform.Find("Center/DetailPanel/Center/StartLevel");
@@ -118,6 +120,7 @@ public class ShopPanel : BasePanel
 
         UIDetailName.GetComponent<Text>().text = item?.Name ?? "未知";
         UIDetailDesc.GetComponent<Text>().text = item?.Description ?? "";
+        UIWeaponSkillDesc.GetComponent<Text>().text = item?.SkillDescription ?? "";
 
         var icon = DataRepository.GetItemIcon(shopData.ItemAssetId);
         if (icon != null)

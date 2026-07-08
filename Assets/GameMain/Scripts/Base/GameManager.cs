@@ -45,6 +45,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        DataRepository.Initialize();
         InitMainMenu();
     }
 

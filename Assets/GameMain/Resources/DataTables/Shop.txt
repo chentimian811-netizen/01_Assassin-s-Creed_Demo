@@ -1,0 +1,6 @@
+#	Id	ShopKeeperId	ItemAssetId	Price	Stock	Discount
+#	int	int	string	int	int	float
+1	1	Item_Sever	200	5	1.0
+2	1	Item_DemonBreaker	500	5	1.0
+3	1	Item_AscendingDragon	100	-1	1.0
+4	1	Item_HuntingBow	100	-1	1.0

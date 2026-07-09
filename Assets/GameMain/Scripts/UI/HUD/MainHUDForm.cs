@@ -20,11 +20,9 @@ using UnityGameFramework.Runtime;
 /// </summary>
 public class MainHUDForm : UIFormLogic
 {
-    [Header("HUD 功能按钮（阶段3 迁移到 TopRightTabForm）")]
     [SerializeField] private Button packageBtn;    // 背包按钮
     [SerializeField] private Button lotteryBtn;    // 抽卡按钮
 
-    // ==================== UIFormLogic 生命周期 ====================
 
     protected override void OnOpen(object userData)
     {
@@ -41,8 +39,6 @@ public class MainHUDForm : UIFormLogic
 
         base.OnClose(isShutdown, userData);
     }
-
-    // ==================== 按钮回调 ====================
 
     /// <summary>
     /// 打开背包面板 — 通过 GF 事件解耦，不直接依赖 PackageForm。

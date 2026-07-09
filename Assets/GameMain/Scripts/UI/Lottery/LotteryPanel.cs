@@ -82,8 +82,13 @@ public class LotteryPanel : BasePanel
     private void OnClose()
     {
         Debug.Log("关闭抽卡界面");
-        ClosePanel();
-        UIManager.Instance.OpenPanel(UIconst.MainPanel);
+        UIManager.Instance.ClosePanel(UIconst.LotteryPanel);
 
+        var mainPanel = UIManager.Instance.GetPanel(UIconst.MainPanel);
+        if(mainPanel != null)
+        {
+            mainPanel.gameObject.SetActive(true);
+        }
+        
     }
 }

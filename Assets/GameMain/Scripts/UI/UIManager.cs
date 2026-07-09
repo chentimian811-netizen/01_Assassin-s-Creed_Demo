@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,7 +8,13 @@ public class UIManager
     private static UIManager _instance;
 
     private Transform _uiRoot;
-
+    private static readonly HashSet<string> ModalPanels = new HashSet<string>
+    {
+        UIconst.MainPanel,
+        UIconst.PackagePanel,
+        UIconst.LotteryPanel,
+        UIconst.ShopPanel,
+    };
     private Dictionary<string, string> pathDict;
 
     private Dictionary<string, GameObject> prefabDict;
@@ -127,6 +134,13 @@ public class UIManager
         Debug.Log("面板打开成功: " + name);
         panelDict.Add(name, panel);
         panel.OpenPanel(name);
+
+        if (ModalPanels.Contains(name))
+        {
+            Time.timeScale = 0f;
+        }
+
+        CursorManager.Instance.AddLock(name);
         return panel;
 
     }
@@ -139,12 +153,32 @@ public class UIManager
             Debug.Log("面板未打开:"+name);
             return false;
         }
+        CursorManager.Instance.RemoveLock(name);
+
+        if (ModalPanels.Contains(name))
+        {
+            TryResumeGame();
+        }
 
         panel.ClosePanel();
         panelDict.Remove(name);
+
+        CursorManager.Instance.RemoveLock(name);
+        if (ModalPanels.Contains(name))
+        {
+            TryResumeGame();
+        }
         return true;
     }
 
+    private void TryResumeGame()
+    {
+        foreach(var kv in panelDict)
+        {
+            if(ModalPanels.Contains(kv.Key)) return;
+        }
+        Time.timeScale = 1f;
+    }
 }
 
 public class UIconst

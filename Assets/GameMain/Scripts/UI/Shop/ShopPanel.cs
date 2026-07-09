@@ -149,7 +149,7 @@ public class ShopPanel : BasePanel
     private void OnClickClose()
     {
         CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler;
-        ClosePanel();
+        UIManager.Instance.ClosePanel(UIconst.ShopPanel);
     }
 
     private void OnGoldChangeHandler(int newGold)
@@ -161,16 +161,14 @@ public class ShopPanel : BasePanel
     public override void OpenPanel(string name)
     {
         base.OpenPanel(name);
-        CursorManager.Instance.AddLock("Shop");
-        Time.timeScale = 0f;
+
         CurrencyManager.Instance.OnGoldChanged += OnGoldChangeHandler;
     }
 
     public override void ClosePanel()
     {
-        CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler;
-        CursorManager.Instance.RemoveLock("Shop");  
-        Time.timeScale = 1f;
+        CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler; 
+
         base.ClosePanel();
     }
 }

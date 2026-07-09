@@ -243,16 +243,21 @@ public class PlayerController : MonoBehaviour
     {
         if(!context.performed) return;
 
+        if (isMainMenuOpen)
+        {
+            CloseSubPanels();
+        }
+
         isMainMenuOpen = !isMainMenuOpen;
         if(isMainMenuOpen)
         {
-            Time.timeScale = 0f;//打开背包时暂停游戏
+           
             CursorManager.Instance.AddLock("Backpack");
             UIManager.Instance.OpenPanel(UIconst.MainPanel);
         }
         else
         {
-            Time.timeScale = 1f;//关闭背包时恢复游戏
+            
             CursorManager.Instance.RemoveLock("Backpack");
             UIManager.Instance.ClosePanel(UIconst.MainPanel);
         }
@@ -311,5 +316,15 @@ public class PlayerController : MonoBehaviour
     }
      #endregion
      
+    private void CloseSubPanels()
+    {
+        string[] subPanels = { UIconst.LotteryPanel, UIconst.PackagePanel, UIconst.ShopPanel };
+        foreach (var panelName in subPanels)
+        {
+            if (UIManager.Instance.GetPanel(panelName) != null)
+                UIManager.Instance.ClosePanel(panelName);
+        }
+
+    }
 }
  

@@ -26,6 +26,7 @@ public class BasePanel : MonoBehaviour
     public virtual void ClosePanel()
     {
         isRemove = true;
+        CursorManager.Instance.RemoveLock(name); 
         SetActive(false);
         Destroy(gameObject);
         if(UIManager.Instance.panelDict.ContainsKey(name))

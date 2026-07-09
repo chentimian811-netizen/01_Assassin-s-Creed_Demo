@@ -4541,6 +4541,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77bc0acd896ea0b438ce0c1a02e4dae7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  autoManageCursor: 1
+  pauseOnOpne: 1
   packageCellPrefab: {fileID: 65602562174586533, guid: caa56c9005434554098003a5585e4558,
     type: 3}
   packageCellPrefab_Food: {fileID: 65602562174586533, guid: f444181db93c4644ab62e59003cdb8f9,

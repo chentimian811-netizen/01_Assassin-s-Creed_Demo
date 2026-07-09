@@ -1065,6 +1065,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 11405216, guid: adb3eb1c35fcff14f89fba7b05c9d71c, type: 3}
+      propertyPath: m_EntranceProcedureTypeName
+      value: ProcedureLaunch
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1405,6 +1409,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6545509355744305180, guid: b128d930682996f409ab0da525032ccd,
+        type: 3}
+      propertyPath: lotteryBtn
+      value: 
+      objectReference: {fileID: 857534717}
+    - target: {fileID: 6545509355744305180, guid: b128d930682996f409ab0da525032ccd,
+        type: 3}
+      propertyPath: packageBtn
+      value: 
+      objectReference: {fileID: 202285519}
     - target: {fileID: 8696922254935457220, guid: b128d930682996f409ab0da525032ccd,
         type: 3}
       propertyPath: minimapRoot
@@ -1898,7 +1912,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4967461795722412562}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.017851356, y: 0.09320424, z: 0.0016713705, w: 0.9954856}
+  m_LocalRotation: {x: -0.017851388, y: 0.09320425, z: 0.0016713705, w: 0.9954856}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2284,7 +2298,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1961418613057742971}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.045708235, y: 0.008717425, z: -0.00039889023, w: 0.99891675}
+  m_LocalRotation: {x: 0.045708228, y: 0.008717417, z: -0.00039888977, w: 0.99891675}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2727,6 +2741,7 @@ MonoBehaviour:
   cmBrain: {fileID: 5577198134294590205}
   freeLook: {fileID: 5764343450044777015}
   playerModel: {fileID: 315430562}
+  cmInputProvider: {fileID: 7943060531831738466}
   impulseSource: {fileID: 8956647233005144051}
   defaultForce: 0.65
   shakeCooldown: 0.3
@@ -3673,7 +3688,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8687621937903247366}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.028535452, y: 0.008722984, z: -0.0002490251, w: 0.9995547}
+  m_LocalRotation: {x: 0.028535426, y: 0.008722985, z: -0.00024902498, w: 0.9995547}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

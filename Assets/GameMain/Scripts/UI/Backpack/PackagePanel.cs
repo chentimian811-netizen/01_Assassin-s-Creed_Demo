@@ -324,10 +324,16 @@ public class PackagePanel : BasePanel
         print("点击了关闭");
         CurrentFilterType = -1;//重置筛选
         currentPage = 0;
-        ClosePanel();
-        UIManager.Instance.OpenPanel(UIconst.MainPanel);
-    }
+        UIManager.Instance.ClosePanel(UIconst.PackagePanel);
 
+        var mainPanel = UIManager.Instance.GetPanel(UIconst.MainPanel);
+        if(mainPanel != null)
+        {
+            mainPanel.gameObject.SetActive(true);
+        }
+        
+    }
+    
     private void OnClickFood()
     {
         print("点击了食物");

@@ -78,15 +78,15 @@ public class MainPanel : BasePanel
     private void OnBtnPackage()
     {
         Debug.Log("点击了背包按钮");
+        gameObject.SetActive(false);
         UIManager.Instance.OpenPanel(UIconst.PackagePanel);
-        ClosePanel();
     }
 
     private void OnBtnLottery()
     {
         Debug.Log("点击了抽卡按钮");
+        gameObject.SetActive(false);
         UIManager.Instance.OpenPanel(UIconst.LotteryPanel);
-        ClosePanel();
     }
 
     private void OnQuitGame()

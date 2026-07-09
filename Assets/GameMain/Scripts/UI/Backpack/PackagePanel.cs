@@ -58,6 +58,16 @@ public class PackagePanel : BasePanel
     private int CurrentFilterType = -1;
     private int currentPage = 0;
     private int pageSize = 50;
+
+    private class TabDef
+    {
+        public string name;
+        public int filterType;
+        public Transform indicator;
+    }
+
+    private List<TabDef> tabs = new List<TabDef>();
+    private int currentTabIndex = 0;
     public void AddChooseDeleteUid(string uid)
     {
         this.deleteChooseUid ??= new List<string>();
@@ -97,10 +107,41 @@ public class PackagePanel : BasePanel
 
     private void Start()
     {
-        CurrentFilterType = 1;
+        InitTabs();
         WeaponIndicator.gameObject.SetActive(true);
         FoodIndicator.gameObject.SetActive(false);
         RefreshUI();
+    }
+
+    private void InitTabs()
+    {
+        tabs = new List<TabDef>
+        {
+            new TabDef { name = "武器", filterType = GameConst.PackageTypeWeapon, indicator = WeaponIndicator },
+            new TabDef { name = "食物", filterType = GameConst.PackageTypeFood, indicator = FoodIndicator },
+        };
+
+        // 默认选中第一个标签（武器）
+        currentTabIndex = 0;
+        SwitchToTab(0);
+
+    }
+
+    private void SwitchToTab(int index)
+    {
+        if (index < 0 || index >= tabs.Count) return;
+
+        var tab = tabs[index];
+        CurrentFilterType = tab.filterType;
+        currentPage = 0;
+
+        // 切换所有标签的 Indicator 显示状态
+        foreach (var t in tabs)
+            t.indicator.gameObject.SetActive(false);
+        tab.indicator.gameObject.SetActive(true);
+
+        RefreshScrollView();
+
     }
 
     private void InitUI()
@@ -184,7 +225,9 @@ public class PackagePanel : BasePanel
         {
             int totalCount = GetFilteredItemCount();
             UITotalInfoText.GetComponent<Text>().text = $"{totalCount}/{PackageMaxCapacity}";
+
         }
+
     }
 
     private List<PackageLocalItem>MergeFoodItems(List<PackageLocalItem> items)
@@ -304,24 +347,17 @@ public class PackagePanel : BasePanel
     private void OnClickRight()
     {
         print("点击了右边");
-        int totalCount = GetFilteredItemCount();
-        int totalPages = Mathf.CeilToInt((float)totalCount / pageSize);
+        currentTabIndex = (currentTabIndex + 1) % tabs.Count;
+        SwitchToTab(currentTabIndex);
 
-        if(currentPage < totalPages - 1)
-        {
-            currentPage++;
-            RefreshScrollView();
-        }
     }
 
     private void OnClickLeft()
     {
         print("点击了左边");
-        if(currentPage > 0)
-        {
-            currentPage--;
-            RefreshScrollView();
-        }
+        currentTabIndex = (currentTabIndex - 1 + tabs.Count) % tabs.Count;
+        SwitchToTab(currentTabIndex);
+
     }
 
     private int GetFilteredItemCount()
@@ -357,22 +393,16 @@ public class PackagePanel : BasePanel
     
     private void OnClickFood()
     {
-        print("点击了食物");
-        FoodIndicator.gameObject.SetActive(true);
-        WeaponIndicator.gameObject.SetActive(false);
-        CurrentFilterType = 2;
-        currentPage = 0;
-        RefreshScrollView();
+        currentTabIndex = 1;
+        SwitchToTab(1);
+
     }
 
     private void OnClickWeapon()
     {
-        print("点击了武器");
-        WeaponIndicator.gameObject.SetActive(true);
-        FoodIndicator.gameObject.SetActive(false);
-        CurrentFilterType = 1;
-        currentPage = 0;
-        RefreshScrollView();
+        currentTabIndex = 0;
+        SwitchToTab(0);
+
     }
     public void RefreshList()
     {

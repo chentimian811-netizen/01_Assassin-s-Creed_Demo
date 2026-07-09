@@ -8,6 +8,8 @@ public class HUDBtn : MonoBehaviour
     [SerializeField] private Button packageBtn;
     [SerializeField] private Button lotteryBtn;
 
+    [SerializeField] private GameObject[] hudRoots;
+
     private void Awake()
     {
         if(packageBtn != null)
@@ -19,6 +21,19 @@ public class HUDBtn : MonoBehaviour
             lotteryBtn.onClick.AddListener(OnOpenLottery);
         }
         
+    }
+
+    private void Update()
+    {
+        bool anyPanelOpen = UIManager.Instance .panelDict.Count > 0;
+        bool shouldShow = !anyPanelOpen;
+        if(packageBtn !=null) packageBtn.gameObject .SetActive(shouldShow);
+        if(lotteryBtn != null) lotteryBtn.gameObject.SetActive(shouldShow);
+
+        foreach(var root in hudRoots)
+        {
+            if(root != null) root.SetActive(!anyPanelOpen);
+        }
     }
 
     private void OnDestroy()

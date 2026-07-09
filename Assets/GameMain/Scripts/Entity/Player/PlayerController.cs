@@ -129,7 +129,7 @@ public class PlayerController : MonoBehaviour
         playerAnimator.Init(Animator, this, playerMovement);
         // playerDodge.Init(Animator, MeleeFighter, this);
 
-        Cursor.lockState = CursorLockMode.Locked;
+        
         Debug.Log("当前金币" + CurrencyManager.Instance.Gold);
     }
   
@@ -205,7 +205,8 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     /// <param name="context"></param>
     public void GetAimInput(InputAction.CallbackContext context)
-    {
+    {   
+        if(!CursorManager.Instance.IsGameplayFocused) return;
         if(RangedFighter == null) return;
         if (context.performed)
         {
@@ -223,6 +224,7 @@ public class PlayerController : MonoBehaviour
     /// <param name="context"></param>
     public void GetFireInput(InputAction.CallbackContext context)
     {
+        if(!CursorManager.Instance.IsGameplayFocused) return;
         if(RangedFighter == null) return;
         if(!context.performed) return;
 
@@ -245,14 +247,13 @@ public class PlayerController : MonoBehaviour
         if(isMainMenuOpen)
         {
             Time.timeScale = 0f;//打开背包时暂停游戏
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            CursorManager.Instance.AddLock("Backpack");
             UIManager.Instance.OpenPanel(UIconst.MainPanel);
         }
         else
         {
             Time.timeScale = 1f;//关闭背包时恢复游戏
-            Cursor.lockState = CursorLockMode.Locked;
+            CursorManager.Instance.RemoveLock("Backpack");
             UIManager.Instance.ClosePanel(UIconst.MainPanel);
         }
     }
@@ -263,6 +264,7 @@ public class PlayerController : MonoBehaviour
     /// <param name="context"></param>
     public void GetLightAttack(InputAction.CallbackContext context)
     {
+        if(!CursorManager.Instance.IsGameplayFocused) return;
         playerCombat.HandleLightAttack(context);
     }
 
@@ -273,6 +275,7 @@ public class PlayerController : MonoBehaviour
     /// <param name="context"></param>
     public void GetLockInput(InputAction.CallbackContext context)
     {
+        if(!CursorManager.Instance.IsGameplayFocused) return;
         playerLockOn.HandleLockInput(context);
     }
 
@@ -283,6 +286,20 @@ public class PlayerController : MonoBehaviour
     {
         // if (!context.performed) return;
         // playerDodge?.TryDodge(playerMovement.GetMoveInputRaw());
+    }
+
+    public void GetShowCursorInput(InputAction.CallbackContext context)
+    {
+
+        Debug.Log($"GetShowCursorInput: {context.phase}"); 
+        if(context.performed)
+        {
+            CursorManager.Instance.HoldCursor();
+        }
+        else if (context.canceled)
+        {
+            CursorManager.Instance.ReleaseCursor();
+        }
     }
 
     /// <summary>

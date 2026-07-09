@@ -21,6 +21,8 @@ public class CameraManager : MonoBehaviour
     //玩家模型Transform
     public Transform playerModel;
 
+    public CinemachineInputProvider cmInputProvider;
+
     [Header("屏幕震动设置")]
     [Tooltip("震动信号源（CinemachineImpulseSource组件）")]
     [SerializeField] CinemachineImpulseSource impulseSource;
@@ -142,4 +144,10 @@ public class CameraManager : MonoBehaviour
 
         impulseSource.GenerateImpulseAt(postion,Vector3.one * shakeForce);
     }
+
+     public void SetLookEnabled(bool enabled)
+        {
+            if (cmInputProvider != null)
+                cmInputProvider.enabled = enabled;
+        }
 }

@@ -402,17 +402,17 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void OnAnimatorMove()
     {
-        if (!meleeFighter.inCounter && !playerController.IsLocking)
-        {
+        // if (!meleeFighter.inCounter && !playerController.IsLocking)
+        // {
             
-        }
+        // }
 
         //翻滚期间不应用Root Motion旋转(由翻滚协程控制朝向)（阶段2实现PlayerDodge后取消注释）
         // if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
 
-        if (!playerController.IsLocking && !meleeFighter.inAction)
-        {
-            transform.rotation *= Animator.deltaRotation;
-        }
+        // if (!playerController.IsLocking && !meleeFighter.inAction)
+        // {
+        //     transform.rotation *= Animator.deltaRotation;
+        // }
     }
 }

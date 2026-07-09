@@ -161,8 +161,7 @@ public class ShopPanel : BasePanel
     public override void OpenPanel(string name)
     {
         base.OpenPanel(name);
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        CursorManager.Instance.AddLock("Shop");
         Time.timeScale = 0f;
         CurrencyManager.Instance.OnGoldChanged += OnGoldChangeHandler;
     }
@@ -170,8 +169,7 @@ public class ShopPanel : BasePanel
     public override void ClosePanel()
     {
         CurrencyManager.Instance.OnGoldChanged -= OnGoldChangeHandler;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        CursorManager.Instance.RemoveLock("Shop");  
         Time.timeScale = 1f;
         base.ClosePanel();
     }

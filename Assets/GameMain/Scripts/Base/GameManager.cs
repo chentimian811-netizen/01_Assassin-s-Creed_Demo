@@ -182,6 +182,12 @@ public class PackageItemComparer : IComparer<PackageLocalItem>
 {
     public int Compare(PackageLocalItem a, PackageLocalItem b)
     {
+        if(a.isEquipped != b.isEquipped)
+        {
+            return a.isEquipped ?-1:1;
+        }
+
+
         DRItem x = GameManager.Instance.GetPackageItemById(a.id);
         DRItem y = GameManager.Instance.GetPackageItemById(b.id);
 

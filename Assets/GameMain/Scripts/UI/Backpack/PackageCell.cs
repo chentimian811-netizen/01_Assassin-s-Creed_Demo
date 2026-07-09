@@ -20,6 +20,8 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     private PackageLocalItem packageLocalData;
     private PackagePanel uiParent;
 
+    private CanvasGroup canvasGroup;
+
     private void Awake()
     {
         InitUIName();
@@ -42,6 +44,8 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         UIDeleteSelect.gameObject.SetActive(false);
         UIMouseOverAni.gameObject.SetActive(false);
         UISelectAni.gameObject.SetActive(false);
+
+        canvasGroup = GetComponent<CanvasGroup>();
     }
 
     public void Refresh(PackageLocalItem packageLocalData, PackagePanel uiParent)
@@ -59,6 +63,7 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
 
         UILevel.GetComponent<Text>().text = "Lv." + this.packageLocalData.level.ToString();
         UINew.gameObject.SetActive(this.packageLocalData.isNew);
+        UIHead.gameObject.SetActive(this.packageLocalData.isEquipped);
 
         var icon = DataRepository.GetItemIcon(item.Id);
         if (icon != null)
@@ -80,7 +85,18 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     }
 
     public void RefreshDeleteState()
-    {
+    {  
+        bool isEquipped = this.packageLocalData.isEquipped;
+        bool isDeleteMode = this.uiParent.curMode == PackageMode.delete;
+
+        if(canvasGroup != null)
+        {
+            canvasGroup.alpha = (isDeleteMode && isEquipped)?0.4f:1f;
+            canvasGroup.blocksRaycasts = !(isDeleteMode && isEquipped);
+        }
+
+        this.UIDeleteSelect.gameObject.SetActive(!isEquipped && this.uiParent.deleteChooseUid.Contains(this.packageLocalData.uid));
+
         if (this.uiParent.deleteChooseUid.Contains(this.packageLocalData.uid))
         {
             this.UIDeleteSelect.gameObject.SetActive(true);
@@ -96,12 +112,25 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         Debug.Log("OnPointerClick: " + eventData.ToString());
         if (this.uiParent.curMode == PackageMode.delete)
         {
-            this.uiParent.AddChooseDeleteUid(this.packageLocalData.uid);
+            if (!this.packageLocalData.isEquipped)
+            {
+                this.uiParent.AddChooseDeleteUid(this.packageLocalData.uid);
+            }
+            
         }
+
+        if (this.packageLocalData.isNew)
+        {
+            this.packageLocalData.isNew = false;
+            UINew.gameObject.SetActive(false);
+            PackageLocalData.Instance.SavePackage();
+        }
+
         if (this.uiParent.ChooseUid == this.packageLocalData.uid)
             return;
         //根据点击设置最新的UID —> 进而刷新详情面板
         this.uiParent.ChooseUid = this.packageLocalData.uid;
+       
 
         UISelectAni.gameObject.SetActive(true);
         UISelectAni.GetComponent<Animator>().SetTrigger("In");

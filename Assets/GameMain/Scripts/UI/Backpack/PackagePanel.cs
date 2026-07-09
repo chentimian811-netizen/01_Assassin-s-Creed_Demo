@@ -33,6 +33,7 @@ public class PackagePanel : BasePanel
     private Transform UIBottomMenus;
     private Transform UIDeleteBtn;
     private Transform UIDetailBtn;
+    private Transform UITotalInfoText;
 
     public GameObject packageCellPrefab;
     public GameObject packageCellPrefab_Food;
@@ -40,6 +41,7 @@ public class PackagePanel : BasePanel
     //当前页面处于上面模式
     public PackageMode curMode = PackageMode.normal;
 
+    private const int PackageMaxCapacity = 1000;
     public List<string> deleteChooseUid;
 
     private string _chooseUid;
@@ -77,6 +79,13 @@ public class PackagePanel : BasePanel
         {
             PackageCell packageCell = child.GetComponent<PackageCell>();
             packageCell.RefreshDeleteState();
+        }
+
+        int total = GetFilteredItemCount();
+        int selected = deleteChooseUid?.Count ?? 0;
+        if(UIDeleteInfoText != null)
+        {
+            UIDeleteInfoText.GetComponent<Text>().text = $"已选{selected}/{total}";
         }
     }
 
@@ -170,6 +179,12 @@ public class PackagePanel : BasePanel
         {
             ChooseUid = firstCell.GetUid();
         }
+
+        if(UITotalInfoText != null)
+        {
+            int totalCount = GetFilteredItemCount();
+            UITotalInfoText.GetComponent<Text>().text = $"{totalCount}/{PackageMaxCapacity}";
+        }
     }
 
     private List<PackageLocalItem>MergeFoodItems(List<PackageLocalItem> items)
@@ -206,6 +221,7 @@ public class PackagePanel : BasePanel
         FoodIndicator = transform.Find("TopCenter/Menus/Food/Indicator");
         UITabName = transform.Find("LeftTop/Name");
         UICloseBtn = transform.Find("RightTop/Close/Icon");
+        UITotalInfoText = transform.Find("RightTop/PackageNum/AmountText");
         UICenter = transform.Find("Center");
         UIScrollView = transform.Find("Center/Scroll View");
         UIDetailPanel = transform.Find("Center/DetailPanel");
@@ -214,7 +230,7 @@ public class PackagePanel : BasePanel
 
         UIDeletePanel = transform.Find("Bottom/DeletePanel");
         UIDeleteBackBtn = transform.Find("Bottom/DeletePanel/Back");
-        UIDeleteInfoText = transform.Find("Bottom/DeletePanel/InfoText");
+        UIDeleteInfoText = transform.Find("Bottom/DeletePanel/DestroyNum/InfoText");
         UIDeleteConfirmBtn = transform.Find("Bottom/DeletePanel/ConfirmBtn");
 
         UIBottomMenus = transform.Find("Bottom/BottomMenus");
@@ -251,21 +267,21 @@ public class PackagePanel : BasePanel
         print("点击了删除");
         curMode = PackageMode.delete;
         UIDeletePanel.gameObject.SetActive(true);
+        RefreshDeletePanel();
     }
 
     private void OnClickDeleteConfirm()
     {
         print("点击了删除确认");
-        if (this.deleteChooseUid == null)
-        {
-            return;
-        }
-        if (this.deleteChooseUid.Count == 0)
+        if (this.deleteChooseUid == null || this.deleteChooseUid.Count == 0)
         {
             return;
         }
         GameManager.Instance.DeletePackageItem(this.deleteChooseUid);
+        this.deleteChooseUid = new List<string>();
         //删除后刷新整个页面
+        curMode = PackageMode.normal;
+        UIDeletePanel.gameObject.SetActive(false);
         RefreshUI();
     }
 
@@ -278,6 +294,11 @@ public class PackagePanel : BasePanel
         deleteChooseUid = new List<string>();
         //刷新选中状态
         RefreshDeletePanel();
+
+        if(UIDeleteInfoText != null)
+        {
+            UIDeleteInfoText.GetComponent<Text>().text = "";
+        }
     }
 
     private void OnClickRight()

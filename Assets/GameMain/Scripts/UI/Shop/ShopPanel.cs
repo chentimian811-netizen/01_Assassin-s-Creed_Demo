@@ -17,7 +17,12 @@ public class ShopPanel : BasePanel
     private Transform UIWeaponSkillDesc;
     private Transform[] UIDetailStar = new Transform[5];
 
-    private GameObject shopCellPrefab;
+    private GameObject shopCellPrefab_Weapon;
+    private GameObject shopCellPrefab_Food;
+
+    private GameObject detailPanelPrefab_Food;
+    private GameObject detailPanelPrefab_Weapon;
+    private GameObject currentDetailPanel;
     private int currentShopKeeperId;
     private DRShop selectedShopData;
 
@@ -43,19 +48,7 @@ public class ShopPanel : BasePanel
         UIGoldDisplay = transform.Find("TopCenter/GoldNumber");
         UIScrollView = transform.Find("Center/Scroll View");
         UICloseBtn = transform.Find("RightTop/Close/Icon");
-        UIDetailPanel = transform.Find("Center/DetailPanel");
-        UIDetailIcon = transform.Find("Center/DetailPanel/Center/Icon");
-        UIDetailName = transform.Find("Center/DetailPanel/Top/Bg/Title");
-        UIDetailDesc = transform.Find("Center/DetailPanel/Center/Description");
-        UIWeaponSkillDesc = transform.Find("Center/DetailPanel/Button/SkillDescription");
         UIConfirmBtn = transform.Find("Right_Low/Buy");
-
-        Transform starGroup = transform.Find("Center/DetailPanel/Center/StartLevel");
-        if (starGroup != null)
-        {
-            for (int i = 0; i < 5; i++)
-                UIDetailStar[i] = starGroup.Find("Image" + (i + 1));
-        }
     }
 
     private void InitClick()
@@ -68,7 +61,11 @@ public class ShopPanel : BasePanel
 
     private void InitPrefab()
     {
-        shopCellPrefab = Resources.Load("Prefabs/Panels/Shop/ShopCl") as GameObject;
+        shopCellPrefab_Weapon = Resources.Load("Prefabs/Panels/Shop/ShopWeapon") as GameObject;
+        shopCellPrefab_Food = Resources.Load("Prefabs/Panels/Shop/ShopFood") as GameObject;
+
+        detailPanelPrefab_Weapon = Resources.Load("Prefabs/Panels/Shop/DetailPanel_Weapon") as GameObject;
+        detailPanelPrefab_Food = Resources.Load("Prefabs/Panels/Shop/DetailPanel_Food") as GameObject;
     }
 
     private void RefreshUI()
@@ -76,24 +73,27 @@ public class ShopPanel : BasePanel
         if (UIScrollView == null) return;
         Transform content = UIScrollView.GetComponent<ScrollRect>().content;
         for (int i = content.childCount - 1; i >= 0; i--)
-            Destroy(content.GetChild(i).gameObject);
+            DestroyImmediate(content.GetChild(i).gameObject);
         RefreshBuyList(content);
     }
 
     private void RefreshBuyList(Transform content)
     {
         List<DRShop> items = DataRepository.GetShopItems(currentShopKeeperId);
-        List<ShopCell> cells = new List<ShopCell>();
-
         foreach (DRShop shopData in items)
-        {
-            Transform cell = Instantiate(shopCellPrefab.transform, content) as Transform;
-            ShopCell shopCell = cell.GetComponent<ShopCell>();
-            shopCell.Refresh(shopData, currentShopKeeperId, this);
-            cells.Add(shopCell);
+        {   
+            DRItem item = DataRepository.GetItemByAssetId(shopData.ItemAssetId);
+            GameObject prefab = (item != null && item.Type == GameConst.PackageTypeFood)
+                ? shopCellPrefab_Food : shopCellPrefab_Weapon;
+            Transform cell = Instantiate(prefab.transform,content);
+            cell.GetComponent<ShopCell>().Refresh(shopData,currentShopKeeperId,this);
         }
 
-        if (cells.Count > 0) OnCellClicked(cells[0]);
+        Transform first = content.childCount > 0 ? content.GetChild(0) : null;
+        if(first != null)
+        {
+            OnCellClicked(first.GetComponent<ShopCell>());
+        }
     }
 
     private void RefreshGold()
@@ -103,8 +103,36 @@ public class ShopPanel : BasePanel
                 = CurrencyManager.Instance.Gold.ToString();
     }
 
-    public void OnCellClicked(ShopCell clickedCell)
+    private void SwapDetailPanel(bool isFood)
     {
+        Transform slot = transform.Find("Center/DetailSlot");
+        for(int i = slot.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(slot.GetChild(i).gameObject);
+        }
+        GameObject prefba = isFood ? detailPanelPrefab_Food : detailPanelPrefab_Weapon; 
+        
+        currentDetailPanel = Instantiate(prefba, slot, false);
+        currentDetailPanel.name = "DetailPanel";
+
+        UIDetailPanel = currentDetailPanel.transform;
+        UIDetailIcon = UIDetailPanel.Find("Center/Icon");
+        UIDetailName = UIDetailPanel.Find("Top/Bg/Title");
+        UIDetailDesc = UIDetailPanel.Find("Center/Description");
+        UIWeaponSkillDesc = UIDetailPanel.Find("Button/SkillDescription");
+
+        Transform starGroup = UIDetailPanel.Find("Center/StartLevel");
+        if (starGroup != null)
+        {
+            for (int i = 0; i < 5; i++)
+                UIDetailStar[i] = starGroup.Find("Image" + (i + 1));
+        }
+    }
+
+    public void OnCellClicked(ShopCell clickedCell)
+    {   
+        if(clickedCell == null) return;
+
         Transform content = UIScrollView.GetComponent<ScrollRect>().content;
         for (int i = 0; i < content.childCount; i++)
         {
@@ -114,9 +142,11 @@ public class ShopPanel : BasePanel
 
         clickedCell.SetSelected(true);
         DRShop shopData = clickedCell.GetShopData();
-        UIDetailPanel.gameObject.SetActive(true);
+        if(shopData == null) return;
 
         DRItem item = DataRepository.GetItemByAssetId(shopData.ItemAssetId);
+        bool isFood = item != null && item.Type == GameConst.PackageTypeFood;
+        SwapDetailPanel(isFood);
 
         UIDetailName.GetComponent<Text>().text = item?.Name ?? "未知";
         UIDetailDesc.GetComponent<Text>().text = item?.Description ?? "";

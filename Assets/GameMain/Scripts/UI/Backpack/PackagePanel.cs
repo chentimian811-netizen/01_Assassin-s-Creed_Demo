@@ -38,6 +38,10 @@ public class PackagePanel : BasePanel
     public GameObject packageCellPrefab;
     public GameObject packageCellPrefab_Food;
 
+    private GameObject detailPanelPrefab_Food;
+    private GameObject detailPanelPrefab_Weapon;
+    private Transform detailSlot;
+
     //当前页面处于上面模式
     public PackageMode curMode = PackageMode.normal;
 
@@ -148,6 +152,7 @@ public class PackagePanel : BasePanel
     {
         InitUIName();
         InitClick();
+        InitPrefab();
     }
 
     private void RefreshUI()
@@ -157,10 +162,22 @@ public class PackagePanel : BasePanel
 
     private void RefreshDetail()
     {
-        //找到uid对应的动态数据
         PackageLocalItem localItem = GameManager.Instance.GetPackageLocalItemByUid(ChooseUid);
-        //刷新详情面板
-        UIDetailPanel.GetComponent<PackageDetail>().Refresh(localItem, this);
+        if(localItem == null) return;
+
+        var config = GameManager.Instance.GetPackageItemById(localItem.id);
+        bool isFood = config != null && config.Type == GameConst.PackageTypeFood;
+
+        for(int i = detailSlot.childCount -1;i >= 0; i--)
+        {
+            DestroyImmediate(detailSlot.GetChild(i).gameObject);
+        }
+
+        GameObject prefab = isFood ? detailPanelPrefab_Food : detailPanelPrefab_Weapon;
+        GameObject go = Instantiate(prefab,detailSlot,false);
+        go.name = "DetailPanel";
+
+        go.GetComponent<PackageDetail>().Refresh(localItem,this);
     }
 
     private void RefreshScrollView()
@@ -267,9 +284,9 @@ public class PackagePanel : BasePanel
         UITotalInfoText = transform.Find("RightTop/PackageNum/AmountText");
         UICenter = transform.Find("Center");
         UIScrollView = transform.Find("Center/Scroll View");
-        UIDetailPanel = transform.Find("Center/DetailPanel");
         UILeftBtn = transform.Find("Left/NextBackPack/icon");
         UIRightBtn = transform.Find("Right/NextBackPack/icon");
+        detailSlot = transform.Find("Center/DetailSlot");
 
         UIDeletePanel = transform.Find("Bottom/DeletePanel");
         UIDeleteBackBtn = transform.Find("Bottom/DeletePanel/Back");
@@ -298,6 +315,12 @@ public class PackagePanel : BasePanel
 
         UIDeleteBtn.GetComponent<Button>().onClick.AddListener(OnClickDelete);
         UIDetailBtn.GetComponent<Button>().onClick.AddListener(OnClickDetail);
+    }
+
+    private void InitPrefab()
+    {
+        detailPanelPrefab_Weapon = Resources.Load<GameObject>("Prefabs/Panels/Shop/DetailPanel_Weapon");
+        detailPanelPrefab_Food = Resources.Load<GameObject>("Prefabs/Panels/Shop/DetailPanel_Food");
     }
 
     private void OnClickDetail()

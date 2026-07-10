@@ -4,4 +4,5 @@
 	10002	1	4	Demon Breaker	Emitting a chilling demonic aura. This blade was forged in the abyss to hunt the unholy.	Use [Demon Breaker] to fire countless projectiles that pierce through all enemies in their path.	Sprites/UI/Weapon/weapon_02	Item_DemonBreaker
 	10003	1	5	Ascending Dragon	A spear nurtured above thunderclouds. Crackling with the fury of a thousand storms.	Use [Thunder Shock] to summon thunderclouds that unleash automatic lightning strikes upon foes.	Sprites/UI/Weapon/weapon_04	Item_AscendingDragon
 	10004	1	3	Hunting Bow	A sturdy longbow carved from ancient oak. Favored by rangers of the northern valleys.	Use [Thunderclap] to call down a single devastating bolt from the heavens.	Sprites/UI/Weapon/weapon_08	Item_HuntingBow
-	10005	2	5	Knife	GoodFood	Eating it!	Sprites/UI/Weapon/weapon_06	Item_Food
+	10005	2	5	Sandwich	GoodFood	Eating it!	Sprites/UI/Food/Food02	Item_Sandwich
+	10006	2	3	Salmon caviar	Good!Good!Good!	Up!	Sprites/UI/Food/Food03	Item_Salmon caviar

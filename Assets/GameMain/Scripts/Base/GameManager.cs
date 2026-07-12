@@ -155,11 +155,7 @@ public class GameManager : MonoBehaviour
     }
 
     public List<PackageLocalItem> GetPackageLocalData()
-    {
-        List<PackageLocalItem> localItems = PackageLocalData.Instance.LoadPackage();
-        localItems.Sort(new PackageItemComparer{sorMode = CurrentSorMode});
-        return localItems;
-    }
+    => PackageLocalData.Instance.LoadPackage();
 
     public DRItem GetPackageItemById(int id)
     {
@@ -179,11 +175,10 @@ public class GameManager : MonoBehaviour
     public List<PackageLocalItem> GetSortPackageLocalData()
     {
         List<PackageLocalItem> localItems = PackageLocalData.Instance.LoadPackage();
-        localItems.Sort(new PackageItemComparer());
+        localItems.Sort(new PackageItemComparer(){sorMode = CurrentSorMode});
         return localItems;
     }
 }
-
 
 public class GameConst
 {

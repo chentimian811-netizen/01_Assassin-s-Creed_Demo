@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using static PackageLocalData;
+using TMPro;
 
 public enum PackageMode
 {
@@ -43,13 +44,13 @@ public class PackagePanel : BasePanel
     private Transform detailSlot;
 
     private Transform UISortBtn;
-    private Text sortBtnText;
+    private TMP_Text sortBtnText;
     private readonly Dictionary<E_SortMode,string>SortNames = new()
     {
-        {E_SortMode.Default,"默认"},
-        {E_SortMode.ByLevel,"等级"},
-        {E_SortMode.ByName,"名称"},
-        {E_SortMode.ByAcquisition,"最新"},
+        {E_SortMode.Default,"Quality"},
+        {E_SortMode.ByLevel,"Level"},
+        {E_SortMode.ByName,"Name"},
+        {E_SortMode.ByAcquisition,"Acquisition"},
     };
 
     //当前页面处于上面模式
@@ -308,7 +309,7 @@ public class PackagePanel : BasePanel
         UIDetailBtn = transform.Find("Bottom/BottomMenus/DetilBtn");
 
         UISortBtn = transform.Find("Bottom/BottomMenus/SortBtn");
-        sortBtnText = UISortBtn?.Find("Text")?.GetComponent<Text>();
+        sortBtnText = UISortBtn?.Find("Text")?.GetComponent<TMP_Text>();
 
         UIDeletePanel.gameObject.SetActive(false);
         UIBottomMenus.gameObject.SetActive(true);

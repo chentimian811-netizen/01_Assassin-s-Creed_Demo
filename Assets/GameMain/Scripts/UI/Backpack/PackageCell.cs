@@ -110,6 +110,11 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         }
     }
 
+    public void HideSelection()
+    {
+        UISelect.gameObject.SetActive(false);
+    }
+
     public void OnPointerClick(PointerEventData eventData)
     {
         Debug.Log("OnPointerClick: " + eventData.ToString());
@@ -140,10 +145,18 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
             return;
         //根据点击设置最新的UID —> 进而刷新详情面板
         this.uiParent.ChooseUid = this.packageLocalData.uid;
-       
 
+        foreach(Transform sibling in transform.parent)
+        {
+            PackageCell cell = sibling.GetComponent<PackageCell>();
+            if (cell != null && cell != this)
+            cell.HideSelection();
+
+        }
+      
         UISelectAni.gameObject.SetActive(true);
         UISelectAni.GetComponent<Animator>().SetTrigger("In");
+        UISelect.gameObject.SetActive(true);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -162,6 +175,16 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     public string GetUid()
     {
         return packageLocalData.uid;
+    }
+    public void ShowSelection()
+    {
+        UISelectAni.gameObject.SetActive(true);
+        UISelectAni.GetComponent<Animator>().SetTrigger("In");
+        UISelect.gameObject.SetActive(true);
+    }
+    public void ShowSelectionFrame()
+    {
+        UISelect.gameObject.SetActive(true);
     }
 
 }

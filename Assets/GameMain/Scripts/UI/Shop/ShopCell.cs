@@ -9,6 +9,8 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     private Transform UIQuantity;
     private Transform UIName;
     private Transform UIPrice;
+
+    private Transform UISelect;
     private DRShop shopData;
     private int shopKeeperId;
     private ShopPanel UIParent;
@@ -26,6 +28,7 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         UIQuantity = transform.Find("Number");
         UIName = transform.Find("Obj_Name_price/Name");
         UIPrice = transform.Find("Obj_Name_price/Price");
+        UISelect = transform.Find("Select");
 
         UIMouseOverAni = transform.Find("MouseOverAni");
 
@@ -64,6 +67,11 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         RefreshIcon();
     }
 
+    public void HideSelection()
+    {
+        UISelect.gameObject.SetActive(false);
+    }
+
     private void RefreshIcon()
     {
         if (UIIcon == null) return;
@@ -75,6 +83,15 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     public void OnPointerClick(PointerEventData eventData)
     {
         UIParent.OnCellClicked(this);
+
+        foreach(Transform sibling in transform.parent)
+        {
+            PackageCell cell = sibling.GetComponent<PackageCell>();
+            if (cell != null && cell != this)
+            cell.HideSelection();
+
+        }
+        UISelect.gameObject.SetActive(true);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -82,6 +99,7 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         Debug.Log("OnPointerEnter:"+ eventData.ToString());
         UIMouseOverAni.gameObject.SetActive(true);
         UIMouseOverAni.GetComponent<Animator>().SetTrigger("In");
+        
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -93,4 +111,9 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     public void SetSelected(bool selected) { }
 
     public DRShop GetShopData() => shopData;
+
+    public void ShowSelection()
+    {
+        UISelect.gameObject.SetActive(true);
+    }
 }

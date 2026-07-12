@@ -247,6 +247,8 @@ public class PackagePanel : BasePanel
         if(firstCell != null)
         {
             ChooseUid = firstCell.GetUid();
+            firstCell.ShowSelectionFrame(); 
+
         }
 
         if(UITotalInfoText != null)

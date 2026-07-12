@@ -66,7 +66,7 @@ public class PackageDetail : MonoBehaviour
         UIIcon = transform.Find("Center/Icon");
         UITitle = transform.Find("Top/Bg/Title");
         UILeveText = transform.Find("Button/LevelPanel/LevelText");
-        UISkillDescription = transform.Find("Button/Description");
+        UISkillDescription = transform.Find("Button/SkillDescription");
     }
 
     public void Refresh(PackageLocalItem packageLocalData, PackagePanel uiParent)
@@ -80,21 +80,28 @@ public class PackageDetail : MonoBehaviour
             Debug.LogError("找不到物品配置，id: " + packageLocalData.id);
             return;
         }
+        
+        if (UILeveText != null)
+            UILeveText.GetComponent<Text>().text
+                = string.Format("Lv.{0}/40", this.packageLocalData.level.ToString());
 
-        UILeveText.GetComponent<Text>().text
-            = string.Format("Lv.{0}/40", this.packageLocalData.level.ToString());
-        UIDescription.GetComponent<Text>().text = item.Description;
-        UISkillDescription.GetComponent<Text>().text = item.SkillDescription;
-        UITitle.GetComponent<Text>().text = item.Name;
+        if (UIDescription != null)
+            UIDescription.GetComponent<Text>().text = item.Description;
+
+        if (UISkillDescription != null)
+            UISkillDescription.GetComponent<Text>().text = item.SkillDescription;
+
+        if (UITitle != null)
+            UITitle.GetComponent<Text>().text = item.Name;
 
         var icon = DataRepository.GetItemIcon(item.Id);
-        if (icon != null)
+        if (icon != null && UIIcon != null)
             UIIcon.GetComponent<Image>().sprite = icon;
 
         RefreshStars(item.Star);
         RefreshEquipButton();
+    
     }
-
     public void RefreshStars(int star)
     {
         for (int i = 0; i < UIStars.childCount; i++)

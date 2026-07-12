@@ -61,7 +61,8 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
             return;
         }
 
-        UILevel.GetComponent<Text>().text = "Lv." + this.packageLocalData.level.ToString();
+        if (UILevel != null)
+            UILevel.GetComponent<Text>().text = "Lv." + this.packageLocalData.level.ToString();
         UINew.gameObject.SetActive(this.packageLocalData.isNew);
         UIHead.gameObject.SetActive(this.packageLocalData.isEquipped);
 
@@ -78,6 +79,8 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
 
     public void RefreshStars(int star)
     {
+        if(UIStars == null) return;
+
         for (int i = 0; i < UIStars.childCount; i++)
         {
            UIStars.GetChild(i).gameObject.SetActive(i < star);
@@ -120,7 +123,14 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         }
 
         if (this.packageLocalData.isNew)
-        {
+        {   
+            foreach(var originalItem in PackageLocalData.Instance.items)
+            {
+                if(originalItem.id == this.packageLocalData.id)
+                {
+                    originalItem.isNew = false;
+                }
+            }
             this.packageLocalData.isNew = false;
             UINew.gameObject.SetActive(false);
             PackageLocalData.Instance.SavePackage();

@@ -20,7 +20,7 @@ public class MeleeFighter : MonoBehaviour
     [Tooltip("命中时暂停时间（秒）")]
     public float hitStopDuration = 0.1f;
 
-    [Tooltip("命中的时间缩放，0 = 完全赞同，0.1=慢动作")]
+    [Tooltip("命中的时间缩放，0 = 完全暂停，0.1=慢动作")]
     [Range(0f,1f)]
     public float hitStopTimeScale = 0f;
 
@@ -36,7 +36,6 @@ public class MeleeFighter : MonoBehaviour
     public event Action OnHitComplete;
 
     BoxCollider SwordCollider;
-
     Animator animator;
     RuntimeAnimatorController originalController;
     public bool IsAttackingHit { get; private set; } = false; //是否处于被攻击状态
@@ -52,7 +51,8 @@ public class MeleeFighter : MonoBehaviour
 
     }
     private void Start()
-    {
+    {   
+
         if (Sword != null)
         {
             SwordCollider = Sword.GetComponent<BoxCollider>();
@@ -69,11 +69,13 @@ public class MeleeFighter : MonoBehaviour
 
     public void SetWeapon(GameObject newSword)
     {
+
         Sword = newSword;
         if(newSword != null)
         {
             SwordCollider = newSword.GetComponent<BoxCollider>();
 
+            //装备武器获得骨骼碰撞器
             if (leftHandeConllider == null && animator != null)
             {
                 leftHandeConllider = animator.GetBoneTransform(HumanBodyBones.LeftHand).GetComponent<SphereCollider>();

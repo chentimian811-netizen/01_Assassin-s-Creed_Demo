@@ -14,6 +14,8 @@ public class GameManager : MonoBehaviour
     private GameObject menuCharacterInstance;
     private static GameManager _instance;
 
+    public E_SortMode CurrentSorMode{get;set;}=E_SortMode.Default;
+
     [Header("游戏状态")]
     [SerializeField] private bool isMainMenuActive = true;
 
@@ -139,7 +141,7 @@ public class GameManager : MonoBehaviour
         List<PackageLocalItem> packageLocalItems = new();
         for (int i = 0; i < 10; i++)
             packageLocalItems.Add(GetLotteryRandom1());
-        if (!sort) packageLocalItems.Sort(new PackageItemComparer());
+        if (!sort) packageLocalItems.Sort(new PackageItemComparer{sorMode=E_SortMode.Default});
         return packageLocalItems;
     }
 
@@ -153,7 +155,11 @@ public class GameManager : MonoBehaviour
     }
 
     public List<PackageLocalItem> GetPackageLocalData()
-        => PackageLocalData.Instance.LoadPackage();
+    {
+        List<PackageLocalItem> localItems = PackageLocalData.Instance.LoadPackage();
+        localItems.Sort(new PackageItemComparer{sorMode = CurrentSorMode});
+        return localItems;
+    }
 
     public DRItem GetPackageItemById(int id)
     {
@@ -178,30 +184,6 @@ public class GameManager : MonoBehaviour
     }
 }
 
-public class PackageItemComparer : IComparer<PackageLocalItem>
-{
-    public int Compare(PackageLocalItem a, PackageLocalItem b)
-    {
-        if(a.isEquipped != b.isEquipped)
-        {
-            return a.isEquipped ?-1:1;
-        }
-
-
-        DRItem x = GameManager.Instance.GetPackageItemById(a.id);
-        DRItem y = GameManager.Instance.GetPackageItemById(b.id);
-
-        int starComparison = y.Star.CompareTo(x.Star);
-        if (starComparison == 0)
-        {
-            int idComparison = y.Id.CompareTo(x.Id);
-            if (idComparison == 0)
-                return b.level.CompareTo(a.level);
-            return idComparison;
-        }
-        return starComparison;
-    }
-}
 
 public class GameConst
 {

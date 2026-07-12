@@ -42,6 +42,16 @@ public class PackagePanel : BasePanel
     private GameObject detailPanelPrefab_Weapon;
     private Transform detailSlot;
 
+    private Transform UISortBtn;
+    private Text sortBtnText;
+    private readonly Dictionary<E_SortMode,string>SortNames = new()
+    {
+        {E_SortMode.Default,"默认"},
+        {E_SortMode.ByLevel,"等级"},
+        {E_SortMode.ByName,"名称"},
+        {E_SortMode.ByAcquisition,"最新"},
+    };
+
     //当前页面处于上面模式
     public PackageMode curMode = PackageMode.normal;
 
@@ -297,6 +307,9 @@ public class PackagePanel : BasePanel
         UIDeleteBtn = transform.Find("Bottom/BottomMenus/DeleteBtn");
         UIDetailBtn = transform.Find("Bottom/BottomMenus/DetilBtn");
 
+        UISortBtn = transform.Find("Bottom/BottomMenus/SortBtn");
+        sortBtnText = UISortBtn?.Find("Text")?.GetComponent<Text>();
+
         UIDeletePanel.gameObject.SetActive(false);
         UIBottomMenus.gameObject.SetActive(true);
     }
@@ -315,6 +328,8 @@ public class PackagePanel : BasePanel
 
         UIDeleteBtn.GetComponent<Button>().onClick.AddListener(OnClickDelete);
         UIDetailBtn.GetComponent<Button>().onClick.AddListener(OnClickDetail);
+
+        UISortBtn?.GetComponent<Button>().onClick.AddListener(OnClickSort);
     }
 
     private void InitPrefab()
@@ -430,5 +445,17 @@ public class PackagePanel : BasePanel
     public void RefreshList()
     {
         RefreshUI();
+    }
+
+    private void OnClickSort()
+    {
+        var modes = System.Enum.GetValues(typeof(E_SortMode));
+        int next = ((int)GameManager.Instance.CurrentSorMode + 1)%modes.Length;
+        GameManager.Instance.CurrentSorMode = (E_SortMode)next;
+        if(sortBtnText != null)
+        {
+            sortBtnText.text = SortNames[(E_SortMode)next];
+        }
+        RefreshScrollView();
     }
 }

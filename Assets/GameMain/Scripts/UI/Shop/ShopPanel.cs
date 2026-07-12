@@ -93,7 +93,6 @@ public class ShopPanel : BasePanel
         if(first != null)
         {
             OnCellClicked(first.GetComponent<ShopCell>());
-            first.ShowSelection();
         }
     }
 

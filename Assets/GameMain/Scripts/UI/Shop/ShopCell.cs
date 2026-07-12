@@ -67,11 +67,6 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         RefreshIcon();
     }
 
-    public void HideSelection()
-    {
-        UISelect.gameObject.SetActive(false);
-    }
-
     private void RefreshIcon()
     {
         if (UIIcon == null) return;
@@ -83,15 +78,6 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     public void OnPointerClick(PointerEventData eventData)
     {
         UIParent.OnCellClicked(this);
-
-        foreach(Transform sibling in transform.parent)
-        {
-            PackageCell cell = sibling.GetComponent<PackageCell>();
-            if (cell != null && cell != this)
-            cell.HideSelection();
-
-        }
-        UISelect.gameObject.SetActive(true);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -108,12 +94,11 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         UIMouseOverAni.GetComponent<Animator>().SetTrigger("Out");
     }
 
-    public void SetSelected(bool selected) { }
+    public void SetSelected(bool selected)
+    {
+        UISelect.gameObject.SetActive(selected);
+    }
 
     public DRShop GetShopData() => shopData;
 
-    public void ShowSelection()
-    {
-        UISelect.gameObject.SetActive(true);
-    }
 }

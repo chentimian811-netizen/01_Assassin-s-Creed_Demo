@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
-public class ShopCell : MonoBehaviour, IPointerClickHandler
+public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     private Transform UIIcon;
     private Transform UIQuantity;
@@ -12,6 +12,8 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler
     private DRShop shopData;
     private int shopKeeperId;
     private ShopPanel UIParent;
+
+    private Transform UIMouseOverAni;
 
     private void Awake()
     {
@@ -24,6 +26,10 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler
         UIQuantity = transform.Find("Number");
         UIName = transform.Find("Obj_Name_price/Name");
         UIPrice = transform.Find("Obj_Name_price/Price");
+
+        UIMouseOverAni = transform.Find("MouseOverAni");
+
+        UIMouseOverAni.gameObject.SetActive(false);
     }
 
     public void Refresh(DRShop data, int keeperId, ShopPanel parent)
@@ -69,6 +75,19 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData)
     {
         UIParent.OnCellClicked(this);
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        Debug.Log("OnPointerEnter:"+ eventData.ToString());
+        UIMouseOverAni.gameObject.SetActive(true);
+        UIMouseOverAni.GetComponent<Animator>().SetTrigger("In");
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        Debug.Log("OnPointerExit:"+ eventData.ToString());
+        UIMouseOverAni.GetComponent<Animator>().SetTrigger("Out");
     }
 
     public void SetSelected(bool selected) { }

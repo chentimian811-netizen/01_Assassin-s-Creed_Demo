@@ -83,12 +83,9 @@ public class WeaponManager : MonoBehaviour
         }
 
         SyncFighterWeapon();
+        meleeFighter?.SetWeaponConfig(config);
         OnWeaponModelChanged?.Invoke(config);
-        
-        if(meleeFighter != null && config.animOverride != null)
-        {
-            meleeFighter.SetAnimatorOverride(config.animOverride);
-        }
+
         return true;
     }
 
@@ -126,11 +123,8 @@ public class WeaponManager : MonoBehaviour
         slot.equippedUid = null;
 
         SyncFighterWeapon();
+        meleeFighter?.SetWeaponConfig(null);
         OnWeaponModelChanged?.Invoke(oldConfig);
-        if(meleeFighter != null && slot == weaponSlots[mainWeaponSlotIndex])
-        {
-            meleeFighter.ClearAnimatorOverride();
-        }
         return uid;
     }
 
@@ -229,15 +223,7 @@ public class WeaponManager : MonoBehaviour
             }
         }
 
-        //更新动画覆盖
-        if(targetConfig != null && targetConfig.animOverride != null)
-        {
-            meleeFighter?.SetAnimatorOverride(targetConfig.animOverride);
-        }
-        else
-        {
-            meleeFighter?.ClearAnimatorOverride();
-        }
+       meleeFighter?.SetWeaponConfig(targetConfig);
 
         OnWeaponModelChanged?.Invoke(targetConfig);
     }

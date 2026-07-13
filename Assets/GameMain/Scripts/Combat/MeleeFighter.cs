@@ -94,18 +94,17 @@ public class MeleeFighter : MonoBehaviour
         }
     }
 
-    //应用武器动画覆盖，替代Animator中的动画片段
-    public void SetAnimatorOverride(RuntimeAnimatorController overrdeController)
+    public void SetWeaponConfig(WeaponConfig config)
     {
-        if(animator == null || overrdeController == null)return;
-        animator.runtimeAnimatorController = overrdeController;
-    }
-
-    //恢复原始动画控制器(卸装武器时调用)
-    public void ClearAnimatorOverride()
-    {
-        if(animator == null || originalController == null)return;
-        animator.runtimeAnimatorController = originalController;
+        currentWeapConfig = config;
+        if(config != null && config.animOverride != null)
+        {
+            animator.runtimeAnimatorController = config.animOverride;
+        }
+        else
+        {
+            animator.runtimeAnimatorController = originalController;
+        }
     }
 
     public void ToTryAttack(MeleeFighter target = null)
@@ -129,7 +128,10 @@ public class MeleeFighter : MonoBehaviour
         currentTarget = target;
         AttackState = E_AttackState.Windup;
 
-        animator.CrossFade(attacks[combocount].AnimName, 0.2f);
+        var activeAttacks =(currentWeapConfig != null && currentWeapConfig.attacks.Count > 0)
+            ?currentWeapConfig.attacks : attacks;
+
+        animator.CrossFade(activeAttacks[combocount].AnimName, 0.2f);
 
         yield return null;
 
@@ -152,17 +154,17 @@ public class MeleeFighter : MonoBehaviour
                 if (inCounter)
                     break;
 
-                if (normalizedTime >= attacks[combocount].ImpactStartTime)
+                if (normalizedTime >= activeAttacks[combocount].ImpactStartTime)
                 {
                     AttackState = E_AttackState.Impact;
-                    EnableHitbox(attacks[combocount]);
+                    EnableHitbox(activeAttacks[combocount]);
 
                     //SwordCollider.enabled = true;
                 }
             }
             else if (AttackState == E_AttackState.Impact)
             {
-                if (normalizedTime >= attacks[combocount].ImpactEndTime)
+                if (normalizedTime >= activeAttacks[combocount].ImpactEndTime)
                 {
                     AttackState = E_AttackState.Cooldown;
                     DisableAllHitxboxes();
@@ -175,7 +177,7 @@ public class MeleeFighter : MonoBehaviour
                 if (doCombo)
                 {
                     doCombo = false;
-                    combocount = (combocount + 1) % attacks.Count;
+                    combocount = (combocount + 1) % activeAttacks.Count;
 
                     StartCoroutine(Attack(target));
                     yield break;
@@ -205,7 +207,10 @@ public class MeleeFighter : MonoBehaviour
                 return;
             }
 
-            TakeDamage(5f);
+            float damage = attacker.currentWeapConfig != null 
+            ? attacker.currentWeapConfig.baseDamage : 5f;
+            TakeDamage(damage);
+
             OnGotHit?.Invoke(attacker);
 
             
@@ -292,7 +297,7 @@ public class MeleeFighter : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(dispVec);
         }
 
-        animator.CrossFade("SwordImpact", 0.2f);
+        animator.CrossFade("Melee_Impact", 0.2f);
 
         yield return null;
 
@@ -321,8 +326,8 @@ public class MeleeFighter : MonoBehaviour
 
         var targetPos = opponet.transform.position - disVec.normalized * 2f;
 
-        animator.CrossFade("CounterAttack", 0.2f);
-        opponet.Animator.CrossFade("CounterAttackVictim", 0.2f);
+        animator.CrossFade("Melee_CounterAttack", 0.2f);
+        opponet.Animator.CrossFade("Melee_CounterVictim", 0.2f);
 
         yield return null;
 
@@ -345,7 +350,7 @@ public class MeleeFighter : MonoBehaviour
 
     void PlayDeathAnimation(MeleeFighter attacker)
     {
-        animator.CrossFade("FallBackDeath", 0.2f);
+        animator.CrossFade("Melee_FallBackDeath", 0.2f);
     }
 
     void EnableHitbox(AttackData attack)

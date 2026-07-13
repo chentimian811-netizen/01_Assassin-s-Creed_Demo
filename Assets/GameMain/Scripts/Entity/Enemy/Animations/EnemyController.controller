@@ -67,7 +67,7 @@ AnimatorStateMachine:
     m_Position: {x: 350, y: 0, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 6088670729504857277}
-    m_Position: {x: 290, y: 250, z: 0}
+    m_Position: {x: 270, y: 250, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -8019994167336411168}
     m_Position: {x: 610, y: 0, z: 0}
@@ -302,7 +302,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: CounterAttackVictim
+  m_Name: Melee_CounterVictim
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
@@ -636,7 +636,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FallBackDeath
+  m_Name: Melee_FallBackDeath
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
@@ -663,7 +663,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: SwordImpact
+  m_Name: Melee_Impact
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:

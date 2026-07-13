@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26e51dd7102ec6b49b3e24d67c477be1, type: 3}
-  m_Name: Kick
+  m_Name: Sword_Attack1
   m_EditorClassIdentifier: 
-  <AnimName>k__BackingField: Kick
-  <HitboxToUse>k__BackingField: 3
-  <ImpactStartTime>k__BackingField: 0.2
-  <ImpactEndTime>k__BackingField: 0.6
+  <AnimName>k__BackingField: Melee_Attack_1
+  <HitboxToUse>k__BackingField: 4
+  <ImpactStartTime>k__BackingField: 0.4
+  <ImpactEndTime>k__BackingField: 0.65

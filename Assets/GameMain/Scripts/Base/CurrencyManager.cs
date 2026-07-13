@@ -19,7 +19,7 @@ public class CurrencyManager
     }
 
     private const string GOLD_KEY = "PlayerGold";
-    private const int DEFAULT_GOLD = 1000;
+    private const int DEFAULT_GOLD = 100000;
 
     private int gold;
     public int Gold => gold;

@@ -118,12 +118,19 @@ public class GameManager : MonoBehaviour
         return result;
     }
 
-    public PackageLocalItem GetLotteryRandom1()
+    public bool TryGetLotteryRandom1(int cost, out PackageLocalItem result)
     {
+        result = null;
+        if(cost >0 && !CurrencyManager.Instance.CanAfford(cost))return false;
+
+        if(cost > 0)
+        {
+            CurrencyManager.Instance.Spend(cost);
+        }
         List<DRItem> packageItems = GetPackageDataByType(GameConst.PackageTypeWeapon);
         int index = Random.Range(0, packageItems.Count);
         DRItem packageItem = packageItems[index];
-        PackageLocalItem packageLocalItem = new()
+        result = new PackageLocalItem
         {
             uid = System.Guid.NewGuid().ToString(),
             id = packageItem.Id,
@@ -131,18 +138,29 @@ public class GameManager : MonoBehaviour
             level = 1,
             isNew = CheckWeaponIsNew(packageItem.Id)
         };
-        PackageLocalData.Instance.items.Add(packageLocalItem);
+        PackageLocalData.Instance.items.Add(result);
         PackageLocalData.Instance.SavePackage();
-        return packageLocalItem;
+        return true;
     }
 
-    public List<PackageLocalItem> GetLotteryRandom10(bool sort = false)
+    public bool TryGetLotteryRandom10(int costPerPull, out List<PackageLocalItem> results)
     {
-        List<PackageLocalItem> packageLocalItems = new();
-        for (int i = 0; i < 10; i++)
-            packageLocalItems.Add(GetLotteryRandom1());
-        if (!sort) packageLocalItems.Sort(new PackageItemComparer{sorMode=E_SortMode.Default});
-        return packageLocalItems;
+        results = new List<PackageLocalItem>();
+        int totalCost = costPerPull * 10;
+        if(totalCost >0 && !CurrencyManager.Instance.CanAfford(totalCost)) return false;
+
+        if(totalCost > 0)
+        {
+            CurrencyManager.Instance.Spend(totalCost);
+        }
+
+        for(int i = 0; i < 10; i++)
+        {
+            TryGetLotteryRandom1(0,out var item);
+            results.Add(item);
+        }
+        results.Sort(new PackageItemComparer{ sorMode = E_SortMode.Default});
+        return true;
     }
 
     public bool CheckWeaponIsNew(int id)

@@ -5,7 +5,10 @@ using UnityEngine.UI;
 using static PackageLocalData;
 
 public class LotteryPanel : BasePanel
-{
+{   
+    [SerializeField] int singlePullCost = 200;
+    [SerializeField] int multiPullCost = 180;
+
     private Transform UIClose;
 
     private Transform UICenter;
@@ -46,18 +49,19 @@ public class LotteryPanel : BasePanel
     private void OnLottery10Btn()
     {
         Debug.Log("抽卡10次");
-        List<PackageLocalItem> packageLocalItems = GameManager.Instance.GetLotteryRandom10();
-        for (int i = 0;i < UICenter.childCount;i++)
+        if(!GameManager.Instance.TryGetLotteryRandom10(multiPullCost,out var items))
         {
-           Destroy(UICenter.GetChild(i).gameObject);
+            ToastMessage.Show("金币不足！");
+            return;
         }
-
-        foreach(PackageLocalItem item in packageLocalItems)
+        for(int i = 0; i < UICenter.childCount; i++)
         {
-            Transform LotteryCellTran = Instantiate(LotteryCellPrefab.transform, UICenter) as Transform;
-            //对卡片做信息展示刷新
-            LotteryCell lottertCell = LotteryCellTran.GetComponent<LotteryCell>();
-            lottertCell.Refresh(item, this);
+            Destroy(UICenter.GetChild(i).gameObject);
+        }
+        foreach(PackageLocalItem item in items)
+        {
+            Transform cellTran = Instantiate(LotteryCellPrefab.transform, UICenter) as Transform;
+            cellTran.GetComponent<LotteryCell>().Refresh(item, this);
         }
 
     }
@@ -65,18 +69,18 @@ public class LotteryPanel : BasePanel
     private void OnLottery1Btn()
     {
         Debug.Log("抽卡1次");
-        for (int i = 0;i < UICenter.childCount;i++)
+        if(!GameManager.Instance.TryGetLotteryRandom1(singlePullCost,out var item))
+        {
+            ToastMessage.Show("金币不足！");
+            return;
+        }
+        for(int i = 0; i < UICenter.childCount; i++)
         {
             Destroy(UICenter.GetChild(i).gameObject);
         }
-        //抽卡获得一张新的物品
-        PackageLocalItem item = GameManager.Instance.GetLotteryRandom1();
-
-        Transform LotteryCellTran = Instantiate(LotteryCellPrefab.transform, UICenter) as Transform;
-
-        //对卡片做信息展示刷新
-        LotteryCell lottertCell = LotteryCellTran.GetComponent<LotteryCell>();
-        lottertCell.Refresh(item, this);
+        Transform cellTran = Instantiate(LotteryCellPrefab.transform, UICenter) as Transform;
+        cellTran.GetComponent<LotteryCell>().Refresh(item, this);
+        
     }
 
     private void OnClose()

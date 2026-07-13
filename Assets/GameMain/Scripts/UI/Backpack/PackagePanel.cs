@@ -71,8 +71,6 @@ public class PackagePanel : BasePanel
         }
     }
     private int CurrentFilterType = -1;
-    private int currentPage = 0;
-    private int pageSize = 50;
 
     private class TabDef
     {
@@ -148,7 +146,6 @@ public class PackagePanel : BasePanel
 
         var tab = tabs[index];
         CurrentFilterType = tab.filterType;
-        currentPage = 0;
 
         // 切换所有标签的 Indicator 显示状态
         foreach (var t in tabs)
@@ -222,13 +219,11 @@ public class PackagePanel : BasePanel
         {
             filteredItems = MergeFoodItems(filteredItems);
         }
-            //分页逻辑
-            int startIndex = currentPage * pageSize;
-            int endIndex = Mathf.Min(startIndex + pageSize,filteredItems.Count);
+
 
             PackageCell firstCell = null;
 
-            for(int i = startIndex; i < endIndex; i++)
+            for(int i = 0; i < filteredItems.Count; i++)
         {
             //根据类型选择预制体
             var config = GameManager.Instance.GetPackageItemById(filteredItems[i].id);
@@ -421,7 +416,6 @@ public class PackagePanel : BasePanel
     {
         print("点击了关闭");
         CurrentFilterType = -1;//重置筛选
-        currentPage = 0;
         UIManager.Instance.ClosePanel(UIconst.PackagePanel);
 
         var mainPanel = UIManager.Instance.GetPanel(UIconst.MainPanel);

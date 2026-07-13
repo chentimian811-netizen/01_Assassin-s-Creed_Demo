@@ -17,8 +17,9 @@ public class WeaponConfig : ScriptableObject
 
     public float attackRange;
 
-    public RuntimeAnimatorController animOverride;
+    public AnimatorOverrideController animOverride;
 
+    public List<AttackData> attacks;
     //远程武器配置
     [Header("远程武器配置")]
     [Tooltip("是否为远程武器")]

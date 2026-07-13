@@ -389,6 +389,10 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 85ac65c0-05af-4def-9c17-231fcef5dbef
     m_ActionName: Player/Fire[/Mouse/leftButton]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 94ae7646-e237-4e99-b938-e2228a1f777f
+    m_ActionName: Player/GetShowCursor[/Keyboard/leftAlt,/Keyboard/rightAlt]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: Keyboard&Mouse
   m_DefaultActionMap: Player
@@ -615,6 +619,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 2528447894664144206, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 008f5b7416cb3dc4a930c9414c3b6d4f, type: 2}
     - target: {fileID: 2551224824074343598, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}
       propertyPath: m_Layer

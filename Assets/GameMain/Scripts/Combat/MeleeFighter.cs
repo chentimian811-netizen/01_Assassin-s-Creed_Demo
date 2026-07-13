@@ -15,6 +15,8 @@ public class MeleeFighter : MonoBehaviour
 {
     [field: SerializeField] public float Health { get; private set; } = 25f;
     [SerializeField] List<AttackData> attacks;
+
+    WeaponConfig currentWeapConfig;
     
     [Header("攻击设置")]
     [Tooltip("命中时暂停时间（秒）")]

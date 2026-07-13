@@ -737,6 +737,7 @@ MonoBehaviour:
   cmBrain: {fileID: 4715728777262659639}
   freeLook: {fileID: 4893334315624990973}
   playerModel: {fileID: 0}
+  cmInputProvider: {fileID: 0}
   impulseSource: {fileID: 8096334435463171385}
   defaultForce: 0.65
   shakeCooldown: 0.3

@@ -422,6 +422,7 @@ MonoBehaviour:
   startGameBtn: {fileID: 5689577508151601584}
   settingsBtn: {fileID: 7494505964581909138}
   quitGameBtn: {fileID: 3786472197512680009}
+  titleText: {fileID: 0}
   fadeInDuration: 1.5
   buttonDelay: 0.3
 --- !u!1 &6579652241757537867

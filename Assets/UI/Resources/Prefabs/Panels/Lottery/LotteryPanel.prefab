@@ -51,8 +51,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba9c07b4e38750d44b53289a053febb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoManageCursor: 1
-  pauseOnOpne: 1
+  singlePullCost: 200
+  multiPullCost: 180
 --- !u!1 &1176274589774353426
 GameObject:
   m_ObjectHideFlags: 0

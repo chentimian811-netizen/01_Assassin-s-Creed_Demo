@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using static PackageLocalData;
 
 public class InventoryManager : MonoBehaviour
 {
-    private static InventoryManager _instance;//单例模式
+    private static InventoryManager _instance;
     public static InventoryManager Instance => _instance;
 
     WeaponManager weaponManager;
@@ -97,29 +98,16 @@ public class InventoryManager : MonoBehaviour
         if(tableItem == null || tableItem.Type != GameConst.PackageTypeWeapon)return false;
         if(weaponManager == null)return false;
 
-        //获取新的武器WeaponConfig，用于判断武器类型
-        WeaponConfig newConfig = weaponManager.GetWeaponConfig(item.id);
-
-        //只卸下同类型的旧武器 不同类型的保留
-        if(newConfig != null)
-        {
-            foreach(PackageLocalItem oldItem in PackageLocalData.Instance.items)
-            {
-                 if (oldItem == item || !oldItem.isEquipped) continue;
-                 WeaponConfig oldConfig = weaponManager.GetWeaponConfig(oldItem.id);
-                 if(oldConfig != null && oldConfig.weaponType == newConfig.weaponType)
-                {
-                    //同类型旧武器：卸下
-                    weaponManager.UnequipSlotByType(oldConfig.weaponType);
-                    oldItem.isEquipped = false;
-                    OnItemUnequipped?.Invoke(oldItem);
-                }
-            }
-        }
-        
+        UnequipAll();
 
         bool success = weaponManager.EquipWeapon(uid);
         if(!success)return false;
+
+        int slotIndex = weaponManager.GetSlotIndexByUid(uid);
+        if(slotIndex >= 0)
+        {
+            weaponManager.SwitchToSlot(slotIndex);
+        }
 
         item.isEquipped = true;
         PackageLocalData.Instance.SavePackage();
@@ -127,6 +115,33 @@ public class InventoryManager : MonoBehaviour
         return true;
 
     }
+
+    private void UnequipAll()
+    {
+        if(weaponManager == null) return;
+        
+        List<PackageLocalItem> toUnequip = new List<PackageLocalItem>();
+        foreach(PackageLocalItem oldItem in PackageLocalData.Instance.items)
+        {
+            if (oldItem.isEquipped)
+            {
+                toUnequip.Add(oldItem);
+            }
+        }
+
+        foreach(var oldItem in toUnequip)
+        {
+            WeaponConfig oldConfig = weaponManager.GetWeaponConfig(oldItem.id);
+            if(oldConfig != null)
+            {
+                weaponManager.UnequipSlotByType(oldConfig.weaponType);
+            }
+
+            oldItem.isEquipped = false;
+            OnItemUnequipped?.Invoke(oldItem);
+        }
+    }
+
 
     public bool EquipFromGround(int weaponId)
     {
@@ -148,19 +163,16 @@ public class InventoryManager : MonoBehaviour
         if (weaponManager == null) return false;
 
         PackageLocalItem equipped = GetEquippedWeapon();
-
-        if (equipped == null) return false;
-
-        weaponManager.UnequipSlot(slotIndex);
+        if(equipped== null) return false;
+        
+        WeaponConfig config = weaponManager.GetWeaponConfig(equipped.id);
+        if (config != null)
+            weaponManager.UnequipSlotByType(config.weaponType);
 
         equipped.isEquipped = false;
-
         PackageLocalData.Instance.SavePackage();
-
         OnItemUnequipped?.Invoke(equipped);
-
         return true;
-
     }
 
 

@@ -33,8 +33,11 @@ public class PackagePanel : BasePanel
     private Transform UIDeleteConfirmBtn;
     private Transform UIBottomMenus;
     private Transform UIDeleteBtn;
-    private Transform UIDetailBtn;
+
+    private Transform UIEquipBtn;
     private Transform UITotalInfoText;
+
+    protected TMP_Text equipBtnText;
 
     public GameObject packageCellPrefab;
     public GameObject packageCellPrefab_Food;
@@ -68,6 +71,7 @@ public class PackagePanel : BasePanel
         {
             _chooseUid = value;
             RefreshDetail();
+            RefreshEquipBtnState();
         }
     }
     private int CurrentFilterType = -1;
@@ -124,6 +128,10 @@ public class PackagePanel : BasePanel
         WeaponIndicator.gameObject.SetActive(true);
         FoodIndicator.gameObject.SetActive(false);
         RefreshUI();
+
+        InventoryManager.Instance.OnItemEquipped += OnInventoryChanged;
+        InventoryManager.Instance.OnItemUnequipped += OnInventoryChanged;
+
     }
 
     private void InitTabs()
@@ -255,6 +263,40 @@ public class PackagePanel : BasePanel
 
     }
 
+    private void RefreshEquipBtnState()
+    {
+        if(equipBtnText == null )return;
+
+        PackageLocalItem seleced = GameManager.Instance.GetPackageLocalItemByUid(ChooseUid);
+
+        if(curMode == PackageMode.delete || seleced == null)
+        {
+            equipBtnText.text = "Equip";
+            UIEquipBtn.GetComponent<Button>().interactable = (curMode != PackageMode.delete);
+            return;
+        }
+
+        UIDeleteBtn.GetComponent<Button>().interactable = true;
+
+        var config = GameManager.Instance.GetPackageItemById(seleced.id);
+        if(config == null)
+        {
+            equipBtnText.text = "Equip";
+            return;
+        }
+        if(config.Type == GameConst.PackageTypeWeapon)
+        {
+            equipBtnText.text = seleced.isEquipped ?"Unequip":"Equip";
+        }else if(config.Type == GameConst.PackageTypeFood)
+        {
+            equipBtnText.text = "Use";
+        }
+        else
+        {
+            equipBtnText.text = "Equip";
+        }
+    }
+
     private List<PackageLocalItem>MergeFoodItems(List<PackageLocalItem> items)
     {
         Dictionary<int,PackageLocalItem> merged = new Dictionary<int, PackageLocalItem>();
@@ -303,10 +345,12 @@ public class PackagePanel : BasePanel
 
         UIBottomMenus = transform.Find("Bottom/BottomMenus");
         UIDeleteBtn = transform.Find("Bottom/BottomMenus/DeleteBtn");
-        UIDetailBtn = transform.Find("Bottom/BottomMenus/DetilBtn");
+        UIEquipBtn = transform.Find("Bottom/BottomMenus/GearBtn");
 
         UISortBtn = transform.Find("Bottom/BottomMenus/SortBtn");
         sortBtnText = UISortBtn?.Find("Text")?.GetComponent<TMP_Text>();
+
+        equipBtnText = UIEquipBtn?.Find("Text (TMP)")?.GetComponent<TMP_Text>();
 
         UIDeletePanel.gameObject.SetActive(false);
         UIBottomMenus.gameObject.SetActive(true);
@@ -325,7 +369,7 @@ public class PackagePanel : BasePanel
         UIDeleteConfirmBtn.GetComponent<Button>().onClick.AddListener(OnClickDeleteConfirm);
 
         UIDeleteBtn.GetComponent<Button>().onClick.AddListener(OnClickDelete);
-        UIDetailBtn.GetComponent<Button>().onClick.AddListener(OnClickDetail);
+        UIEquipBtn.GetComponent<Button>().onClick.AddListener(OnClickDetail);
 
         UISortBtn?.GetComponent<Button>().onClick.AddListener(OnClickSort);
     }
@@ -337,9 +381,39 @@ public class PackagePanel : BasePanel
     }
 
     private void OnClickDetail()
+{
+    PackageLocalItem selected = GameManager.Instance.GetPackageLocalItemByUid(ChooseUid);
+    if (selected == null) return;
+
+    var config = GameManager.Instance.GetPackageItemById(selected.id);
+    if (config == null) return;
+
+    if (config.Type == GameConst.PackageTypeWeapon)
     {
-        print("点击了详情");
+        if (selected.isEquipped)
+        {
+            InventoryManager.Instance.Unequip();
+            ToastMessage.Show("已卸下装备");
+        }
+        else
+        {
+            bool success = InventoryManager.Instance.EquipWeapon(selected.uid);
+            if (success)
+            {
+                DataRepository.ItemTable.TryGetValue(selected.id, out var item);
+                ToastMessage.Show("已装备: " + (item?.Name ?? ""));
+            }
+            else
+                ToastMessage.Show("装备失败");
+        }
     }
+    else if (config.Type == GameConst.PackageTypeFood)
+    {
+        ToastMessage.Show("使用功能暂未开放");
+    }
+
+    RefreshEquipBtnState();
+}
 
     private void OnClickDelete()
     {
@@ -347,6 +421,7 @@ public class PackagePanel : BasePanel
         curMode = PackageMode.delete;
         UIDeletePanel.gameObject.SetActive(true);
         RefreshDeletePanel();
+        RefreshEquipBtnState();
     }
 
     private void OnClickDeleteConfirm()
@@ -378,6 +453,8 @@ public class PackagePanel : BasePanel
         {
             UIDeleteInfoText.GetComponent<Text>().text = "";
         }
+
+        RefreshEquipBtnState();
     }
 
     private void OnClickRight()
@@ -454,5 +531,22 @@ public class PackagePanel : BasePanel
             sortBtnText.text = SortNames[(E_SortMode)next];
         }
         RefreshScrollView();
+    }
+
+    private void OnInventoryChanged(PackageLocalItem item)
+    {
+        RefreshEquipBtnState();
+        RefreshList();
+    }
+
+
+    private void OnDestroy()
+    {
+        if (InventoryManager.Instance != null)
+    {
+        InventoryManager.Instance.OnItemEquipped -= OnInventoryChanged;
+        InventoryManager.Instance.OnItemUnequipped -= OnInventoryChanged;
+    }
+
     }
 }

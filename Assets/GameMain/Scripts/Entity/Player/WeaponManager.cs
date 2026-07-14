@@ -207,6 +207,8 @@ public class WeaponManager : MonoBehaviour
             weaponSlots[slotIndex].currentModel.SetActive(true);
         }
 
+        meleeFighter?.SetWeapon(weaponSlots[slotIndex].currentModel);
+
         //更新 RangedFighter
         RangedFighter rangedFighter = GetComponent<RangedFighter>();
         if(rangedFighter != null)
@@ -238,5 +240,24 @@ public class WeaponManager : MonoBehaviour
             return null;
         }
         return weaponSlots[slotIndex].currentConfig;
+    }
+
+    public int GetSlotIndexByUid(string uid)
+    {
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            if (weaponSlots[i].equippedUid == uid)
+                return i;
+        }
+        return -1;
+    }
+
+    public bool HasMeeleWeaponEquipped()
+    {
+        for(int i = 0 ; i < weaponSlots.Length; i++)
+        {
+            if(weaponSlots[i].currentConfig!=null&&!weaponSlots[i].currentConfig.isRanged) return true;
+        }
+        return false;
     }
 }

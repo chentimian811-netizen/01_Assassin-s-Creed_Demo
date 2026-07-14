@@ -12,53 +12,11 @@ public class PackageDetail : MonoBehaviour
     private Transform UITitle;
     private Transform UILeveText;
     private Transform UISkillDescription;
-
-    // 新增：装备按钮
-    [SerializeField] private Button equipBtn;
-    [SerializeField] private Text equipBtnText;
-
     private PackageLocalItem packageLocalData;
-    private PackagePanel uiParent;
-    private bool isEquipped = false;
-    private InventoryManager inventoryManager; // 缓存引用，用于 OnDestroy 取消订阅
-
     private void Awake()
     {
         InitUIName();
-        if (equipBtn != null)
-            equipBtn.onClick.AddListener(OnEquipClick);
-        // 注意：原文件中的 Test() 方法已移除，不再在 Awake 中调用
     }
-
-    private void Start()
-    {
-        inventoryManager = FindFirstObjectByType<InventoryManager>();
-        if (inventoryManager != null)
-        {
-            // 使用方法引用代替 lambda，以便 OnDestroy 中正确取消订阅
-            inventoryManager.OnItemEquipped += OnInventoryChanged;
-            inventoryManager.OnItemUnequipped += OnInventoryChanged;
-        }
-    }
-
-    private void OnDestroy()
-    {
-        // 取消订阅，防止内存泄漏
-        if (inventoryManager != null)
-        {
-            inventoryManager.OnItemEquipped -= OnInventoryChanged;
-            inventoryManager.OnItemUnequipped -= OnInventoryChanged;
-        }
-    }
-
-    void OnInventoryChanged(PackageLocalItem item)
-        {
-            RefreshEquipButton();
-            // 通知 PackagePanel 刷新列表（显示装备状态图标）
-            if (uiParent != null)
-                uiParent.RefreshList();
-        }
-
     private void InitUIName()
     {
         UIStars = transform.Find("Center/StartLevel");
@@ -72,7 +30,6 @@ public class PackageDetail : MonoBehaviour
     public void Refresh(PackageLocalItem packageLocalData, PackagePanel uiParent)
     {
         this.packageLocalData = packageLocalData;
-        this.uiParent = uiParent;
 
         DataRepository.ItemTable.TryGetValue(packageLocalData.id, out var item);
         if(item == null)
@@ -99,44 +56,11 @@ public class PackageDetail : MonoBehaviour
             UIIcon.GetComponent<Image>().sprite = icon;
 
         RefreshStars(item.Star);
-        RefreshEquipButton();
     
     }
     public void RefreshStars(int star)
     {
         for (int i = 0; i < UIStars.childCount; i++)
             UIStars.GetChild(i).gameObject.SetActive(i < star);
-    }
-
-
-    void OnEquipClick()
-    {
-        if (packageLocalData == null) return;
-
-        if (isEquipped)
-        {
-            InventoryManager.Instance.Unequip();
-            ToastMessage.Show("已卸下装备");
-        }
-        else
-        {
-            bool success = InventoryManager.Instance.EquipWeapon(packageLocalData.uid);
-            if (success)
-            {
-                DataRepository.ItemTable.TryGetValue(packageLocalData.id, out var item);
-                ToastMessage.Show("已装备: " + (item?.Name ?? ""));
-            }
-            else
-                ToastMessage.Show("装备失败");
-        }
-
-        RefreshEquipButton();
-    }
-
-    void RefreshEquipButton()
-    {
-        if (equipBtn == null || packageLocalData == null) return;
-        isEquipped = packageLocalData.isEquipped;
-        equipBtnText.text = isEquipped ? "卸下" : "装备";
     }
 }

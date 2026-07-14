@@ -29,8 +29,7 @@ public class PlayerCombat : MonoBehaviour
         //如果正在使用远程武器 不触发近战攻击
         if(switcher != null && switcher.IsUsingRanged) return;
 
-        //检查是否装备了近战武器 无武器时拦截攻击
-        if(weapManager == null || weapManager.GetSlotConfig(0) == null) return;
+        if(weapManager == null || !weapManager.HasMeeleWeaponEquipped()) return;
 
         //获取锁定目标
         MeleeFighter targetFighter = null;

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26e51dd7102ec6b49b3e24d67c477be1, type: 3}
   m_Name: Sword_Attack2
   m_EditorClassIdentifier: 
-  <AnimName>k__BackingField: Melee_Attack_2
-  <HitboxToUse>k__BackingField: 4
-  <ImpactStartTime>k__BackingField: 0.4
-  <ImpactEndTime>k__BackingField: 0.65
+  <AnimName>k__BackingField: Melee_Attack_3
+  <HitboxToUse>k__BackingField: 3
+  <ImpactStartTime>k__BackingField: 0.2
+  <ImpactEndTime>k__BackingField: 0.6

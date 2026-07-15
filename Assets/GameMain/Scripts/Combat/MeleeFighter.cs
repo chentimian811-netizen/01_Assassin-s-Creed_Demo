@@ -50,6 +50,7 @@ public class MeleeFighter : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         originalController = animator.runtimeAnimatorController;
+        InitBoneCollider();
 
     }
     private void Start()
@@ -58,33 +59,16 @@ public class MeleeFighter : MonoBehaviour
         if (Sword != null)
         {
             SwordCollider = Sword.GetComponent<BoxCollider>();
-
-            leftHandeConllider = animator.GetBoneTransform(HumanBodyBones.LeftHand).GetComponent<SphereCollider>();
-            leftFootConllider = animator.GetBoneTransform(HumanBodyBones.LeftFoot).GetComponent<SphereCollider>();
-            rightHandeConllider = animator.GetBoneTransform(HumanBodyBones.RightHand).GetComponent<SphereCollider>();
-            rightFootConllider = animator.GetBoneTransform(HumanBodyBones.RightFoot).GetComponent<SphereCollider>();
-
-
             DisableAllHitxboxes();
         }
     }
 
     public void SetWeapon(GameObject newSword)
     {
-
         Sword = newSword;
         if(newSword != null)
         {
             SwordCollider = newSword.GetComponent<BoxCollider>();
-
-            //装备武器获得骨骼碰撞器
-            if (leftHandeConllider == null && animator != null)
-            {
-                leftHandeConllider = animator.GetBoneTransform(HumanBodyBones.LeftHand).GetComponent<SphereCollider>();
-                leftFootConllider = animator.GetBoneTransform(HumanBodyBones.LeftFoot).GetComponent<SphereCollider>();
-                rightHandeConllider = animator.GetBoneTransform(HumanBodyBones.RightHand).GetComponent<SphereCollider>();
-                rightFootConllider = animator.GetBoneTransform(HumanBodyBones.RightFoot).GetComponent<SphereCollider>();
-            }
             DisableAllHitxboxes();
         }
         else
@@ -105,6 +89,18 @@ public class MeleeFighter : MonoBehaviour
         {
             animator.runtimeAnimatorController = originalController;
         }
+    }
+
+    private void InitBoneCollider()
+    {
+        if(animator == null)return;
+        leftHandeConllider = animator.GetBoneTransform(HumanBodyBones.LeftHand)?.GetComponent<SphereCollider>();
+
+        rightHandeConllider = animator.GetBoneTransform(HumanBodyBones.RightHand)?.GetComponent<SphereCollider>();
+
+        leftFootConllider = animator.GetBoneTransform(HumanBodyBones.LeftFoot)?.GetComponent<SphereCollider>();
+
+        rightFootConllider = animator.GetBoneTransform(HumanBodyBones.RightFoot)?.GetComponent<SphereCollider>();
     }
 
     public void ToTryAttack(MeleeFighter target = null)
@@ -358,16 +354,16 @@ public class MeleeFighter : MonoBehaviour
         switch (attack.HitboxToUse)
         {
             case E_AttackHitbox.LeftHande:
-                leftHandeConllider.enabled = true;
+                if(leftHandeConllider != null) leftHandeConllider.enabled = true;
                 break;
             case E_AttackHitbox.RightHande:
-                rightHandeConllider.enabled = true;
+                if(rightHandeConllider !=null) rightHandeConllider.enabled = true;
                 break;
             case E_AttackHitbox.LeftFoot:
-                leftFootConllider.enabled = true;
+                if(leftFootConllider != null)leftFootConllider.enabled = true;
                 break;
             case E_AttackHitbox.RightFoot:
-                rightFootConllider.enabled = true;
+                if(rightFootConllider != null) rightFootConllider.enabled = true;
                 break;
             case E_AttackHitbox.Sword:
                 if (SwordCollider != null) SwordCollider.enabled = true;

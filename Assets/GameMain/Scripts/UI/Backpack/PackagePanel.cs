@@ -34,6 +34,8 @@ public class PackagePanel : BasePanel
     private Transform UIBottomMenus;
     private Transform UIDeleteBtn;
 
+    private Transform UIImproveBtn;
+
     private Transform UIEquipBtn;
     private Transform UITotalInfoText;
 
@@ -346,6 +348,7 @@ public class PackagePanel : BasePanel
         UIBottomMenus = transform.Find("Bottom/BottomMenus");
         UIDeleteBtn = transform.Find("Bottom/BottomMenus/DeleteBtn");
         UIEquipBtn = transform.Find("Bottom/BottomMenus/GearBtn");
+        UIImproveBtn = transform.Find("Bottom/BottomMenus/ImproveBtn");
 
         UISortBtn = transform.Find("Bottom/BottomMenus/SortBtn");
         sortBtnText = UISortBtn?.Find("Text")?.GetComponent<TMP_Text>();
@@ -371,17 +374,19 @@ public class PackagePanel : BasePanel
         UIDeleteBtn.GetComponent<Button>().onClick.AddListener(OnClickDelete);
         UIEquipBtn.GetComponent<Button>().onClick.AddListener(OnClickDetail);
 
+        UIImproveBtn?.GetComponent<Button>().onClick.AddListener(OnClickUpgrade);
+
         UISortBtn?.GetComponent<Button>().onClick.AddListener(OnClickSort);
     }
 
     private void InitPrefab()
     {
-        detailPanelPrefab_Weapon = Resources.Load<GameObject>("Prefabs/Panels/Shop/DetailPanel_Weapon");
+        detailPanelPrefab_Weapon = Resources.Load<GameObject>("Prefabs/Panels/ObjectDetiel/DetailPanel_Weapon");
         detailPanelPrefab_Food = Resources.Load<GameObject>("Prefabs/Panels/Shop/DetailPanel_Food");
     }
 
     private void OnClickDetail()
-{
+    {
     PackageLocalItem selected = GameManager.Instance.GetPackageLocalItemByUid(ChooseUid);
     if (selected == null) return;
 
@@ -413,7 +418,26 @@ public class PackagePanel : BasePanel
     }
 
     RefreshEquipBtnState();
-}
+    }
+
+    public void OnClickUpgrade()
+    {
+        PackageLocalItem selected = GameManager.Instance.GetPackageLocalItemByUid(ChooseUid);
+        if(selected == null) return;
+
+        if(!WeaponUpgradeSystem.CanUpgrade(selected.level,CurrencyManager.Instance.Gold,out var reason))
+        {
+            ToastMessage.Show(reason);
+            return;
+        }
+
+        int cost = WeaponUpgradeSystem.GetUpgradeCost(selected.level);
+        CurrencyManager.Instance.Spend(cost);
+        selected.level++;
+        PackageLocalData.Instance.SavePackage();
+        ToastMessage.Show($"升级成功! 消耗 {cost} 金币");
+        RefreshDetail();
+    }
 
     private void OnClickDelete()
     {

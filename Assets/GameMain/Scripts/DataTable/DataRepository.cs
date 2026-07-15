@@ -70,12 +70,15 @@ public static class DataRepository
             {
                 Id = int.Parse(cols[0]),
                 Type = int.Parse(cols[1]),
-                Star = int.Parse(cols[2]),
-                Name = cols[3],
-                Description = cols[4],
-                SkillDescription = cols[5],
-                ImagePath = cols[6],
-                AssetId = cols[7]
+                WeaponType = (E_WeaponType)int.Parse(cols[2]),
+                BaseDamage = int.Parse(cols[3]),
+                CritRate = float.Parse(cols[4]),
+                Star = int.Parse(cols[5]),
+                Name = cols[6],
+                Description = cols[7],
+                SkillDescription = cols[8],
+                ImagePath = cols[9],
+                AssetId = cols[10]
 
             };
             dict[item.Id] = item;

@@ -56,10 +56,14 @@ public class WeaponManager : MonoBehaviour
 
         if (!weaponConfigMap.TryGetValue(item.id, out config)) return false;
 
-        WeaponSlot targetSlot = FindSlotForWeapon(config.weaponType);
+        var wType = DataRepository.ItemTable.TryGetValue(config.weaponID, out var wItem) 
+        ? wItem.WeaponType : E_WeaponType.Sword;
+        
+        WeaponSlot targetSlot = FindSlotForWeapon(wType);
+
         if (targetSlot == null) return false;
 
-        if (config.weaponType != targetSlot.allowedType) return false;
+        if (wType != targetSlot.allowedType) return false;
 
         if (targetSlot.currentModel != null)
             Destroy(targetSlot.currentModel);
@@ -83,7 +87,12 @@ public class WeaponManager : MonoBehaviour
         }
 
         SyncFighterWeapon();
+
+        meleeFighter?.SetWeaponID(config.weaponID);
+        var localItem = GameManager.Instance.GetPackageLocalItemByUid(uid);
+        meleeFighter?.SetUpgradeLevel(localItem?.level ?? 1); 
         meleeFighter?.SetWeaponConfig(config);
+        
         OnWeaponModelChanged?.Invoke(config);
 
         return true;
@@ -123,6 +132,8 @@ public class WeaponManager : MonoBehaviour
         slot.equippedUid = null;
 
         SyncFighterWeapon();
+        meleeFighter?.SetWeaponID(-1);
+        meleeFighter?.SetUpgradeLevel(1);
         meleeFighter?.SetWeaponConfig(null);
         OnWeaponModelChanged?.Invoke(oldConfig);
         return uid;
@@ -225,8 +236,10 @@ public class WeaponManager : MonoBehaviour
             }
         }
 
-       meleeFighter?.SetWeaponConfig(targetConfig);
-
+        meleeFighter?.SetWeaponID(targetConfig.weaponID);
+        var slotItem = GameManager.Instance.GetPackageLocalItemByUid(weaponSlots[slotIndex].equippedUid);
+        meleeFighter?.SetUpgradeLevel(slotItem?.level ?? 1);
+        meleeFighter?.SetWeaponConfig(targetConfig);
         OnWeaponModelChanged?.Invoke(targetConfig);
     }
 

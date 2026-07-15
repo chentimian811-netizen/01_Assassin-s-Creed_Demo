@@ -14,6 +14,9 @@ public enum E_AttackState
 public class MeleeFighter : MonoBehaviour
 {
     [field: SerializeField] public float Health { get; private set; } = 25f;
+
+    [SerializeField] private int weaponID = -1;
+    private int upgradeLevel = 1;
     [SerializeField] List<AttackData> attacks;
 
     WeaponConfig currentWeapConfig;
@@ -203,8 +206,11 @@ public class MeleeFighter : MonoBehaviour
                 return;
             }
 
-            float damage = attacker.currentWeapConfig != null 
-            ? attacker.currentWeapConfig.baseDamage : 5f;
+            float damage = 5f;
+            if(attacker.weaponID >0 && DataRepository.ItemTable.TryGetValue(attacker.weaponID,out var weaponItem))
+            {
+                damage = WeaponUpgradeSystem.CalculateDamage(weaponItem.BaseDamage,attacker.upgradeLevel);
+            }
             TakeDamage(damage);
 
             OnGotHit?.Invoke(attacker);
@@ -385,4 +391,8 @@ public class MeleeFighter : MonoBehaviour
     public List<AttackData> Attacks => attacks;
 
     public bool IsCounterable => AttackState == E_AttackState.Windup && combocount == 0;
+
+    public void SetUpgradeLevel(int level) => upgradeLevel = level;
+
+    public void SetWeaponID(int id) => weaponID = id;
 }

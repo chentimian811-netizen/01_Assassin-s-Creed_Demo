@@ -9,12 +9,7 @@ public class WeaponConfig : ScriptableObject
 
     public string weaponName;
 
-    public E_WeaponType weaponType;
-
     public GameObject weaponPrefab;
-
-    public int baseDamage;
-
     public float attackRange;
 
     public AnimatorOverrideController animOverride;

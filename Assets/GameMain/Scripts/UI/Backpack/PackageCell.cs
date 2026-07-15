@@ -117,7 +117,7 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        Debug.Log("OnPointerClick: " + eventData.ToString());
+        // Debug.Log("OnPointerClick: " + eventData.ToString());
         if (this.uiParent.curMode == PackageMode.delete)
         {
             if (!this.packageLocalData.isEquipped)
@@ -161,14 +161,14 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        Debug.Log("OnPointerEnter: " + eventData.ToString());
+        // Debug.Log("OnPointerEnter: " + eventData.ToString());
         UIMouseOverAni.gameObject.SetActive(true);
         UIMouseOverAni.GetComponent<Animator>().SetTrigger("In");
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        Debug.Log("OnPointerExit: " + eventData.ToString());
+        // Debug.Log("OnPointerExit: " + eventData.ToString());
         UIMouseOverAni.GetComponent<Animator>().SetTrigger("Out");
     }
 

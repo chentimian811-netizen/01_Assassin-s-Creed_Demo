@@ -159,7 +159,7 @@ public class RangedFighter : MonoBehaviour
                 firePoint.position,
                 direction,
                 currentWeapon.projectilleSpeed,
-                currentWeapon.baseDamage,
+                (DataRepository.ItemTable.TryGetValue(currentWeapon.weaponID, out var rItem)? rItem.BaseDamage : 5f),
                 gameObject
             );
         }

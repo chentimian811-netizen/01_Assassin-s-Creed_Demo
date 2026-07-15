@@ -2,6 +2,13 @@ public class DRItem
 {
     public int Id { get; set; }
     public int Type { get; set; }
+
+    public E_WeaponType WeaponType{get;set;}
+
+    public int BaseDamage {get;set;}
+
+    public float CritRate {get;set;}
+
     public int Star { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }

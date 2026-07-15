@@ -134,7 +134,10 @@ public class InventoryManager : MonoBehaviour
             WeaponConfig oldConfig = weaponManager.GetWeaponConfig(oldItem.id);
             if(oldConfig != null)
             {
-                weaponManager.UnequipSlotByType(oldConfig.weaponType);
+                var oldType = DataRepository.ItemTable.TryGetValue(oldConfig.weaponID, out var cfgItem) 
+                    ? cfgItem.WeaponType: E_WeaponType.Sword;
+
+                weaponManager.UnequipSlotByType(oldType);
             }
 
             oldItem.isEquipped = false;
@@ -167,7 +170,12 @@ public class InventoryManager : MonoBehaviour
         
         WeaponConfig config = weaponManager.GetWeaponConfig(equipped.id);
         if (config != null)
-            weaponManager.UnequipSlotByType(config.weaponType);
+        {
+            var eqType = DataRepository.ItemTable.TryGetValue(config.weaponID, out var eqItem) 
+                ? eqItem.WeaponType : E_WeaponType.Sword;
+            weaponManager.UnequipSlotByType(eqType);
+        }
+        
 
         equipped.isEquipped = false;
         PackageLocalData.Instance.SavePackage();

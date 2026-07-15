@@ -57,7 +57,7 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         // 检查 packageTablesItem 是否为 null
         if (item == null)
         {
-            Debug.LogError("找不到物品配置，id: " + packageLocalData.id);
+            Debug.LogError("找不到物品配置,id: " + packageLocalData.id);
             return;
         }
 

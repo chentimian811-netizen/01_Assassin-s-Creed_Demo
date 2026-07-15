@@ -16,6 +16,7 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     private ShopPanel UIParent;
 
     private Transform UIMouseOverAni;
+    private Transform UISelectAni;
 
     private void Awake()
     {
@@ -31,8 +32,13 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         UISelect = transform.Find("Select");
 
         UIMouseOverAni = transform.Find("MouseOverAni");
-
         UIMouseOverAni.gameObject.SetActive(false);
+
+        UISelectAni = transform.Find("SelectAni");
+        if(UISelectAni != null)
+        {
+            UISelectAni.gameObject.SetActive(false);
+        }
     }
 
     public void Refresh(DRShop data, int keeperId, ShopPanel parent)
@@ -78,6 +84,8 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     public void OnPointerClick(PointerEventData eventData)
     {
         UIParent.OnCellClicked(this);
+
+        ShowSelection();
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -97,8 +105,19 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     public void SetSelected(bool selected)
     {
         UISelect.gameObject.SetActive(selected);
+
     }
 
+
+    public void ShowSelection()
+    {
+        UISelect.gameObject.SetActive(true);
+        if(UISelectAni != null)
+        {
+            UISelectAni.gameObject.SetActive(true);
+            UISelectAni.GetComponent<Animator>().SetTrigger("In");
+        }
+    }
     public DRShop GetShopData() => shopData;
 
 }

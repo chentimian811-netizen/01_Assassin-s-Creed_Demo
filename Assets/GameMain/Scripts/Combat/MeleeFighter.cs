@@ -22,13 +22,13 @@ public class MeleeFighter : MonoBehaviour
     [Tooltip("命中时暂停时间（秒）")]
     public float hitStopDuration = 0.1f;
 
-    [Tooltip("命中的时间缩放，0 = 完全暂停，0.1=慢动作")]
+    [Tooltip("命中的时间缩放,0 = 完全暂停,0.1=慢动作")]
     [Range(0f,1f)]
     public float hitStopTimeScale = 0f;
 
     static bool isHitStopActive = false;
 
-    [SerializeField] GameObject Sword;
+    private GameObject currentWeapon;
 
     SphereCollider leftHandeConllider, rightHandeConllider, leftFootConllider, rightFootConllider;
 
@@ -37,7 +37,7 @@ public class MeleeFighter : MonoBehaviour
     public event Action<MeleeFighter> OnGotHit;
     public event Action OnHitComplete;
 
-    BoxCollider SwordCollider;
+    BoxCollider WeaponCollider;
     Animator animator;
     RuntimeAnimatorController originalController;
     public bool IsAttackingHit { get; private set; } = false; //是否处于被攻击状态
@@ -56,25 +56,25 @@ public class MeleeFighter : MonoBehaviour
     private void Start()
     {   
 
-        if (Sword != null)
+        if (currentWeapon != null)
         {
-            SwordCollider = Sword.GetComponent<BoxCollider>();
+            WeaponCollider = currentWeapon.GetComponent<BoxCollider>();
             DisableAllHitxboxes();
         }
     }
 
-    public void SetWeapon(GameObject newSword)
+    public void SetWeapon(GameObject newWeapon)
     {
-        Sword = newSword;
-        if(newSword != null)
+        currentWeapon = newWeapon;
+        if(newWeapon != null)
         {
-            SwordCollider = newSword.GetComponent<BoxCollider>();
+            WeaponCollider = newWeapon.GetComponent<BoxCollider>();
             DisableAllHitxboxes();
         }
         else
         {
-            Sword = null;
-            SwordCollider = null;
+            currentWeapon = null;
+            WeaponCollider = null;
         }
     }
 
@@ -365,8 +365,8 @@ public class MeleeFighter : MonoBehaviour
             case E_AttackHitbox.RightFoot:
                 if(rightFootConllider != null) rightFootConllider.enabled = true;
                 break;
-            case E_AttackHitbox.Sword:
-                if (SwordCollider != null) SwordCollider.enabled = true;
+            case E_AttackHitbox.Weapon:
+                if (WeaponCollider != null) WeaponCollider.enabled = true;
                 break;
             default:
                 break;
@@ -379,7 +379,7 @@ public class MeleeFighter : MonoBehaviour
         if (rightHandeConllider != null) rightHandeConllider.enabled = false;
         if (leftFootConllider != null) leftFootConllider.enabled = false;
         if (rightFootConllider != null) rightFootConllider.enabled = false;
-        if (SwordCollider != null) SwordCollider.enabled = false;
+        if (WeaponCollider != null) WeaponCollider.enabled = false;
     }
 
     public List<AttackData> Attacks => attacks;

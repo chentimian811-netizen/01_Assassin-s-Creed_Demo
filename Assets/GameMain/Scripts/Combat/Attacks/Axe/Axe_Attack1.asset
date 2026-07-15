@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Axe_Attack1
   m_EditorClassIdentifier: 
   <AnimName>k__BackingField: Melee_Attack_1
-  <HitboxToUse>k__BackingField: 0
-  <ImpactStartTime>k__BackingField: 0
-  <ImpactEndTime>k__BackingField: 0
+  <HitboxToUse>k__BackingField: 4
+  <ImpactStartTime>k__BackingField: 0.3
+  <ImpactEndTime>k__BackingField: 0.55

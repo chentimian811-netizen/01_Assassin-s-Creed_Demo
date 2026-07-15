@@ -17,5 +17,5 @@ public enum E_AttackHitbox
     RightHande,
     LeftFoot,
     RightFoot,
-    Sword,
+    Weapon,
 }

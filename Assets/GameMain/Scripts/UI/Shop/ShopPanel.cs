@@ -64,7 +64,7 @@ public class ShopPanel : BasePanel
         shopCellPrefab_Weapon = Resources.Load("Prefabs/Panels/Shop/ShopWeapon") as GameObject;
         shopCellPrefab_Food = Resources.Load("Prefabs/Panels/Shop/ShopFood") as GameObject;
 
-        detailPanelPrefab_Weapon = Resources.Load("Prefabs/Panels/Shop/DetailPanel_Weapon") as GameObject;
+        detailPanelPrefab_Weapon = Resources.Load("Prefabs/Panels/ObjectDetiel/DetailPanel_Weapon") as GameObject;
         detailPanelPrefab_Food = Resources.Load("Prefabs/Panels/Shop/DetailPanel_Food") as GameObject;
     }
 
@@ -149,7 +149,11 @@ public class ShopPanel : BasePanel
         SwapDetailPanel(isFood);
 
         UIDetailName.GetComponent<Text>().text = item?.Name ?? "未知";
-        UIDetailDesc.GetComponent<Text>().text = item?.Description ?? "";
+        if(UIDetailDesc != null)
+        {
+            UIDetailDesc.GetComponent<Text>().text = item?.Description ?? "";
+        }
+        
         UIWeaponSkillDesc.GetComponent<Text>().text = item?.SkillDescription ?? "";
 
         var icon = DataRepository.GetItemIcon(shopData.ItemAssetId);
@@ -164,6 +168,18 @@ public class ShopPanel : BasePanel
                     UIDetailStar[i].gameObject.SetActive(i < item.Star);
             }
         }
+
+        Transform typeText = UIDetailPanel.Find("Center/WeaponType");
+        if (typeText != null && item != null)
+            typeText.GetComponent<Text>().text = item.WeaponType.ToString();
+        
+        Transform dmgText = UIDetailPanel.Find("Center/BaseDamageText");
+        if (dmgText != null && item != null)
+            dmgText.GetComponent<Text>().text = item.BaseDamage.ToString();
+
+        Transform critText = UIDetailPanel.Find("Center/CritRateText");
+        if (critText != null && item != null)
+            critText.GetComponent<Text>().text = $"{item.CritRate * 100:F0}%";
 
         selectedShopData = shopData;
     }

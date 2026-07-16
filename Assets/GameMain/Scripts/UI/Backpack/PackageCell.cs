@@ -87,6 +87,14 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         }
     }
 
+    public void RefreshLevel()
+    {
+        if(UILevel != null)
+        {
+            UILevel.GetComponent<Text>().text = "Lv." + this.packageLocalData.level.ToString();
+        }
+    }
+
     public void RefreshDeleteState()
     {  
         bool isEquipped = this.packageLocalData.isEquipped;

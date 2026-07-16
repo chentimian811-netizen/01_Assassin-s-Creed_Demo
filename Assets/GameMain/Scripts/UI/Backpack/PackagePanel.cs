@@ -34,6 +34,8 @@ public class PackagePanel : BasePanel
     private Transform UIBottomMenus;
     private Transform UIDeleteBtn;
 
+    private Transform UIGoldNum;
+
     private Transform UIImproveBtn;
 
     private Transform UIEquipBtn;
@@ -134,6 +136,8 @@ public class PackagePanel : BasePanel
         InventoryManager.Instance.OnItemEquipped += OnInventoryChanged;
         InventoryManager.Instance.OnItemUnequipped += OnInventoryChanged;
 
+        CurrencyManager.Instance.OnGoldChanged += OnGoldChangedHandler;
+
     }
 
     private void InitTabs()
@@ -176,6 +180,24 @@ public class PackagePanel : BasePanel
     private void RefreshUI()
     {
         RefreshScrollView();
+
+        RefreshGoldDisplay();
+    }
+
+    private void RefreshGoldDisplay()
+    {
+        if(UIGoldNum != null)
+        {
+            UIGoldNum.GetComponent<Text>().text = CurrencyManager.Instance.Gold.ToString();
+        }
+    }
+
+    private void OnGoldChangedHandler(int newGold)
+    {
+        if(UIGoldNum != null)
+        {
+            UIGoldNum.GetComponent<Text>().text = newGold.ToString();
+        }
     }
 
     private void RefreshDetail()
@@ -279,6 +301,7 @@ public class PackagePanel : BasePanel
         }
 
         UIDeleteBtn.GetComponent<Button>().interactable = true;
+        UIEquipBtn.GetComponent<Button>().interactable = true;
 
         var config = GameManager.Instance.GetPackageItemById(seleced.id);
         if(config == null)
@@ -349,6 +372,7 @@ public class PackagePanel : BasePanel
         UIDeleteBtn = transform.Find("Bottom/BottomMenus/DeleteBtn");
         UIEquipBtn = transform.Find("Bottom/BottomMenus/GearBtn");
         UIImproveBtn = transform.Find("Bottom/BottomMenus/ImproveBtn");
+        UIGoldNum = transform.Find("Bottom/GoldNum");
 
         UISortBtn = transform.Find("Bottom/BottomMenus/SortBtn");
         sortBtnText = UISortBtn?.Find("Text")?.GetComponent<TMP_Text>();
@@ -437,6 +461,18 @@ public class PackagePanel : BasePanel
         PackageLocalData.Instance.SavePackage();
         ToastMessage.Show($"升级成功! 消耗 {cost} 金币");
         RefreshDetail();
+
+        //同步刷新列表中该物品的等级显示
+        RectTransform scrollContent = UIScrollView.GetComponent<ScrollRect>().content;
+        foreach (Transform child in scrollContent)
+        {
+            PackageCell cell = child.GetComponent<PackageCell>();
+            if (cell != null && cell.GetUid() == selected.uid)
+            {
+                cell.RefreshLevel();
+                break;
+            }
+        }
     }
 
     private void OnClickDelete()
@@ -571,6 +607,8 @@ public class PackagePanel : BasePanel
         InventoryManager.Instance.OnItemEquipped -= OnInventoryChanged;
         InventoryManager.Instance.OnItemUnequipped -= OnInventoryChanged;
     }
+
+    CurrencyManager.Instance.OnGoldChanged -= OnGoldChangedHandler;
 
     }
 }

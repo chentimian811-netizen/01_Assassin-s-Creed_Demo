@@ -85,7 +85,7 @@ public class Projectile : MonoBehaviour
     //碰撞检测
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"Projectile.OnTriggerEnter 触发！碰撞对象: {other.name}, Layer: {other.gameObject.layer}, isActive: {isActive}");
+        GameLog.Combat($"Projectile.OnTriggerEnter 触发！碰撞对象: {other.name}, Layer: {other.gameObject.layer}, isActive: {isActive}");
 
         if(!isActive) return;
 
@@ -95,7 +95,7 @@ public class Projectile : MonoBehaviour
         //检测是否在可碰撞层级内
         if((hitLayers.value & (1 << other.gameObject.layer)) == 0)
         {
-            Debug.Log($"Projectile: 层级不匹配，跳过。hitLayers={hitLayers.value}, 目标Layer={other.gameObject.layer}");
+            GameLog.Combat($"Projectile: 层级不匹配，跳过。hitLayers={hitLayers.value}, 目标Layer={other.gameObject.layer}");
             return;
         }
 

@@ -137,7 +137,8 @@ public class UIManager
 
         if (ModalPanels.Contains(name))
         {
-            Time.timeScale = 0f;
+            HitStopManager.EnsureExists();
+            HitStopManager.Instance?.Pause();
         }
 
         CursorManager.Instance.AddLock(name);
@@ -177,7 +178,7 @@ public class UIManager
         {
             if(ModalPanels.Contains(kv.Key)) return;
         }
-        Time.timeScale = 1f;
+        HitStopManager.Instance?.Resume();
     }
 }
 

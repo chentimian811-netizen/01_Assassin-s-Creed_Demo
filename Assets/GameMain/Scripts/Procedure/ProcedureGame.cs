@@ -29,8 +29,9 @@ public class ProcedureGame : ProcedureBase
         // 阶段3: m_TabFormId = GameEntry.UI.OpenUIForm(UIPaths.TopRightTabForm, "HUD");
         // 阶段3: m_MenuBarFormId = GameEntry.UI.OpenUIForm(UIPaths.MainMenuBarForm, "HUD");
 
-        // 3. 恢复游戏时间
-        Time.timeScale = 1f;
+        // 3. 确保卡肉/暂停唯一所有者存在，并恢复游戏时间
+        HitStopManager.EnsureExists();
+        HitStopManager.Instance?.Resume();
 
         // 4. 订阅事件
         GameEntry.Event.Subscribe(MenuCommandEventArgs.EventId, OnMenuCommand);
@@ -100,12 +101,13 @@ public class ProcedureGame : ProcedureBase
                 break;
 
             case "Pause":
-                Time.timeScale = 0f;
+                HitStopManager.EnsureExists();
+                HitStopManager.Instance?.Pause();
                 // 阶段3: GameEntry.UI.OpenUIForm(UIPaths.PauseForm, "Popup");
                 break;
 
             case "Resume":
-                Time.timeScale = 1f;
+                HitStopManager.Instance?.Resume();
                 // 阶段3: 关闭 PauseForm
                 break;
         }

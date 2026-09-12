@@ -57,6 +57,26 @@ public class HitStopManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    /// <summary>
+    /// 确保场景中存在 HitStopManager。ProcedureGame.OnEnter 调用。
+    /// </summary>
+    public static HitStopManager EnsureExists()
+    {
+        if (Instance != null) return Instance;
+
+        var existing = Object.FindObjectOfType<HitStopManager>();
+        if (existing != null)
+        {
+            Instance = existing;
+            return Instance;
+        }
+
+        var go = new GameObject("[HitStopManager]");
+        Object.DontDestroyOnLoad(go);
+        Instance = go.AddComponent<HitStopManager>();
+        return Instance;
+    }
+
     // ==================== 卡肉 ====================
 
     /// <summary>播放顿帧。duration/timeScale 传负值表示用默认。</summary>

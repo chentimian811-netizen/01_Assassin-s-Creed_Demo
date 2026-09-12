@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// 玩家战斗输入组件
-/// 职责：轻攻击输入处理 反击判断
+/// 职责：轻攻击输入处理 反击判断；P1 起负责攻击耐力消耗
 /// </summary>
 public class PlayerCombat : MonoBehaviour
 {
@@ -13,13 +13,21 @@ public class PlayerCombat : MonoBehaviour
     PlayerController playerController;
     WeaponSwitcher switcher;
     WeaponManager weapManager;
+    PlayerStamina stamina;
+    StaminaConfig staminaConfig;
 
-    public void Init(MeleeFighter mf,PlayerLockOn lo,PlayerController pc)
+    public void Init(MeleeFighter mf,PlayerLockOn lo,PlayerController pc, PlayerStamina staminaRef = null)
     {
         meleeFighter = mf;
         playerController = pc;
         switcher = GetComponent<WeaponSwitcher>();
         weapManager = GetComponent<WeaponManager>();
+        stamina = staminaRef != null ? staminaRef : GetComponent<PlayerStamina>();
+        // 从耐力组件取配置，避免战斗侧再挂一份 SO 引用
+        if (stamina != null)
+        {
+            staminaConfig = stamina.Config;
+        }
     }
 
     public void HandleLightAttack(InputAction.CallbackContext context)
@@ -56,10 +64,15 @@ public class PlayerCombat : MonoBehaviour
 
         if (enemy != null && enemy.Fighter.IsCounterable && !meleeFighter.inAction && !meleeFighter.IsAttackingHit)
         {
+            // 反击是窗口期惩罚，不扣耐力（魂类惯例：处决/反击免费）
             StartCoroutine(meleeFighter.PerformCounterAttack(enemy));
         }
         else
         {
+            // 轻攻击消耗：不足则整段攻击不发出
+            float cost = staminaConfig != null ? staminaConfig.lightAttackCost : 12f;
+            if (stamina != null && !stamina.TryConsume(cost)) return;
+
             meleeFighter.ToTryAttack(targetFighter ?? playerController.TargetEnemy?.Fighter);
         }
     }

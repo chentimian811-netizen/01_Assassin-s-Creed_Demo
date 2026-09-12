@@ -55,6 +55,8 @@ GameObject:
   - component: {fileID: 7203364765567259905}
   - component: {fileID: 195394216387546571}
   - component: {fileID: 8811223344556677001}
+  - component: {fileID: 444690404845367205}
+  - component: {fileID: 4659310331464547962}
   m_Layer: 6
   m_Name: Male
   m_TagString: Player
@@ -95,6 +97,8 @@ MonoBehaviour:
   playerCombat: {fileID: 0}
   playerLockOn: {fileID: 0}
   playerAnimator: {fileID: 0}
+  playerDodge: {fileID: 0}
+  playerStamina: {fileID: 0}
   RangedFighter: {fileID: 0}
   PlayerPosture: 2
   LocomotionState: 0
@@ -139,9 +143,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad5306f128adaaf4b98fdbc6f409238e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  weaponID: -1
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weaponID: 10001
   attacks:
   - {fileID: 11400000, guid: e2abf08d88207cc48ad8b09f66758426, type: 2}
   - {fileID: 11400000, guid: 9ffeb712fb5fd3a4aa7de97050feeae7, type: 2}
@@ -149,21 +153,6 @@ MonoBehaviour:
   health: {fileID: 8811223344556677001}
   hitStopDuration: 0.09
   hitStopTimeScale: 0
---- !u!114 &8811223344556677001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7962487104537891693}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c4e9a1b2d3f4056a8b9c0d1e2f30415, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  maxHealth: 100
-  refillOnEnable: 1
-  unitId:
 --- !u!114 &8402597464197582587
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -208,9 +197,9 @@ MonoBehaviour:
     currentConfig: {fileID: 0}
     currentModel: {fileID: 0}
     equippedUid: 
-  - slotName: MainHand
+  - slotName: AxeHand
     holdPoint: {fileID: 1176333465599525210}
-    allowedType: 3
+    allowedType: 2
     currentConfig: {fileID: 0}
     currentModel: {fileID: 0}
     equippedUid: 
@@ -416,7 +405,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
     m_ActionId: 94ae7646-e237-4e99-b938-e2228a1f777f
@@ -566,6 +555,52 @@ CharacterController:
   m_SkinWidth: 0.1
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.93, z: 0}
+--- !u!114 &8811223344556677001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e9a1b2d3f4056a8b9c0d1e2f30415, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  refillOnEnable: 1
+  unitId: 
+--- !u!114 &444690404845367205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1cc0303b2cbcf045bc778adb9aa4892, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: 3c8a9e1f5b2d4a6790c1e4f8a7b6d5c4, type: 2}
+--- !u!114 &4659310331464547962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962487104537891693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 974b322a02c72884fa47248996aab71f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  staminaConfig: {fileID: 0}
+  dodgeDuration: 0.9
+  dodgeCooldown: 0.2
+  iframeStartDelay: 0.05
+  iframeDuration: 0.4
+  allowNeutralDodge: 1
 --- !u!1001 &2414941953244394479
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -638,6 +673,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Layer
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 1813906797881826651, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_TagString
+      value: Hitbox
       objectReference: {fileID: 0}
     - target: {fileID: 1840329450017739115, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}
@@ -723,16 +763,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_TagString
       value: Hitbox
-      objectReference: {fileID: 0}
-    - target: {fileID: 1813906797881826651, guid: d795ecf62053eb745964b087aeb03184,
-        type: 3}
-      propertyPath: m_TagString
-      value: Hitbox
-      objectReference: {fileID: 0}
-    - target: {fileID: 1813906797881826651, guid: d795ecf62053eb745964b087aeb03184,
-        type: 3}
-      propertyPath: m_Layer
-      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 2982069422767653059, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}

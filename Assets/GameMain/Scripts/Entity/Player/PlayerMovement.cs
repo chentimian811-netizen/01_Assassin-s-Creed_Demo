@@ -69,6 +69,8 @@ public class PlayerMovement : MonoBehaviour
     public bool IsRunning() => isRunning;
     /// <summary>是否蹲下</summary>
     public bool IsCrouching() => isCrouch;
+    /// <summary>是否在地面（供翻滚/跳跃判定）</summary>
+    public bool IsGrounded => isGround;
     /// <summary>获取原始移动输入（供翻滚方向计算使用）</summary>
     public Vector2 GetMoveInputRaw() => moveInput;
     
@@ -119,6 +121,9 @@ public class PlayerMovement : MonoBehaviour
     {
         isRunning = context.ReadValueAsButton();
     }
+
+    /// <summary>由 Shift 双功能逻辑调用：长按疾跑时置 true</summary>
+    public void SetRunning(bool value) => isRunning = value;
 
     public void HandleCrouchInput(InputAction.CallbackContext context)
     {
@@ -342,14 +347,14 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     void AnimatorMove()//动画驱动移动
     {
-        // 翻滚期间完全由Root Motion驱动位移 跳过所有代码移动（阶段2实现PlayerDodge后取消注释）
-        // if(playerController.playerDodge != null && playerController.playerDodge.IsDodging)
-        // {
-        //     Vector3 dogeDelta = Animator.deltaPosition;
-        //     dogeDelta.y = VerticalVelocity * Time.deltaTime;
-        //     characterController.Move(dogeDelta);
-        //     return;
-        // }
+        // 翻滚期间水平位移由 PlayerDodge 曲线驱动。
+        // 这里绝不能吃 Animator.deltaPosition：CrossFade 混合期会残留走路位移，
+        // 表现为「先滑一小段才开始滚」。
+        if(playerController.playerDodge != null && playerController.playerDodge.IsDodging)
+        {
+            characterController.Move(Vector3.up * VerticalVelocity * Time.deltaTime);
+            return;
+        }
 
         if (playerController.PlayerPosture != PlayerController.E_PlayerPosture.Jumping 
             && playerController.PlayerPosture != PlayerController.E_PlayerPosture.Falling)
@@ -407,8 +412,8 @@ public class PlayerMovement : MonoBehaviour
             
         // }
 
-        //翻滚期间不应用Root Motion旋转(由翻滚协程控制朝向)（阶段2实现PlayerDodge后取消注释）
-        // if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
+        //翻滚期间不应用 Root Motion 旋转（朝向由 PlayerDodge 处理）
+        if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
 
         // if (!playerController.IsLocking && !meleeFighter.inAction)
         // {

@@ -31,6 +31,9 @@ public class PlayerStamina : MonoBehaviour, IStaminaUser
     public bool IsInputLocked => isInputLocked;
     public float Normalized => Max > 0f ? current / Max : 0f;
 
+    /// <summary>供 PlayerCombat 等读取消耗数值，避免各处再挂一份 SO</summary>
+    public StaminaConfig Config => config;
+
     private void Awake()
     {
         if (config == null) Debug.LogWarning("[PlayerStamina] 未配置 StaminaConfig，将使用默认值", this);

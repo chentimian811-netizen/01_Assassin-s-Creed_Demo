@@ -19,8 +19,8 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public PlayerCombat playerCombat;
     [HideInInspector] public PlayerLockOn playerLockOn;
     [HideInInspector] public PlayerAnimator playerAnimator;
-    // [HideInInspector] public PlayerDodge playerDodge;       // 翻滚组件（阶段2实现后取消注释）
-    // [HideInInspector] public PlayerStamina playerStamina;   // 耐力组件（阶段2实现后取消注释）
+    // [HideInInspector] public PlayerDodge playerDodge;       // 翻滚组件（P2 再取消注释）
+    [HideInInspector] public PlayerStamina playerStamina;   // 耐力组件（P1）
 
     public Transform PlayerTransform { get; private set; }
     public Animator Animator { get; private set; }
@@ -120,11 +120,13 @@ public class PlayerController : MonoBehaviour
         playerCombat = GetComponent<PlayerCombat>();
         playerLockOn = GetComponent<PlayerLockOn>();
         playerAnimator = GetComponent<PlayerAnimator>();
-        // playerDodge = GetComponent<PlayerDodge>();       // 还没实现，先注释
-        // playerStamina = GetComponent<PlayerStamina>();   // 还没实现，先注释
+        // playerDodge = GetComponent<PlayerDodge>();       // P2 再取消注释
+        playerStamina = GetComponent<PlayerStamina>();
+        if (playerStamina == null)
+            Debug.LogWarning("[PlayerController] 玩家未挂 PlayerStamina，攻击将不扣耐力", this);
 
         playerMovement.Init(CharacterController , Animator ,MeleeFighter , this);
-        playerCombat.Init(MeleeFighter, playerLockOn, this);
+        playerCombat.Init(MeleeFighter, playerLockOn, this, playerStamina);
         playerLockOn.Init(this);
         playerAnimator.Init(Animator, this, playerMovement);
         // playerDodge.Init(Animator, MeleeFighter, this);

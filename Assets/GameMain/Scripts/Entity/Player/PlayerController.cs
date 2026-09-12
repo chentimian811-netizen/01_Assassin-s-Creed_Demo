@@ -135,7 +135,8 @@ public class PlayerController : MonoBehaviour
   
     void Update()
     {
-        if (MeleeFighter.Health <= 0 || !acceptInput)
+        if ((MeleeFighter != null && MeleeFighter.HealthComponent != null && MeleeFighter.HealthComponent.IsDead)
+            || !acceptInput)
         {
             ClearInput();
         }

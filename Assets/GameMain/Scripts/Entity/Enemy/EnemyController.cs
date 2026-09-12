@@ -36,6 +36,7 @@ public class EnemyController : MonoBehaviour
     public MeleeFighter Fighter { get; private set; }
     public VisionSensor VisionSensor { get;  set; }
     public CharacterController character { get; private set; }
+    public Health Health { get; private set; }
     public float CombatMovementTimer { get; set; } = 0f;
 
     Vector3 prevPos;
@@ -53,12 +54,14 @@ public class EnemyController : MonoBehaviour
 
         Fighter = GetComponent<MeleeFighter>();
 
+        Health = GetComponent<Health>();
+
         character = GetComponent<CharacterController>();
 
         stateDict = new Dictionary<E_EnemyState, State<EnemyController>>();
 
         stateDict[E_EnemyState.Idle] = GetComponent<IdleState>();
-        
+
         stateDict[E_EnemyState.Patrol] = GetComponent<PatrolState>();
 
         stateDict[E_EnemyState.CombatMovement] = GetComponent<CombatMovementStates>();
@@ -73,8 +76,6 @@ public class EnemyController : MonoBehaviour
 
         stateMachine = new StateMachine<EnemyController>(this);
 
-        // stateMachine.ChangeState(stateDict[E_EnemyState.Idle]);
-
         if(GetComponent<PatrolPoute>() != null && GetComponent<PatrolPoute>().HasPoints)
         {
             ChangeState(E_EnemyState.Patrol);
@@ -83,24 +84,47 @@ public class EnemyController : MonoBehaviour
         {
             ChangeState(E_EnemyState.Idle);
         }
+    }
 
-        Fighter.OnGotHit += (MeleeFighter attacker) =>
+    private void OnEnable()
+    {
+        GameEvents.OnUnitDamaged += HandleUnitDamaged;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.OnUnitDamaged -= HandleUnitDamaged;
+    }
+
+    /// <summary>
+    /// 受击处理。替代原 Fighter.OnGotHit 的 lambda。
+    /// 必须先用 victimUnitId 过滤"是不是我"，
+    /// 否则一只敌人被打，全场敌人都会进受击/死亡状态。
+    /// </summary>
+    private void HandleUnitDamaged(string victimUnitId, DamageInfo info)
+    {
+        if (Health == null || victimUnitId != Health.UnitId) return;
+
+        // ① 死亡 —— 全工程唯一的 Dead 状态转换入口，不能丢
+        if (Health.IsDead)
         {
-            if(Fighter.Health > 0)
-            {
-                if(Target == null)
-                {
-                    Target = attacker;
-                    AlertNearbyEnemies();
-                }
-                ChangeState(E_EnemyState.GettingHit);
-            }
-            else
-            {
-                ChangeState(E_EnemyState.Dead);
-            }
-            
-        };
+            ChangeState(E_EnemyState.Dead);
+            return;
+        }
+
+        // ② 仇恨：从 info.Source 取攻击者
+        MeleeFighter attacker = info.Source != null
+            ? info.Source.GetComponent<MeleeFighter>()
+            : null;
+
+        if (Target == null && attacker != null)
+        {
+            Target = attacker;
+            AlertNearbyEnemies();
+        }
+
+        // ③ 进入受击
+        ChangeState(E_EnemyState.GettingHit);
     }
 
       
@@ -157,12 +181,11 @@ public class EnemyController : MonoBehaviour
             }
         }
 
-        if(Target?.Health <= 0)
+        if(Target != null && Target.HealthComponent != null && Target.HealthComponent.IsDead)
         {
-
             TargetsInRange.Remove(Target);
             EnemyManager.i.RemoveEnemyInRange(this);
-        }  
+        }
 
         EnforceSeparation();
 
@@ -176,7 +199,7 @@ public class EnemyController : MonoBehaviour
     private void EnforceSeparation()
     {
         if(Target == null) return;
-        if(Fighter.Health <= 0)return;
+        if(Health != null && Health.IsDead)return;
 
         Vector3 playerPos = Target.transform.position;
         Vector3 diff = transform.position - playerPos;

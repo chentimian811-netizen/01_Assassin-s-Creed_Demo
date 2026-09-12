@@ -155,12 +155,14 @@ public class RangedFighter : MonoBehaviour
         Projectile projectile = projectilePool.GetProjectile();
         if(projectile != null)
         {
+            bool isPlayer = CompareTag("Player");
             projectile.Initialize(
                 firePoint.position,
                 direction,
                 currentWeapon.projectilleSpeed,
                 (DataRepository.ItemTable.TryGetValue(currentWeapon.weaponID, out var rItem)? rItem.BaseDamage : 5f),
-                gameObject
+                gameObject,
+                isPlayer ? E_DamageSource.Player : E_DamageSource.Enemy
             );
         }
     }

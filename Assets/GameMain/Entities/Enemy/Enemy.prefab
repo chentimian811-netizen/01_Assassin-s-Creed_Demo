@@ -1370,6 +1370,7 @@ GameObject:
   - component: {fileID: 7313202557231490922}
   - component: {fileID: 4273704250487801590}
   - component: {fileID: 1485882695008051471}
+  - component: {fileID: 8811223344556677002}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Enemy
@@ -1432,15 +1433,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad5306f128adaaf4b98fdbc6f409238e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  <Health>k__BackingField: 100
+  m_Name:
+  m_EditorClassIdentifier:
+  weaponID: -1
   attacks:
   - {fileID: 11400000, guid: ac0c29b7b65405247b8d850d08e98675, type: 2}
   - {fileID: 11400000, guid: 3c5b7744a4f889f47bf29fae2b0528d1, type: 2}
+  health: {fileID: 8811223344556677002}
   hitStopDuration: 0
   hitStopTimeScale: 0
-  Sword: {fileID: 3139722781369767024}
+--- !u!114 &8811223344556677002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769488866850045155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e9a1b2d3f4056a8b9c0d1e2f30415, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  maxHealth: 100
+  refillOnEnable: 1
+  unitId:
 --- !u!143 &8684321585978170563
 CharacterController:
   m_ObjectHideFlags: 0

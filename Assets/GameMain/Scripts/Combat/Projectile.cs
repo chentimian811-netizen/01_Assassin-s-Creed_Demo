@@ -18,11 +18,12 @@ public class Projectile : MonoBehaviour
     [SerializeField] private GameObject hitEffectPrefab;
 
     
-    private Vector3 velocity;   
-    private float damage;       
+    private Vector3 velocity;
+    private float damage;
     private GameObject owner;   //发射着(防止自伤)
-    private float currentLifetime; 
-    private bool isActive;      
+    private E_DamageSource sourceType = E_DamageSource.Player;
+    private float currentLifetime;
+    private bool isActive;
 
     //组件引用
     private Collider col;
@@ -36,13 +37,15 @@ public class Projectile : MonoBehaviour
     /// <summary>
     /// 初始化箭矢（由对象池调用）
     /// </summary>
-    public void Initialize(Vector3 position, Vector3 direction, float speed, float dmg, GameObject shooter)
+    public void Initialize(Vector3 position, Vector3 direction, float speed, float dmg, GameObject shooter,
+        E_DamageSource source = E_DamageSource.Player)
     {
         //设置位置和速度
         transform.position = position;
         velocity = direction.normalized * speed;
         damage = dmg;
         owner = shooter;
+        sourceType = source;
         currentLifetime = 0f;
         isActive = true;
 
@@ -107,22 +110,12 @@ public class Projectile : MonoBehaviour
     }
 
     /// <summary>
-    /// 对目标造成伤害（触发受击/死亡动画）
+    /// 对目标造成伤害。箭矢不可被弹反，只能靠格挡/翻滚处理。
     /// </summary>
     private void DealDamage(Collider target)
     {
-        MeleeFighter fighter = target.GetComponentInParent<MeleeFighter>();
-        Debug.Log($"Projectile.DealDamage: 目标={target.name}, MeleeFighter={(fighter != null ? "找到" : "未找到")}, 伤害={damage}");
-
-        if(fighter != null)
-        {
-            //获取发射者（玩家）的MeleeFighter，而非箭矢自身
-            MeleeFighter attacker = owner != null ? owner.GetComponent<MeleeFighter>() : null;
-            Debug.Log($"Projectile.DealDamage: attacker={(attacker != null ? attacker.name : "null")}");
-
-            //调用带攻击者的重载，触发受击/死亡动画
-            fighter.TakeDamage(damage, attacker);
-        }
+        DamageRouter.ApplyAmount(target, owner, target.ClosestPoint(transform.position),
+            damage, sourceType, parryable: false, attackId: "projectile");
     }
 
     /// <summary>

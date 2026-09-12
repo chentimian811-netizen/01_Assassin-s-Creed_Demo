@@ -16,6 +16,10 @@ public class DeadState : State<EnemyController>
         owner.NavAgent.enabled = false;
         owner.character.enabled = false;
 
+        // 打断未完成的攻击/受击协程
+        var mf = owner.GetComponent<MeleeFighter>();
+        if (mf != null) mf.StopAllCoroutines();
+
         Destroy(owner.gameObject,destroyDelay);
     }
     

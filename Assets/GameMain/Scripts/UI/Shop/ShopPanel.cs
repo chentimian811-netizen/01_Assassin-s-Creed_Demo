@@ -180,6 +180,9 @@ public class ShopPanel : BasePanel
         Transform critText = UIDetailPanel.Find("Center/CritRateText");
         if (critText != null && item != null)
             critText.GetComponent<Text>().text = $"{item.CritRate * 100:F0}%";
+        Transform leveText = UIDetailPanel.Find("Button/LevelText");
+        if(leveText != null)
+            leveText.GetComponent<Text>().text = $"Lv.1/{WeaponUpgradeSystem.GetMaxLevel()}";
 
         selectedShopData = shopData;
     }

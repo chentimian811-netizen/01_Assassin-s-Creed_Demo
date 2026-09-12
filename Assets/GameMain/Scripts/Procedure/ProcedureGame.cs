@@ -92,9 +92,10 @@ public class ProcedureGame : ProcedureBase
         switch (args.Command)
         {
             case "ReturnToMainMenu":
-                // 设置反向加载目标和下一流程
-                ProcedureLoading.TargetScene = ScenePaths.MainMenu;
-                ProcedureLoading.NextProcedureType = typeof(ProcedureMainMenu).Name;
+                // 单场景开发期：重载 TestScene 相当于重开关卡。
+                // 之后自建 MainMenu 场景后，改回 TargetScene=ScenePaths.MainMenu / Next=ProcedureMainMenu
+                ProcedureLoading.TargetScene = ScenePaths.TestScene;
+                ProcedureLoading.NextProcedureType = typeof(ProcedureGame).Name;
                 ChangeState<ProcedureLoading>(m_ProcedureOwner);
                 break;
 

@@ -35,7 +35,8 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        InitMainMenu();
+        // 单场景开发期：入口已是 ProcedureGame，不再强制进入主菜单。
+        // 之后自建 MainMenu 场景后，可恢复 InitMainMenu();
     }
 
     private void OnDestroy()

@@ -26,7 +26,8 @@ public class ProcedureLaunch : ProcedureBase
         if (!GameEntry.UI.AddUIGroup("Loading", 4))
             Log.Warning("Add UIGroup 'Loading' failed.");
 
-        // 注册完毕，切换到主菜单流程
-        ChangeState<ProcedureMainMenu>(procedureOwner);
+        // 单场景开发期：跳过主菜单场景切换，直接进入游戏流程。
+        // 之后自建 MainMenu 场景后，可改回 ChangeState<ProcedureMainMenu>
+        ChangeState<ProcedureGame>(procedureOwner);
     }
 }

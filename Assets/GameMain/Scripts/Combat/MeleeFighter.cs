@@ -57,12 +57,43 @@ public class MeleeFighter : MonoBehaviour
 
     }
     private void Start()
-    {   
+    {
+        // 敌人等未走 SetWeapon 的单位：自动接上预置武器（prefab 里挂在骨骼下的 Sword）
+        if (currentWeapon == null)
+        {
+            TryBindPreplacedWeapon();
+        }
 
         if (currentWeapon != null)
         {
-            WeaponCollider = currentWeapon.GetComponent<BoxCollider>();
+            if (WeaponCollider == null)
+                WeaponCollider = currentWeapon.GetComponent<BoxCollider>();
             DisableAllHitxboxes();
+        }
+        else
+        {
+            DisableAllHitxboxes();
+        }
+    }
+
+    /// <summary>
+    /// 查找子层级里名为 Sword 且带 BoxCollider 的预置武器。
+    /// 敌人 AI 不会调 SetWeapon，不接这里的话 Weapon 型 AttackData 永远开不出命中盒。
+    /// </summary>
+    void TryBindPreplacedWeapon()
+    {
+        var transforms = GetComponentsInChildren<Transform>(true);
+        foreach (var t in transforms)
+        {
+            if (t == null || t.name != "Sword") continue;
+            var box = t.GetComponent<BoxCollider>();
+            if (box == null) continue;
+            currentWeapon = t.gameObject;
+            WeaponCollider = box;
+            // 同装备路径：去掉子级 Rigidbody，否则 CharacterController 子级 Trigger 收不到命中
+            var rb = t.GetComponent<Rigidbody>();
+            if (rb != null) Destroy(rb);
+            return;
         }
     }
 
@@ -189,6 +220,8 @@ public class MeleeFighter : MonoBehaviour
         AttackState = E_AttackState.idle;
 
         //yield return new WaitForSeconds(animState.length);
+        // 动画异常提前退出时也要关命中盒，否则会一直挂着触发伤害
+        DisableAllHitxboxes();
         combocount = 0;
         inAction = false;
         currentTarget = null;
@@ -357,6 +390,10 @@ public class MeleeFighter : MonoBehaviour
 
     void EnableHitbox(AttackData attack)
     {
+        // 运行时兜底：武器引用可能在 SetWeapon 之后才出现模型
+        if (WeaponCollider == null && currentWeapon != null)
+            WeaponCollider = currentWeapon.GetComponent<BoxCollider>();
+
         switch (attack.HitboxToUse)
         {
             case E_AttackHitbox.LeftHande:
@@ -372,7 +409,11 @@ public class MeleeFighter : MonoBehaviour
                 if(rightFootConllider != null) rightFootConllider.enabled = true;
                 break;
             case E_AttackHitbox.Weapon:
+                // 武器碰撞体 + 右手球一起开：
+                // 剑的 BoxCollider 曾因挂在独立 Rigidbody 下而收不到触发；
+                // 右手 SphereCollider 与脚部同构，是已验证能命中的路径。
                 if (WeaponCollider != null) WeaponCollider.enabled = true;
+                if (rightHandeConllider != null) rightHandeConllider.enabled = true;
                 break;
             default:
                 break;

@@ -172,6 +172,14 @@ public class PlayerController : MonoBehaviour
             nearestPickup.TryEquip();
         }
     }
+
+    /// <summary>
+    /// 拾取输入。Prefab 上 PlayerInput 事件绑的是这个方法名。
+    /// </summary>
+    public void GetPickupInput(InputAction.CallbackContext context)
+    {
+        GetPickup_ShopInput(context);
+    }
     
     /// <summary>
     /// 移动输入
@@ -273,7 +281,7 @@ public class PlayerController : MonoBehaviour
         playerCombat.HandleLightAttack(context);
     }
 
-    
+
     /// <summary>
     /// 锁定输入
     /// </summary>
@@ -285,12 +293,31 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// 跳跃输入。Prefab 上 PlayerInput 事件绑的是这个方法名，转发给 PlayerMovement。
+    /// </summary>
+    public void GetJumpInInput(InputAction.CallbackContext context)
+    {
+        if (!CursorManager.Instance.IsGameplayFocused) return;
+        playerMovement.HandleJumpInput(context);
+    }
+
+    /// <summary>
     /// 翻滚输入（阶段2实现）
     /// </summary>
     public void GetDodgeInput(InputAction.CallbackContext context)
     {
-        // if (!context.performed) return;
-        // playerDodge?.TryDodge(playerMovement.GetMoveInputRaw());
+        if (!context.performed) return;
+        // P2：playerDodge?.TryDodge();
+    }
+
+    /// <summary>
+    /// 格挡/弹反输入（阶段3实现）。按下=开始格挡，松开=结束。
+    /// </summary>
+    public void GetBlockInput(InputAction.CallbackContext context)
+    {
+        // P3：parrySystem?.SetBlocking(context.performed);
+        // 当前仅占位，保证 PlayerInput 事件能绑上且不抛异常
+        _ = context;
     }
 
     public void GetShowCursorInput(InputAction.CallbackContext context)

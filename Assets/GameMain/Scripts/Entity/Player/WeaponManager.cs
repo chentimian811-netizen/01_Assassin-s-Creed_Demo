@@ -5,6 +5,9 @@ using static PackageLocalData;
 
 public class WeaponManager : MonoBehaviour
 {
+    /// <summary>玩家武器命中盒层级：Project Settings 里为 Playehitbox(8)</summary>
+    const int PlayeHitboxLayer = 8;
+
     [Header("配置")]
     [SerializeField] string weaponConfigPath = "WeaponConfigs";
     [SerializeField] WeaponSlot[] weaponSlots = new WeaponSlot[0];
@@ -83,7 +86,19 @@ public class WeaponManager : MonoBehaviour
                 Destroy(residualPickup);
             }
 
-            SetLayerRecursive(targetSlot.currentModel, gameObject.layer);
+            // ⚠️ 必须去掉武器上的 Rigidbody：
+            // 武器挂在玩家 CharacterController 下。若子级自带 Rigidbody，命中盒会变成独立刚体，
+            // Trigger 往往打不到敌人 CharacterController（表现为：剑砍不中，脚/腿反而能中——
+            // 因为脚部 SphereCollider 没有 Rigidbody，作为 CC 的子碰撞体可以正常发事件）。
+            Rigidbody residualRb = targetSlot.currentModel.GetComponent<Rigidbody>();
+            if (residualRb != null)
+            {
+                Destroy(residualRb);
+            }
+
+            // 武器命中盒必须落在 Playehitbox(8)，不能跟角色身体层(Player/Enemy)相同。
+            // 否则与自身 CharacterController / 敌友判定搅在一起，命中事件不可靠。
+            SetLayerRecursive(targetSlot.currentModel, PlayeHitboxLayer);
         }
 
         SyncFighterWeapon();

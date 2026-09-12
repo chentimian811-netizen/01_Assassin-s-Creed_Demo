@@ -390,9 +390,53 @@ MonoBehaviour:
     m_ActionId: 85ac65c0-05af-4def-9c17-231fcef5dbef
     m_ActionName: Player/Fire[/Mouse/leftButton]
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 3405350071860709212}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: GetShowCursorInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 94ae7646-e237-4e99-b938-e2228a1f777f
     m_ActionName: Player/GetShowCursor[/Keyboard/leftAlt,/Keyboard/rightAlt]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 3405350071860709212}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: GetDodgeInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: c8e1a4f2-3b5d-4e6a-9c7f-1d2e3f4a5b6c
+    m_ActionName: Player/Dodge[/Keyboard/c]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 3405350071860709212}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: GetBlockInput
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: d9f2b5e3-4c6e-5f7b-0d8a-2e3f4a5b6c7d
+    m_ActionName: Player/Block[/Mouse/rightButton,/Keyboard/v]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: Keyboard&Mouse
   m_DefaultActionMap: Player
@@ -609,6 +653,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 2221637807928643052, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_TagString
+      value: Hitbox
+      objectReference: {fileID: 0}
     - target: {fileID: 2307625121203353643, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}
       propertyPath: m_Layer
@@ -658,6 +707,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_TagString
       value: Hitbox
+      objectReference: {fileID: 0}
+    - target: {fileID: 1813906797881826651, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_TagString
+      value: Hitbox
+      objectReference: {fileID: 0}
+    - target: {fileID: 1813906797881826651, guid: d795ecf62053eb745964b087aeb03184,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 2982069422767653059, guid: d795ecf62053eb745964b087aeb03184,
         type: 3}

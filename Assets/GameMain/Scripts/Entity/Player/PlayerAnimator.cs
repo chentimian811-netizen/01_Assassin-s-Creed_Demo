@@ -49,8 +49,8 @@ public class PlayerAnimator : MonoBehaviour
 
     void SetupAnimator()
     {
-        // 翻滚期间不更新BlendTree参数（阶段2实现PlayerDodge后取消注释）
-        // if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
+        // 翻滚期间不更新 BlendTree 参数，避免 locomotion 抢状态
+        if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
 
         PlayerController.E_PlayerPosture posture = playerController.PlayerPosture;
         PlayerController.E_LocomotionState loco = playerController.LocomotionState;

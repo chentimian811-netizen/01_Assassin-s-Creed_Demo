@@ -19,7 +19,7 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public PlayerCombat playerCombat;
     [HideInInspector] public PlayerLockOn playerLockOn;
     [HideInInspector] public PlayerAnimator playerAnimator;
-    // [HideInInspector] public PlayerDodge playerDodge;       // 翻滚组件（P2 再取消注释）
+    [HideInInspector] public PlayerDodge playerDodge;       // 翻滚组件（P2）
     [HideInInspector] public PlayerStamina playerStamina;   // 耐力组件（P1）
 
     public Transform PlayerTransform { get; private set; }
@@ -89,6 +89,12 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public bool acceptInput = true;
     bool  isMainMenuOpen;
 
+    // Shift 双功能：短按翻滚 / 长按疾跑
+    const float SprintHoldThreshold = 0.2f;
+    float shiftPressedRealtime;
+    bool shiftHeld;
+    bool sprintEngaged;
+
     WeaponPickup nearestPickup;
     ShopNPC nearestShopNPC;
     public void SetNearestPickup(WeaponPickup pickup)
@@ -120,16 +126,20 @@ public class PlayerController : MonoBehaviour
         playerCombat = GetComponent<PlayerCombat>();
         playerLockOn = GetComponent<PlayerLockOn>();
         playerAnimator = GetComponent<PlayerAnimator>();
-        // playerDodge = GetComponent<PlayerDodge>();       // P2 再取消注释
+        playerDodge = GetComponent<PlayerDodge>();
         playerStamina = GetComponent<PlayerStamina>();
         if (playerStamina == null)
             Debug.LogWarning("[PlayerController] 玩家未挂 PlayerStamina，攻击将不扣耐力", this);
+        if (playerDodge == null)
+            Debug.LogWarning("[PlayerController] 玩家未挂 PlayerDodge，翻滚不可用", this);
 
         playerMovement.Init(CharacterController , Animator ,MeleeFighter , this);
         playerCombat.Init(MeleeFighter, playerLockOn, this, playerStamina);
         playerLockOn.Init(this);
         playerAnimator.Init(Animator, this, playerMovement);
-        // playerDodge.Init(Animator, MeleeFighter, this);
+        playerDodge?.Init(Animator, this, playerMovement, playerStamina,
+            MeleeFighter != null ? MeleeFighter.HealthComponent : GetComponent<Health>(),
+            CharacterController);
 
         
         Debug.Log("当前金币" + CurrencyManager.Instance.Gold);
@@ -137,6 +147,14 @@ public class PlayerController : MonoBehaviour
   
     void Update()
     {
+        // Shift 长按 → 疾跑（在短按翻滚判定之前就咬合）
+        if (shiftHeld && !sprintEngaged
+            && Time.unscaledTime - shiftPressedRealtime >= SprintHoldThreshold)
+        {
+            sprintEngaged = true;
+            playerMovement.SetRunning(true);
+        }
+
         if ((MeleeFighter != null && MeleeFighter.HealthComponent != null && MeleeFighter.HealthComponent.IsDead)
             || !acceptInput)
         {
@@ -194,13 +212,34 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// 奔跑输入
+    /// Shift 双功能：按下计时；超过阈值进入疾跑；松开时若未疾跑则翻滚。
+    /// 不再走独立的 Dodge 按键，避免与 Run 抢同一个键。
     /// </summary>
-    /// <param name="context"></param>
     public void GetRunInput(InputAction.CallbackContext context)
     {
-        playerMovement.HandleRunInput(context);
-    }  
+        if (context.started)
+        {
+            shiftHeld = true;
+            shiftPressedRealtime = Time.unscaledTime;
+            sprintEngaged = false;
+            playerMovement.SetRunning(false);
+            return;
+        }
+
+        if (context.canceled)
+        {
+            shiftHeld = false;
+            bool wasSprint = sprintEngaged;
+            sprintEngaged = false;
+            playerMovement.SetRunning(false);
+
+            // 短按 → 翻滚（长按疾跑松开不翻滚）
+            if (!wasSprint && CursorManager.Instance != null && CursorManager.Instance.IsGameplayFocused)
+            {
+                playerDodge?.TryDodge();
+            }
+        }
+    }
     
     /// <summary>
     /// 蹲下输入
@@ -305,12 +344,13 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// 翻滚输入（阶段2实现）
+    /// 翻滚输入。Shift 双功能走 GetRunInput；此方法保留给调试/其他调用。
     /// </summary>
     public void GetDodgeInput(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
-        // P2：playerDodge?.TryDodge();
+        if (!CursorManager.Instance.IsGameplayFocused) return;
+        playerDodge?.TryDodge();
     }
 
     /// <summary>
@@ -342,6 +382,8 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     void ClearInput()
     {
+        shiftHeld = false;
+        sprintEngaged = false;
         playerMovement?.ClearInput();
     }
      #endregion

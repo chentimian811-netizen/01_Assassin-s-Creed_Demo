@@ -118,7 +118,7 @@
                     "name": "Dodge",
                     "type": "Button",
                     "id": "c8e1a4f2-3b5d-4e6a-9c7f-1d2e3f4a5b6c",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -127,7 +127,7 @@
                     "name": "Block",
                     "type": "Button",
                     "id": "d9f2b5e3-4c6e-5f7b-0d8a-2e3f4a5b6c7d",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -335,10 +335,10 @@
                 {
                     "name": "",
                     "id": "a1b2c3d4-e5f6-4789-8abc-def012345678",
-                    "path": "<Keyboard>/c",
+                    "path": "",
                     "interactions": "",
                     "processors": "",
-                    "groups": ";Keyboard&Mouse",
+                    "groups": "",
                     "action": "Dodge",
                     "isComposite": false,
                     "isPartOfComposite": false

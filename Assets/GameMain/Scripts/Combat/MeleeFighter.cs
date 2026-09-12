@@ -98,6 +98,28 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         // P3：进入硬直状态
     }
 
+    /// <summary>
+    /// 翻滚打断攻击（魂类的翻滚取消）。清理：攻击协程、战斗层动画、命中盒、连击状态。
+    /// 调用前提：不在受击硬直、不在处决演出（由 PlayerDodge.TryDodge 把关）。
+    /// </summary>
+    public void CancelActionByDodge()
+    {
+        if (!inAction || inCounter) return;
+
+        StopAllCoroutines();    // 停掉 Attack 协程（此时不可能在受击/处决，入口已拦）
+        AttackState = E_AttackState.idle;
+        inAction = false;
+        doCombo = false;
+        combocount = 0;
+        currentTarget = null;
+        DisableAllHitxboxes();
+
+        // 战斗层（Override Layer, index 1）淡回 Empty：
+        // 攻击动画在层 1 以权重 1 覆盖基础层；只停协程不回 Empty 的话，
+        // 攻击姿势还盖在翻滚上（"人在滚、上半身还在挥剑"）
+        animator.CrossFade("Empty", 0.1f, 1);
+    }
+
     List<AttackData> ActiveAttacks =>
         (currentWeapConfig != null && currentWeapConfig.attacks != null && currentWeapConfig.attacks.Count > 0)
             ? currentWeapConfig.attacks

@@ -98,8 +98,13 @@ public class AttackStates : State<EnemyController>
         // 重置标志位，确保下次进入时不会被阻塞
         isAttacking = false;
         // 确保RootMotion被关闭
-        enemy.Animator.applyRootMotion = false;
-        enemy.NavAgent.updatePosition = true;
-        enemy.NavAgent.ResetPath();
+        if (enemy.Animator != null)
+            enemy.Animator.applyRootMotion = false;
+        // 切到 Dead 时 NavAgent 仍可用；若已被外部禁用则跳过，避免 Exit 抛异常卡死状态机
+        if (enemy.NavAgent != null && enemy.NavAgent.enabled)
+        {
+            enemy.NavAgent.updatePosition = true;
+            enemy.NavAgent.ResetPath();
+        }
     }
 }

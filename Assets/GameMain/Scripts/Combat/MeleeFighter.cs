@@ -241,7 +241,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
             yield break;
         }
 
-        animator.CrossFade(activeAttacks[combocount].AnimName, 0.2f);
+        animator.CrossFade(activeAttacks[combocount].AnimName, 0.2f, 1);
 
         yield return null;
 
@@ -365,7 +365,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
             if (dispVec != Vector3.zero) transform.rotation = Quaternion.LookRotation(dispVec);
         }
 
-        animator.CrossFade("Melee_Impact", 0.2f);
+        animator.CrossFade("Melee_Impact", 0.2f, 1);
         yield return null;
 
         var animState = animator.GetNextAnimatorStateInfo(1);
@@ -380,7 +380,8 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     {
         if (health == null || killedUnitId != health.UnitId) return;
         StopAllCoroutines();
-        animator.CrossFade("Melee_FallBackDeath", 0.2f);
+        // 死亡/受击/攻击状态都在 Override Layer(1)
+        animator.CrossFade("Melee_FallBackDeath", 0.2f, 1);
         DisableAllHitxboxes();
     }
 
@@ -388,7 +389,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     {
         if (!CompareTag("Player")) return;
         StopAllCoroutines();
-        animator.CrossFade("Melee_FallBackDeath", 0.2f);
+        animator.CrossFade("Melee_FallBackDeath", 0.2f, 1);
     }
 
     public IEnumerator PerformCounterAttack(EnemyController opponet)
@@ -409,8 +410,8 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
 
         var targetPos = opponet.transform.position - disVec.normalized * 2f;
 
-        animator.CrossFade("Melee_CounterAttack", 0.2f);
-        opponet.Animator.CrossFade("Melee_CounterVictim", 0.2f);
+        animator.CrossFade("Melee_CounterAttack", 0.2f, 1);
+        opponet.Animator.CrossFade("Melee_CounterVictim", 0.2f, 1);
 
         yield return null;
 

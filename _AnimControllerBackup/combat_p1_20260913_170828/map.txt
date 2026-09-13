@@ -1,0 +1,11 @@
+P1 combat map:
+  Melee_Attack_1 -> Attack_Combo1  guid=2742f107264f2303e435073b6c27ca90
+  Melee_Attack_2 -> Attack_Heavy2  guid=29426e1e8126202f43d131c88c6ed6ed
+  Melee_Attack_3 -> Attack_Combo3  guid=79b4d87770ef36c6e9a9b34d58694c6b
+  Melee_Impact -> Hit1  guid=33bb022095ecbd05fa75390748857dd1
+  Melee_FallBackDeath -> Death  guid=d6ae6360de93392c0710d879416d4408
+ExitTimes:
+  3222333634159062077 -> 0.85
+  -1106385746990259488 -> 0.85
+  2494462185291423075 -> 0.85
+  -1333818737957605408 -> 0.65

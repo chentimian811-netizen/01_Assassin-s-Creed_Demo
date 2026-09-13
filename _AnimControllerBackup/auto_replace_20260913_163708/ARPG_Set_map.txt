@@ -1,0 +1,70 @@
+OK copy Idle1 loop=1 guid=e48eaf66809f9a34753b3d89178ce175
+OK copy Idle2 loop=1 guid=5a7f6d3a9294a9ee39efc72ef9d15338
+OK copy Walk_Forward_IPC loop=1 guid=316508d07286eb561f7662e5176e725d
+OK copy Walk_Leftward_IPC loop=1 guid=1d2f92d6ba758cdae3b87ac08c3430be
+OK copy Walk_Rightward_IPC loop=1 guid=3a5106e8bb9cfc1f78c771fe9adf8006
+OK copy Walk_Backward_IPC loop=1 guid=05f9897184f47cdf0045004bccd2798d
+OK copy Walk_Forward_Left_IPC loop=1 guid=2895a9bd17b10fb3ed0aa6f8df9d5ead
+OK copy Walk_Forward_Right_IPC loop=1 guid=502f66048e2cb9944747fe7c4fea7359
+OK copy Run_Forward_IPC loop=1 guid=619d4cf5a37bce80ba7ed7c3db4a0846
+OK copy Run_Leftward_IPC loop=1 guid=70fd467b67ca51b30f83ed45e065e163
+OK copy Run_Rightward_IPC loop=1 guid=820c64f7cdde5c799871a7e3d45f3dd8
+OK copy Run_Backward_IPC loop=1 guid=36f47680a3bfb7736c0ef24fead7e8e0
+OK copy Run_Backward_Left_IPC loop=1 guid=18ab944da823844dd14ff84ce150e7c4
+OK copy Run_Backward_Right_IPC loop=1 guid=2cb9c17b08c710454825136bfecdbe58
+OK copy Turn_90L loop=0 guid=26fa52c7b32b203e7529e9b2e47ba1df
+OK copy Turn_90R loop=0 guid=381b0ca21a606bdb3578a84a2d13ad49
+OK copy Evade_Forward loop=0 guid=47e34e75f63ae852bfc67b9f07069771
+OK copy Evade_Backward loop=0 guid=9a2d2943187abe9ff1b35136741ff50a
+OK copy Evade_Left loop=0 guid=00cbb960e1c23b0f4456cfff2557c0be
+OK copy Evade_Right loop=0 guid=833efc7fb1b0ea58ba8e02265b2e872c
+OK copy Airborne loop=1 guid=2fc93269e3dbbb06da94751521cb532f
+OK copy Landing loop=0 guid=2ac19ac923a94d949ebae8ac57b14cfb
+OK copy Hit1 loop=0 guid=33bb022095ecbd05fa75390748857dd1
+OK copy Death loop=0 guid=d6ae6360de93392c0710d879416d4408
+
+StandState:
+  [0] Idle1
+  [1] Walk_Forward_IPC
+  [2] Walk_Leftward_IPC
+  [3] Walk_Rightward_IPC
+  [4] Walk_Forward_Left_IPC
+  [5] Walk_Forward_Right_IPC
+  [6] Run_Forward_IPC
+  [7] Run_Leftward_IPC
+  [8] Run_Rightward_IPC
+  [9] Run_Backward_Left_IPC
+  [10] Run_Backward_Right_IPC
+  [11] Turn_90L
+  [12] Turn_90R
+  [13] Turn_90L
+  [14] Turn_90R
+  [15] Run_Backward_IPC
+LockOn:
+  [0] Idle1
+  [1] Walk_Forward_IPC
+  [2] Walk_Leftward_IPC
+  [3] Walk_Rightward_IPC
+  [4] Walk_Backward_IPC
+AirState:
+  [0] Airborne
+  [1] Airborne
+  [2] Airborne
+  [3] Airborne
+  [4] Airborne
+  [5] Airborne
+  [6] Airborne
+  [7] Airborne
+  [8] Airborne
+  [9] Airborne
+  [10] Airborne
+  [11] Airborne
+  [12] Landing
+States:
+  RollForward -> Evade_Forward
+  RollBackward -> Evade_Backward
+  RollLeft -> Evade_Left
+  RollRight -> Evade_Right
+  Melee_Impact -> Hit1
+  Melee_FallBackDeath -> Death
+Unused copies: ['Idle2']

@@ -345,6 +345,12 @@ public class PlayerMovement : MonoBehaviour
     /// <summary>
     /// 根据姿态执行实际的CharacterController移动
     /// </summary>
+    [Header("根运动自然速度（ARPG Rootmotion：走≈2.33 / 跑≈3.44 m/s）")]
+    [Tooltip("走循环自然速度 m/s。walkSpeed / 此值 = Animator.speed")]
+    [SerializeField] private float walkRootMotionRefSpeed = 2.33f;
+    [Tooltip("跑循环自然速度 m/s。runSpeed / 此值 = Animator.speed")]
+    [SerializeField] private float runRootMotionRefSpeed = 3.44f;
+
     void AnimatorMove()//动画驱动移动
     {
         // 翻滚期间水平位移由 PlayerDodge 曲线驱动。
@@ -352,15 +358,27 @@ public class PlayerMovement : MonoBehaviour
         // 表现为「先滑一小段才开始滚」。
         if(playerController.playerDodge != null && playerController.playerDodge.IsDodging)
         {
+            ResetLocomotionAnimSpeed();
             characterController.Move(Vector3.up * VerticalVelocity * Time.deltaTime);
             return;
         }
 
-        if (playerController.PlayerPosture != PlayerController.E_PlayerPosture.Jumping 
+        // 攻击/受击：吃 clip 自带根位移（前冲/后仰），但不套走路速度缩放，避免被放大成「滑出去」
+        if (meleeFighter != null && meleeFighter.inAction)
+        {
+            ResetLocomotionAnimSpeed();
+            Vector3 attackMove = Animator.deltaPosition;
+            attackMove.y = VerticalVelocity * Time.deltaTime;
+            characterController.Move(attackMove);
+            return;
+        }
+
+        if (playerController.PlayerPosture != PlayerController.E_PlayerPosture.Jumping
             && playerController.PlayerPosture != PlayerController.E_PlayerPosture.Falling)
         {
             if (playerController.IsLocking)
             {
+                ResetLocomotionAnimSpeed();
                 // 索敌模式：禁用 root motion 水平移动，用代码控制 strafe 方向
                 Vector3 worldMove = transform.TransformVector(playerMovement);
                 worldMove.y = 0;
@@ -370,6 +388,15 @@ public class PlayerMovement : MonoBehaviour
             }
             else
             {
+                // 非锁定：用 Animator.speed 对齐 walkSpeed/runSpeed。
+                // 加快播放 = 腿和 deltaPosition 同步变快，避免「人 5m/s、脚 2.3m/s」的滑步。
+                // 不能只乘 deltaPosition：那样位移快了、脚步原速，滑行更明显。
+                float targetSpeed = isRunning ? runSpeed : walkSpeed;
+                float refSpeed = isRunning ? runRootMotionRefSpeed : walkRootMotionRefSpeed;
+                Animator.speed = refSpeed > 0.01f
+                    ? Mathf.Clamp(targetSpeed / refSpeed, 0.25f, 2.5f)
+                    : 1f;
+
                 Vector3 playerDelataMovement = Animator.deltaPosition;
                 playerDelataMovement.y = VerticalVelocity * Time.deltaTime;
                 characterController.Move(playerDelataMovement);
@@ -378,10 +405,17 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
+            ResetLocomotionAnimSpeed();
             averageVel.y = VerticalVelocity;
             Vector3 playerDelataMovement = averageVel * Time.deltaTime;
             characterController.Move(playerDelataMovement);
         }
+    }
+
+    void ResetLocomotionAnimSpeed()
+    {
+        if (Animator != null && !Mathf.Approximately(Animator.speed, 1f))
+            Animator.speed = 1f;
     }
 
     /// <summary>

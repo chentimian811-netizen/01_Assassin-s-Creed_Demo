@@ -135,6 +135,11 @@ public class EnemyController : MonoBehaviour
 
     public void ChangeState(E_EnemyState state)
     {
+        // 死亡为终态：GettingHit 协程、Attack 连段、EnemyManager 调度都可能在死后仍调 ChangeState，
+        // 若放行会从 Dead 拉回 CombatMovement/Attack，表现为「倒地后又爬起来」。
+        if (Health != null && Health.IsDead && state != E_EnemyState.Dead)
+            return;
+
         stateMachine.ChangeState(stateDict[state]);
     }
 
@@ -146,6 +151,13 @@ public class EnemyController : MonoBehaviour
 
     private void Update()
     {
+        // 死亡后不再推进 FSM / 刷动画参数，避免与死亡姿态抢控制
+        if (Health != null && Health.IsDead)
+        {
+            transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f);
+            return;
+        }
+
         stateMachine.Execute();
 
 

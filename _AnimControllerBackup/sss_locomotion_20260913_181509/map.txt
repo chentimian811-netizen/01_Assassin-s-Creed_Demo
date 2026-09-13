@@ -1,0 +1,23 @@
+StandState:
+  [0] Idle_CombatReady
+  [1] Walk_Forward
+  [2] Walk_Left
+  [3] Walk_Right
+  [4] Walk_ForwardLeft
+  [5] Walk_ForwardRight
+  [6] Run_Forward
+  [7] Run_Left
+  [8] Run_Right
+  [9] Run_BackLeft
+  [10] Run_BackRight
+  [11] Turn_Left90
+  [12] Turn_Right90
+  [13] Turn_Left90
+  [14] Turn_Right90
+  [15] Run_Back
+LockOn:
+  [0] Idle_CombatReady
+  [1] Walk_Forward
+  [2] Walk_Left
+  [3] Walk_Right
+  [4] Walk_Back

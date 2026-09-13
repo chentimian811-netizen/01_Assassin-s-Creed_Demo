@@ -1,0 +1,17 @@
+StandState slots:
+  [0] Idle1
+  [1] Walk_Forward_Rootmotion
+  [2] Walk_Leftward_Rootmotion
+  [3] Walk_Rightward_Rootmotion
+  [4] Walk_Forward_Left_Rootmotion
+  [5] Walk_Forward_Right_Rootmotion
+  [6] Run_Forward_Rootmotion
+  [7] Run_Leftward_Rootmotion
+  [8] Run_Rightward_Rootmotion
+  [9] Run_Backward_Left_Rootmotion
+  [10] Run_Backward_Right_Rootmotion
+  [11] Turn_90L
+  [12] Turn_90R
+  [13] Turn_90L
+  [14] Turn_90R
+  [15] Run_Backward_Rootmotion

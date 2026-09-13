@@ -1,0 +1,23 @@
+PlayerMove.controller 引用的 AnimationClip 清单
+导出时间：2026-09-13 16:01:16
+共 17 条
+
+clip 名                                   时长                                GUID  资源路径
+----------------------------------------------------------------------------------------------------------------------------------
+ARPG_Warrior_Idle1                    0.983    4df6eca7a56c7c84dad3815bd3f01dd1  Assets/ARPGWarrior/Animations/Humanoid/ARPG_Warrior_Idle1.anim
+Brutal Assassination                  3.233    2f0ad6fb75ce6d7448d1c30af6cdbe97  Assets/GameMain/Scripts/Entity/Player/Animations/Paladin WProp J Nordstrom@Brutal Assassination (1).fbx
+Great Sword Slash                     1.267    3b575f360bbb1734589b8fbed97a93d2  Assets/GameMain/Art/Effects/Animations/Sword/Ch14_nonPBR@Great Sword Slash.fbx
+HumanoidCrouchIdle                    1.833    d89ea37480b6d75458aa38843e9688dc  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidCrouch.fbx
+HumanoidCrouchTurnLeft                1.467    d89ea37480b6d75458aa38843e9688dc  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidCrouch.fbx
+HumanoidCrouchTurnRight               1.467    d89ea37480b6d75458aa38843e9688dc  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidCrouch.fbx
+HumanoidCrouchWalk                    1.800    d89ea37480b6d75458aa38843e9688dc  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidCrouch.fbx
+HumanoidCrouchWalkLeft                2.267    d89ea37480b6d75458aa38843e9688dc  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidCrouch.fbx
+HumanoidCrouchWalkRightB              2.267    d89ea37480b6d75458aa38843e9688dc  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidCrouch.fbx
+HumanoidRunLeft                       0.573    1062212255550964e974f3ffb3cbaae3  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidRunTurn.fbx
+HumanoidRunLeftSharp                  0.507    f2bed5dc5afacff44a00de8daae9703b  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidRunTurnSharp.fbx
+HumanoidRunRight                      0.573    1062212255550964e974f3ffb3cbaae3  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidRunTurn.fbx
+HumanoidRunRightSharp                 0.507    f2bed5dc5afacff44a00de8daae9703b  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidRunTurnSharp.fbx
+Stable Sword Outward Slash            1.567    180e704cedba1d44c8e152fa1270b970  Assets/GameMain/Art/Effects/Animations/Sword/Ch14_nonPBR@Stable Sword Outward Slash.fbx
+StandHalfTurnLeft                     1.233    6fb3851da6a6f5948ab6892bee8ba920  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidStandTurn.fbx
+StandHalfTurnRight                    1.233    6fb3851da6a6f5948ab6892bee8ba920  Assets/GameMain/Scripts/Entity/Player/Animations/HumanoidStandTurn.fbx
+Sword And Shield Kick                 1.200    4940c453048548248acc267f3f3efaf1  Assets/GameMain/Art/Effects/Animations/Sword/Skin_1@Sword And Shield Kick.fbx

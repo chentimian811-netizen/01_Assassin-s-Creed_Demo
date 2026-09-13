@@ -120,7 +120,10 @@ public class EnemyManager : MonoBehaviour
     /// <returns></returns>
     EnemyController SelectEnemyForAttack()
     {
-        return enemiesInRange.OrderByDescending(e => e.CombatMovementTimer).FirstOrDefault(e => e.Target != null && e.IsInState(E_EnemyState.CombatMovement));
+        return enemiesInRange
+            .Where(e => e != null && e.Health != null && !e.Health.IsDead)
+            .OrderByDescending(e => e.CombatMovementTimer)
+            .FirstOrDefault(e => e.Target != null && e.IsInState(E_EnemyState.CombatMovement));
     }
 
     /// <summary>

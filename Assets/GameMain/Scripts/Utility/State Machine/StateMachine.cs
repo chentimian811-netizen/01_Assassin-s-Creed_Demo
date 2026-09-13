@@ -14,6 +14,8 @@ public class StateMachine<T>
     }
     public void ChangeState(State<T> newState)
     {
+        // 同状态不重入：Dead 多次 Enter 会重复 Destroy/禁用组件
+        if (ReferenceEquals(CurrentState, newState)) return;
         CurrentState?.Exit();
         CurrentState = newState;
         CurrentState.Enter(_owner);

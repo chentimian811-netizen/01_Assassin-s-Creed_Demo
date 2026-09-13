@@ -11,14 +11,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f252a3db21c7df341a42e5cd1a8a39af, type: 3}
   m_Name: StaminaConfig_Default
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   maxStamina: 100
-  regenDelayAfterUse: 1
-  regenPerSecond: 15
+  regenDelayAfterUse: 1.2
+  regenPerSecond: 30
   exhaustedLockDuration: 2
   lightAttackCost: 12
-  heavyAttackCost: 25
-  dodgeCost: 20
+  heavyAttackCost: 30
+  dodgeCost: 15
   parryFailCost: 15
   sprintCostPerSecond: 8
   blockCostPerSecond: 10

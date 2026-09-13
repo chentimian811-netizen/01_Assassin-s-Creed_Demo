@@ -18,9 +18,17 @@ public class PlayerMovement : MonoBehaviour
     #endregion
 
     #region 移动速度
-    public float crouchSpeed = 1.5f; //蹲下移动速度
-    public float walkSpeed = 3f;     //行走速度
-    public float runSpeed = 6f;      //奔跑速度
+    // 【这三个值 = 动画 clip 的「自然速度」，不是随便调的手感数字】
+    //   自然速度 = 剪辑根位移总长 ÷ 循环时长，实测值写在下面 walkRootMotionRefSpeed 上。
+    //   两者对齐后 Animator.speed 恒为 1，完全按动画师原始节奏播放，滑步最小。
+    //   想让人走快一点：改 walkSpeed，Animator.speed 会自动补偿（夹在 min/maxAnimSpeed 内）。
+    //   注意：蹲下以外的位移都来自 root motion，所以改这里=同时改动画节奏和实际速度，不会脱节。
+    [Tooltip("蹲下移动速度 m/s。仅当 HumanoidCrouch 剪辑没有根位移时作为代码位移的兜底")]
+    public float crouchSpeed = 1.12f;
+    [Tooltip("行走速度 m/s。实测 ARPG_Warrior_Walk_Forward_Rootmotion：2.2854m ÷ 0.98333s = 2.33 m/s")]
+    public float walkSpeed = 2.33f;
+    [Tooltip("奔跑速度 m/s。实测 ARPG_Warrior_Run_Forward_Rootmotion：2.5162m ÷ 0.73333s = 3.43 m/s")]
+    public float runSpeed = 3.43f;
     #endregion
 
     #region 重力与跳跃参数
@@ -345,25 +353,31 @@ public class PlayerMovement : MonoBehaviour
     /// <summary>
     /// 根据姿态执行实际的CharacterController移动
     /// </summary>
-    [Header("根运动自然速度（ARPG Rootmotion：走≈2.33 / 跑≈3.44 m/s）")]
+    [Header("根运动自然速度（ARPG Rootmotion：走 2.33 / 跑 3.43 m/s）")]
     [Tooltip("走循环自然速度 m/s。walkSpeed / 此值 = Animator.speed")]
     [SerializeField] private float walkRootMotionRefSpeed = 2.33f;
     [Tooltip("跑循环自然速度 m/s。runSpeed / 此值 = Animator.speed")]
-    [SerializeField] private float runRootMotionRefSpeed = 3.44f;
+    [SerializeField] private float runRootMotionRefSpeed = 3.43f;
+    [Tooltip("Animator 播放倍率下限：目标速度远低于剪辑自然速度时，动画最慢只放到这里")]
+    [SerializeField] private float minAnimSpeed = 0.85f;
+    [Tooltip("Animator 播放倍率上限：动画绝不被快放超过这个倍数，从根上堵掉「越跑越快」的观感")]
+    [SerializeField] private float maxAnimSpeed = 1.25f;
+    [Tooltip("判定「剪辑自带根位移」的阈值（米/帧）。低于它认为是原地剪辑，蹲下才会退回代码位移")]
+    [SerializeField] private float rootMotionEpsilon = 0.0005f;
 
     void AnimatorMove()//动画驱动移动
     {
-        // 翻滚期间水平位移由 PlayerDodge 曲线驱动。
+        // 1) 翻滚期间水平位移由 PlayerDodge 曲线驱动。
         // 这里绝不能吃 Animator.deltaPosition：CrossFade 混合期会残留走路位移，
         // 表现为「先滑一小段才开始滚」。
-        if(playerController.playerDodge != null && playerController.playerDodge.IsDodging)
+        if (playerController.playerDodge != null && playerController.playerDodge.IsDodging)
         {
             ResetLocomotionAnimSpeed();
             characterController.Move(Vector3.up * VerticalVelocity * Time.deltaTime);
             return;
         }
 
-        // 攻击/受击：吃 clip 自带根位移（前冲/后仰），但不套走路速度缩放，避免被放大成「滑出去」
+        // 2) 攻击/受击：吃 clip 自带根位移（前冲/后仰），但不套走路速度缩放，避免被放大成「滑出去」
         if (meleeFighter != null && meleeFighter.inAction)
         {
             ResetLocomotionAnimSpeed();
@@ -373,43 +387,85 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        if (playerController.PlayerPosture != PlayerController.E_PlayerPosture.Jumping
-            && playerController.PlayerPosture != PlayerController.E_PlayerPosture.Falling)
-        {
-            if (playerController.IsLocking)
-            {
-                ResetLocomotionAnimSpeed();
-                // 索敌模式：禁用 root motion 水平移动，用代码控制 strafe 方向
-                Vector3 worldMove = transform.TransformVector(playerMovement);
-                worldMove.y = 0;
-                float speed = (isRunning ? runSpeed : walkSpeed);
-                characterController.Move(worldMove * speed * Time.deltaTime);
-                characterController.Move(Vector3.up * VerticalVelocity * Time.deltaTime);
-            }
-            else
-            {
-                // 非锁定：用 Animator.speed 对齐 walkSpeed/runSpeed。
-                // 加快播放 = 腿和 deltaPosition 同步变快，避免「人 5m/s、脚 2.3m/s」的滑步。
-                // 不能只乘 deltaPosition：那样位移快了、脚步原速，滑行更明显。
-                float targetSpeed = isRunning ? runSpeed : walkSpeed;
-                float refSpeed = isRunning ? runRootMotionRefSpeed : walkRootMotionRefSpeed;
-                Animator.speed = refSpeed > 0.01f
-                    ? Mathf.Clamp(targetSpeed / refSpeed, 0.25f, 2.5f)
-                    : 1f;
-
-                Vector3 playerDelataMovement = Animator.deltaPosition;
-                playerDelataMovement.y = VerticalVelocity * Time.deltaTime;
-                characterController.Move(playerDelataMovement);
-            }
-            averageVel = AverageVel(Animator.velocity);
-        }
-        else
+        // 3) 滞空：不吃 Airborne clip 的根位移，用起跳前缓存的地面速度做惯性滑行
+        if (playerController.PlayerPosture == PlayerController.E_PlayerPosture.Jumping
+            || playerController.PlayerPosture == PlayerController.E_PlayerPosture.Falling)
         {
             ResetLocomotionAnimSpeed();
             averageVel.y = VerticalVelocity;
-            Vector3 playerDelataMovement = averageVel * Time.deltaTime;
-            characterController.Move(playerDelataMovement);
+            characterController.Move(averageVel * Time.deltaTime);
+            return;
         }
+
+        // 4) 地面移动：水平位移 100% 来自 root motion，锁定/非锁定走同一套逻辑。
+        //
+        // 【为什么锁定模式也要吃 root motion】
+        //   StandState 树里走路行和跑步行放的都是四向 Rootmotion 剪辑
+        //   （Walk_Leftward / Walk_Forward_Right / Run_Backward_Left …），
+        //   横移的根位移就烘焙在 clip 里。以前锁定模式把它关掉、改按 walkSpeed 用代码推，
+        //   于是「代码按 3m/s 推 + clip 按 2.33m/s 摆腿」，脚必然滑 —— 这就是锁定模式滑步的根源。
+        Animator.speed = ResolveLocomotionAnimSpeed();
+        characterController.Move(BuildGroundDelta());
+        averageVel = AverageVel(Animator.velocity);
+    }
+
+    /// <summary>
+    /// 本帧地面移动的位移量。
+    ///
+    /// 正常情况直接吃 Animator.deltaPosition —— 位移和脚步来自同一段剪辑，天然同步，所以不滑步。
+    /// 唯一例外是蹲下：SquatState 用的是 HumanoidCrouch 的原地剪辑（树里还写了 TimeScale=2），
+    /// 很可能没有根位移曲线。这种情况若还只吃 deltaPosition，人就会「蹲着原地踏步」，
+    /// 所以检测到水平根位移≈0 时才退回代码位移。
+    /// </summary>
+    Vector3 BuildGroundDelta()
+    {
+        Vector3 rootDelta = Animator.deltaPosition;
+        float planar = new Vector2(rootDelta.x, rootDelta.z).magnitude;
+
+        Vector3 horizontal;
+        if (!isCrouch || planar > rootMotionEpsilon)
+        {
+            // 剪辑自带根位移：原样使用，不额外乘任何速度，避免位移比脚步快
+            horizontal = new Vector3(rootDelta.x, 0f, rootDelta.z);
+        }
+        else
+        {
+            // 原地剪辑兜底：按 crouchSpeed 用代码推
+            Vector3 worldMove = transform.TransformVector(playerMovement);
+            horizontal = new Vector3(worldMove.x, 0f, worldMove.z) * crouchSpeed * Time.deltaTime;
+        }
+
+        horizontal.y = VerticalVelocity * Time.deltaTime;
+        return horizontal;
+    }
+
+    /// <summary>
+    /// 本帧 Locomotion 动画该用多少倍率播放。
+    ///
+    /// 【待机为什么必须回 1】
+    ///   以前算倍率的分支只区分「跑/非跑」（targetSpeed = isRunning ? runSpeed : walkSpeed），
+    ///   待机也被算成 walkSpeed/2.33 ≈ 1.29 —— 站着不动动画却在 1.29 倍速播，
+    ///   这就是「待机也像在加速」的原因。
+    ///
+    /// 【蹲下为什么也回 1】
+    ///   SquatState 树里移动剪辑已经写了 TimeScale = 2，节奏交给树负责，这里不再叠一层。
+    ///
+    /// 【为什么倍率只放 Animator.speed，不放 MoveSpeed】
+    ///   MoveSpeed 是 blend 档位（决定播哪套 clip），Animator.speed 才是「多快」。
+    ///   两者同时表达速度 = 双重记账，脚和位移脱钩 = 滑步。
+    /// </summary>
+    float ResolveLocomotionAnimSpeed()
+    {
+        if (playerController.LocomotionState == PlayerController.E_LocomotionState.Idle || isCrouch)
+            return 1f;
+
+        bool running = playerController.LocomotionState == PlayerController.E_LocomotionState.Run;
+        float targetSpeed = running ? runSpeed : walkSpeed;
+        float naturalSpeed = running ? runRootMotionRefSpeed : walkRootMotionRefSpeed;
+        if (naturalSpeed <= 0.01f) return 1f;
+
+        // root motion 位移和脚步节奏会被同一个倍率缩放，所以调速度不会引入滑步
+        return Mathf.Clamp(targetSpeed / naturalSpeed, minAnimSpeed, maxAnimSpeed);
     }
 
     void ResetLocomotionAnimSpeed()

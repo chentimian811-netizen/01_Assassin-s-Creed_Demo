@@ -93,18 +93,24 @@ public class InventoryManager : MonoBehaviour
         PackageLocalItem item = GameManager.Instance.GetPackageLocalItemByUid(uid);
         if (item == null) return false;
 
-        var tableItem = GameManager.Instance.GetPackageItemById(item.id); 
+        var tableItem = GameManager.Instance.GetPackageItemById(item.id);
 
-        if(tableItem == null || tableItem.Type != GameConst.PackageTypeWeapon)return false;
-        if(weaponManager == null)return false;
+        if (weaponManager == null) return false;
 
-        UnequipAll();
+        // 武器或盾均可装备（盾走 isShield / 表 Type=Shield=3）
+        WeaponConfig wCfg = weaponManager.GetWeaponConfig(item.id);
+        bool isWeapon = tableItem != null && tableItem.Type == GameConst.PackageTypeWeapon;
+        bool isShield = wCfg != null && wCfg.isShield;
+        if (!isWeapon && !isShield) return false;
 
+        // 双持：不再 UnequipAll 清空两手；同槽替换与 EnsureNotDualEquipped 在 WeaponManager 内处理
         bool success = weaponManager.EquipWeapon(uid);
-        if(!success)return false;
+        if (!success) return false;
+
+        SyncEquippedFlags(item);
 
         int slotIndex = weaponManager.GetSlotIndexByUid(uid);
-        if(slotIndex >= 0)
+        if (slotIndex >= 0)
         {
             weaponManager.SwitchToSlot(slotIndex);
         }
@@ -114,6 +120,23 @@ public class InventoryManager : MonoBehaviour
         OnItemEquipped?.Invoke(item);
         return true;
 
+    }
+
+    /// <summary>双持下同步 isEquipped：仍占槽的保持，已被顶掉的清除</summary>
+    void SyncEquippedFlags(PackageLocalItem newItem)
+    {
+        if (weaponManager == null) return;
+
+        foreach (PackageLocalItem it in PackageLocalData.Instance.items)
+        {
+            if (it == null || !it.isEquipped) continue;
+            if (newItem != null && it.uid == newItem.uid) continue;
+            if (weaponManager.GetSlotIndexByUid(it.uid) < 0)
+            {
+                it.isEquipped = false;
+                OnItemUnequipped?.Invoke(it);
+            }
+        }
     }
 
     private void UnequipAll()

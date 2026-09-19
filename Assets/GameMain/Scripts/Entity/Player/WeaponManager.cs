@@ -18,6 +18,9 @@ public class WeaponManager : MonoBehaviour
 
     public event Action<WeaponConfig> OnWeaponModelChanged;
 
+    /// <summary>槽位数量（供 WeaponSwitcher 等按索引遍历）</summary>
+    public int SlotCount => weaponSlots != null ? weaponSlots.Length : 0;
+
     void Awake()
     {
         weaponConfigMap = new Dictionary<int, WeaponConfig>();
@@ -27,7 +30,7 @@ public class WeaponManager : MonoBehaviour
             foreach (var config in configs)
             {
                 if (config != null)
-                    weaponConfigMap[config.weaponID] = config; 
+                    weaponConfigMap[config.weaponID] = config;
             }
         }
         meleeFighter = GetComponent<MeleeFighter>();
@@ -50,23 +53,48 @@ public class WeaponManager : MonoBehaviour
         }
     }
 
+    /// <summary>装备到自动推断的槽位（旧入口，行为兼容）</summary>
     public bool EquipWeapon(string uid)
+    {
+        return EquipWeapon(uid, -1);
+    }
+
+    /// <summary>
+    /// 装备武器/盾。
+    /// targetSlotIndex &gt;= 0：目标槽优先，类型不匹配则失败（魂系不自动换手）；
+    /// targetSlotIndex &lt; 0：FindSlotForWeapon 兜底（先空槽，再可接受该类型的槽）。
+    /// </summary>
+    public bool EquipWeapon(string uid, int targetSlotIndex)
     {
         PackageLocalItem item = GameManager.Instance.GetPackageLocalItemByUid(uid);
         if (item == null) return false;
 
         WeaponConfig config;
-
         if (!weaponConfigMap.TryGetValue(item.id, out config)) return false;
 
-        var wType = DataRepository.ItemTable.TryGetValue(config.weaponID, out var wItem) 
-        ? wItem.WeaponType : E_WeaponType.Sword;
-        
-        WeaponSlot targetSlot = FindSlotForWeapon(wType);
+        var wType = DataRepository.ItemTable.TryGetValue(config.weaponID, out var wItem)
+            ? wItem.WeaponType : E_WeaponType.Sword;
 
-        if (targetSlot == null) return false;
+        // isShield 优先于表类型：盾内容可能尚未写入 Item.txt 的 Type=3
+        if (config != null && config.isShield)
+            wType = E_WeaponType.Shield;
 
-        if (!targetSlot.Accepts(wType)) return false;
+        WeaponSlot targetSlot;
+        if (targetSlotIndex >= 0)
+        {
+            if (targetSlotIndex >= weaponSlots.Length) return false;
+            targetSlot = weaponSlots[targetSlotIndex];
+            if (targetSlot == null || !targetSlot.Accepts(wType)) return false;
+        }
+        else
+        {
+            targetSlot = FindSlotForWeapon(wType);
+            if (targetSlot == null) return false;
+            if (!targetSlot.Accepts(wType)) return false;
+        }
+
+        // 同一件装备不可同时占两手，否则卸一边时另一边 currentModel 变已销毁对象
+        EnsureNotDualEquipped(uid, targetSlot);
 
         if (targetSlot.currentModel != null)
             Destroy(targetSlot.currentModel);
@@ -79,51 +107,49 @@ public class WeaponManager : MonoBehaviour
             targetSlot.currentModel = Instantiate(config.weaponPrefab, targetSlot.holdPoint);
 
             // 防御性清理：销毁武器模型上可能残留的 WeaponPickup 组件
-            // 防止拾取脚本在装备到玩家身上后仍然响应触发器事件，导致错误弹出拾取UI
             WeaponPickup residualPickup = targetSlot.currentModel.GetComponent<WeaponPickup>();
             if (residualPickup != null)
             {
                 Destroy(residualPickup);
             }
 
-            // ⚠️ 必须去掉武器上的 Rigidbody：
-            // 武器挂在玩家 CharacterController 下。若子级自带 Rigidbody，命中盒会变成独立刚体，
-            // Trigger 往往打不到敌人 CharacterController（表现为：剑砍不中，脚/腿反而能中——
-            // 因为脚部 SphereCollider 没有 Rigidbody，作为 CC 的子碰撞体可以正常发事件）。
+            // ⚠️ 必须去掉武器上的 Rigidbody：命中盒要作为 CC 子碰撞体才能稳定触发
             Rigidbody residualRb = targetSlot.currentModel.GetComponent<Rigidbody>();
             if (residualRb != null)
             {
                 Destroy(residualRb);
             }
 
-            // 武器命中盒必须落在 Playehitbox(8)，不能跟角色身体层(Player/Enemy)相同。
-            // 否则与自身 CharacterController / 敌友判定搅在一起，命中事件不可靠。
             SetLayerRecursive(targetSlot.currentModel, PlayeHitboxLayer);
 
-            // 命中盒的初始开关状态：武器开着、盾关着。
-            // 【为什么盾必须关】盾会挂到左臂上，若碰撞体全程 enabled，
-            // 走路时盾身刮到敌人就会触发 OnTriggerEnter —— 表现是"走着走着敌人掉血"。
-            // 判定窗口由 MeleeFighter.EnableHitbox / DisableAllHitxboxes 精确开，
-            // 那是阶段 4 的 E_AttackHitbox.Shield 分支，在那之前盾不会造成任何伤害。
+            // 武器碰撞体开、盾关；盾的开窗留给步骤 10 的 E_AttackHitbox.Shield
             ApplyInitialColliderState(targetSlot.currentModel, config);
         }
 
         SyncFighterWeapon();
+        ApplyMeleeFighterWeaponState();
 
-        meleeFighter?.SetWeaponID(config.weaponID);
-        var localItem = GameManager.Instance.GetPackageLocalItemByUid(uid);
-        meleeFighter?.SetUpgradeLevel(localItem?.level ?? 1); 
-        meleeFighter?.SetWeaponConfig(config);
-        
         OnWeaponModelChanged?.Invoke(config);
-
         return true;
+    }
+
+    /// <summary>装备时若该 uid 已在另一手，先卸下另一手</summary>
+    void EnsureNotDualEquipped(string uid, WeaponSlot target)
+    {
+        if (string.IsNullOrEmpty(uid) || weaponSlots == null) return;
+
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            WeaponSlot slot = weaponSlots[i];
+            if (slot == null || slot == target) continue;
+            if (slot.equippedUid == uid)
+                UnequipSlotInternal(slot);
+        }
     }
 
     public string UnequipSlot(int slotIndex)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return null;
-
         return UnequipSlotInternal(weaponSlots[slotIndex]);
     }
 
@@ -153,10 +179,10 @@ public class WeaponManager : MonoBehaviour
         slot.currentConfig = null;
         slot.equippedUid = null;
 
+        // 从剩余槽位重新推导，而不是一律清空 —— 卸盾时右手剑的判定不能被抹掉
         SyncFighterWeapon();
-        meleeFighter?.SetWeaponID(-1);
-        meleeFighter?.SetUpgradeLevel(1);
-        meleeFighter?.SetWeaponConfig(null);
+        ApplyMeleeFighterWeaponState();
+
         OnWeaponModelChanged?.Invoke(oldConfig);
         return uid;
     }
@@ -171,7 +197,7 @@ public class WeaponManager : MonoBehaviour
     public WeaponConfig GetWeaponConfig(int weaponId)
     {
         WeaponConfig config;
-        weaponConfigMap.TryGetValue(weaponId,out config);
+        weaponConfigMap.TryGetValue(weaponId, out config);
         return config;
     }
 
@@ -197,14 +223,89 @@ public class WeaponManager : MonoBehaviour
         return null;
     }
 
+    /// <summary>找非盾、非远程的近战槽（通常 = RightHand / mainWeaponSlotIndex）</summary>
+    WeaponSlot FindMeleeWeaponSlot()
+    {
+        if (weaponSlots == null) return null;
+
+        if (mainWeaponSlotIndex >= 0 && mainWeaponSlotIndex < weaponSlots.Length)
+        {
+            WeaponSlot main = weaponSlots[mainWeaponSlotIndex];
+            if (main != null && main.currentConfig != null
+                && !main.currentConfig.isShield && !main.currentConfig.isRanged)
+                return main;
+        }
+
+        foreach (var slot in weaponSlots)
+        {
+            if (slot != null && slot.currentConfig != null
+                && !slot.currentConfig.isShield && !slot.currentConfig.isRanged)
+                return slot;
+        }
+        return null;
+    }
+
+    WeaponConfig FindMeleeWeaponConfig()
+    {
+        WeaponSlot slot = FindMeleeWeaponSlot();
+        return slot != null ? slot.currentConfig : null;
+    }
+
+    /// <summary>
+    /// MeleeFighter 的 WeaponCollider 只认近战模型，必须排除盾。
+    /// 否则主手槽若被盾占用，EnableHitbox 开的是盾的碰撞体，剑砍不中人。
+    /// </summary>
     void SyncFighterWeapon()
     {
-        if (mainWeaponSlotIndex < 0 || mainWeaponSlotIndex >= weaponSlots.Length)
-            return;
+        if (meleeFighter == null) return;
+        WeaponSlot meleeSlot = FindMeleeWeaponSlot();
+        meleeFighter.SetWeapon(meleeSlot != null ? meleeSlot.currentModel : null);
+    }
 
-        WeaponSlot mainSlot = weaponSlots[mainWeaponSlotIndex];
-        if (meleeFighter != null)
-            meleeFighter.SetWeapon(mainSlot.currentModel);
+    /// <summary>MeleeFighter 的 weaponID / 等级 / AttackData 跟非盾近战走，装盾时不覆盖</summary>
+    void ApplyMeleeFighterWeaponState()
+    {
+        if (meleeFighter == null) return;
+
+        WeaponSlot meleeSlot = FindMeleeWeaponSlot();
+        WeaponConfig meleeCfg = meleeSlot != null ? meleeSlot.currentConfig : null;
+
+        if (meleeCfg != null)
+        {
+            meleeFighter.SetWeapon(meleeSlot.currentModel);
+            meleeFighter.SetWeaponID(meleeCfg.weaponID);
+            var localItem = GameManager.Instance.GetPackageLocalItemByUid(meleeSlot.equippedUid);
+            meleeFighter.SetUpgradeLevel(localItem?.level ?? 1);
+            meleeFighter.SetWeaponConfig(meleeCfg);
+            return;
+        }
+
+        // 无近战：清判定；若仅剩远程，仍把远程配置交给动画/战斗通道（兼容旧切枪）
+        meleeFighter.SetWeapon(null);
+        WeaponConfig rangedCfg = FindRangedWeaponConfig();
+        if (rangedCfg != null)
+        {
+            meleeFighter.SetWeaponID(rangedCfg.weaponID);
+            meleeFighter.SetUpgradeLevel(1);
+            meleeFighter.SetWeaponConfig(rangedCfg);
+        }
+        else
+        {
+            meleeFighter.SetWeaponID(-1);
+            meleeFighter.SetUpgradeLevel(1);
+            meleeFighter.SetWeaponConfig(null);
+        }
+    }
+
+    WeaponConfig FindRangedWeaponConfig()
+    {
+        if (weaponSlots == null) return null;
+        foreach (var slot in weaponSlots)
+        {
+            if (slot != null && slot.currentConfig != null && slot.currentConfig.isRanged)
+                return slot.currentConfig;
+        }
+        return null;
     }
 
     void SetLayerRecursive(GameObject obj, int layer)
@@ -216,12 +317,7 @@ public class WeaponManager : MonoBehaviour
 
     /// <summary>
     /// 装备瞬间统一决定模型上所有碰撞体的初始开关状态。
-    ///
-    /// 为什么要在这里"统一决定"，而不是各管各的：
-    /// 碰撞体默认是开的（Prefab 里如此），于是"盾走路误伤"这类问题取决于
-    /// 谁先跑、谁后跑，属于隐式约定。集中成一处之后，规则是显式的、可测的：
-    ///   武器 → 开（攻击窗口里 MeleeFighter 会直接操作它，初始状态不该是关的）
-    ///   盾   → 关（只允许在盾击判定窗口内开，由后续阶段的 HitboxToUse=Shield 控制）
+    /// 武器 → 开；盾 → 关（只允许盾击判定窗口内开）。
     /// </summary>
     void ApplyInitialColliderState(GameObject model, WeaponConfig config)
     {
@@ -235,60 +331,50 @@ public class WeaponManager : MonoBehaviour
             if (colliders[i] != null) colliders[i].enabled = enable;
         }
     }
+
     /// <summary>
-    /// 切换到指定槽位（供 WeaponSwitcher 调用）
+    /// 切换到指定槽位（供 WeaponSwitcher 调用）。
+    /// 双持可见性：近战/盾模型同时显示；远程仅在激活远程槽时显示。
+    /// MeleeFighter 始终绑非盾近战，避免盾配置污染连招与命中盒。
     /// </summary>
     public void SwitchToSlot(int slotIndex)
     {
-        if(slotIndex < 0 || slotIndex >= weaponSlots.Length)
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length)
         {
             Debug.LogWarning($"WeaponManager: 槽位索引无效 [{slotIndex}]");
             return;
         }
 
-        //隐藏所有槽位的武器模型
-        foreach(var slot in weaponSlots)
+        WeaponSlot target = weaponSlots[slotIndex];
+        WeaponConfig targetConfig = target != null ? target.currentConfig : null;
+        bool activateRanged = targetConfig != null && targetConfig.isRanged;
+
+        for (int i = 0; i < weaponSlots.Length; i++)
         {
-            if(slot.currentModel != null)
-            {
-                slot.currentModel.SetActive(false);
-            }
+            WeaponSlot slot = weaponSlots[i];
+            if (slot == null || slot.currentModel == null) continue;
+
+            WeaponConfig cfg = slot.currentConfig;
+            bool slotRanged = cfg != null && cfg.isRanged;
+            bool show = slotRanged ? (activateRanged && i == slotIndex) : true;
+            slot.currentModel.SetActive(show);
+            if (show)
+                ApplyInitialColliderState(slot.currentModel, cfg);
         }
 
-        //显示目标槽位的武器模型
-        WeaponConfig targetConfig = weaponSlots[slotIndex].currentConfig;
-        if(targetConfig != null && weaponSlots[slotIndex].currentModel != null)
-        {
-            weaponSlots[slotIndex].currentModel.SetActive(true);
-            // 切槽位时同样复位一次碰撞体状态：
-            // MeleeFighter.DisableAllHitxboxes 会关掉它认识的那个命中盒，
-            // 但盾等其他槽位的碰撞体不归它管，状态会残留
-            ApplyInitialColliderState(weaponSlots[slotIndex].currentModel, targetConfig);
-        }
+        SyncFighterWeapon();
+        ApplyMeleeFighterWeaponState();
 
-        meleeFighter?.SetWeapon(weaponSlots[slotIndex].currentModel);
-
-        //更新 RangedFighter
         RangedFighter rangedFighter = GetComponent<RangedFighter>();
-        if(rangedFighter != null)
+        if (rangedFighter != null)
         {
-            if(targetConfig != null && targetConfig.isRanged)
-            {
-                //装备远程武器
+            if (activateRanged)
                 rangedFighter.SetWeapon(targetConfig);
-            }
             else
-            {
-                //清除远程武器
                 rangedFighter.ClearWeapon();
-            }
         }
 
-        meleeFighter?.SetWeaponID(targetConfig.weaponID);
-        var slotItem = GameManager.Instance.GetPackageLocalItemByUid(weaponSlots[slotIndex].equippedUid);
-        meleeFighter?.SetUpgradeLevel(slotItem?.level ?? 1);
-        meleeFighter?.SetWeaponConfig(targetConfig);
-        OnWeaponModelChanged?.Invoke(targetConfig);
+        OnWeaponModelChanged?.Invoke(targetConfig != null ? targetConfig : FindMeleeWeaponConfig());
     }
 
     /// <summary>
@@ -296,7 +382,7 @@ public class WeaponManager : MonoBehaviour
     /// </summary>
     public WeaponConfig GetSlotConfig(int slotIndex)
     {
-        if(slotIndex < 0 || slotIndex >= weaponSlots.Length)
+        if (slotIndex < 0 || slotIndex >= weaponSlots.Length)
         {
             return null;
         }
@@ -313,12 +399,9 @@ public class WeaponManager : MonoBehaviour
         return -1;
     }
 
+    /// <summary>是否装备了可用于近战的武器（盾不算）</summary>
     public bool HasMeeleWeaponEquipped()
     {
-        for(int i = 0 ; i < weaponSlots.Length; i++)
-        {
-            if(weaponSlots[i].currentConfig!=null&&!weaponSlots[i].currentConfig.isRanged) return true;
-        }
-        return false;
+        return FindMeleeWeaponSlot() != null;
     }
 }

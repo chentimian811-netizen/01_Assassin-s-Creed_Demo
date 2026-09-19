@@ -203,4 +203,6 @@ public class GameConst
 {
     public const int PackageTypeWeapon = 1;
     public const int PackageTypeFood = 2;
+    /// <summary>盾（动作集阶段 1.5 / 步骤 5 约定：Item.txt Type=3）</summary>
+    public const int PackageTypeShield = 3;
 }

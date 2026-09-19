@@ -97,11 +97,26 @@ public class WeaponSwitcher : MonoBehaviour
         }
 
 
-        weaponManager?.SwitchToSlot(rangeSlotIndex);
+        weaponManager?.SwitchToSlot(FindRangedSlotIndex());
 
         OnWeaponTypeChanged?.Invoke(true);
 
         Debug.Log("切换到远程武器 [按键2]");
+    }
+
+    /// <summary>
+    /// 远程槽不再写死为 index=1（步骤 3 后 1=LeftHand/盾）。
+    /// 按 isRanged 找实际装备了远程武器的槽。
+    /// </summary>
+    int FindRangedSlotIndex()
+    {
+        if (weaponManager == null) return rangeSlotIndex;
+        for (int i = 0; i < weaponManager.SlotCount; i++)
+        {
+            WeaponConfig c = weaponManager.GetSlotConfig(i);
+            if (c != null && c.isRanged) return i;
+        }
+        return rangeSlotIndex;
     }
     /// <summary>
     /// 检查远程槽位是否装备了远程武器

@@ -9,7 +9,7 @@
 > | 项目 | `01_Assassin's Creed_Demo`（Unity 2022.3.62f2c1） |
 > | 玩家资产 | `Assets/GameMain/Entities/Player/Male.prefab`（骨架 `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`） |
 > | 唯一场景 | `Assets/GameMain/Scenes/TestScene.unity` |
-> | 当前进度 | **阶段 0 完成 ｜ 步骤 1–3 完成** → 下一步 **步骤 4** |
+> | 当前进度 | **阶段 0 完成 ｜ 步骤 1–4 完成** → 下一步 **步骤 5** |
 
 ---
 
@@ -95,7 +95,7 @@ $crlf=0;$lf=0; for($i=0;$i -lt $b.Length;$i++){ if($b[$i] -eq 10){ if($i -gt 0 -
    │      │
    │      ├─> 步骤3 [✅] Male.prefab 加左手挂点 + 两槽改名/重配   ★高风险
    │      │      │
-   │      │      ├─> 步骤4 [ ] WeaponManager 装备规则（双持约束 + 目标槽优先）
+   │      │      ├─> 步骤4 [✅] WeaponManager 装备规则（双持约束 + 目标槽优先）
    │      │      │      │
    │      │      │      └─> 步骤5 [ ] Item.txt 加盾行 + 盾预制体（★漏项）
    │      │      │             │
@@ -244,13 +244,39 @@ mainWeaponSlotIndex: 0                          # = RightHand
 
 ---
 
-### 步骤 4 — `WeaponManager` 装备规则（双持约束 + 目标槽优先）
+### 步骤 4 — `WeaponManager` 装备规则（双持约束 + 目标槽优先）✅ 已完成
 
 | 项 | 内容 |
 |---|---|
-| 文件 | `Assets/GameMain/Scripts/Entity/Player/WeaponManager.cs` |
-| 依赖 | 步骤 3 |
+| 文件 | `WeaponManager.cs`（主）+ `InventoryManager.cs` / `WeaponSwitcher.cs` / `GameManager.cs` / `Male.prefab`（连带） |
+| 依赖 | 步骤 3 Play 验收 |
 | 预估 | 中 |
+| 状态 | ✅ 代码完成，Roslyn 零 `error CS`；**Play 验收待用户确认** |
+
+**实施记录**：
+
+| 项 | 落地 |
+|---|---|
+| (a) 双持约束 | `EnsureNotDualEquipped(uid, target)`：装备前卸下另一手上相同 uid |
+| (b) 目标槽优先 | `EquipWeapon(uid, targetSlotIndex)` 重载；`>=0` 时类型不匹配直接失败，不自动换手；`-1` 时 `FindSlotForWeapon` 兜底 |
+| (c) `SyncFighterWeapon` 排除盾 | `FindMeleeWeaponSlot()` 只认非盾非远程；`ApplyMeleeFighterWeaponState()` 让 weaponID/等级/AttackData 始终跟近战走 |
+| `SwitchToSlot` 双持可见性 | 近战/盾模型同时显示；远程仅在激活远程槽时显示；`MeleeFighter` 不再绑盾模型 |
+| `UnequipSlotInternal` | 改为从剩余槽重新推导，卸盾时不会清掉右手剑的判定 |
+
+**连带修复（原计划未写，但不改则步骤 5 Gate 不可达）**：
+
+| 文件 | 原因 |
+|---|---|
+| `InventoryManager.cs` | 原 `UnequipAll()` 会在装盾时卸掉剑 → 改为同槽替换 + `SyncEquippedFlags`；允许盾（`isShield`）走装备链路 |
+| `WeaponSwitcher.cs` | `rangeSlotIndex=1` 在步骤 3 后是 LeftHand/盾 → 改为按 `isRanged` 动态找槽 |
+| `GameManager.cs` | 新增 `PackageTypeShield = 3`（步骤 5 的 Item.txt Type） |
+| `Male.prefab` | RightHand `allowedTypes` 追加 **Bow=3**，避免现有弓无法装备（计划原文只写了 Sword/Dagger/Axe） |
+
+**验收**：
+1. 同一把剑先后装到两个槽（若类型允许）→ 先装的自动卸下，无空引用
+2. 右手剑 + 左手盾同时装备 → 两个模型同时可见
+3. `MeleeFighter.WeaponCollider` 在装盾后仍指向剑（Inspector 或临时日志）
+4. 卸下盾 → 剑的攻击判定仍在；装/卸过程无 `MissingReferenceException`
 
 **要改的三处**：
 
@@ -548,7 +574,7 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 |---|---|---|---|
 | 2 | `allowedType` → 数组会**清空 prefab 原值** | 🟠 中 | ✅ 已在步骤 3 重配 RightHand/LeftHand |
 | 3 | `holdPoint` 是跨 prefab 的 stripped 引用 | 🟠 中 | ✅ 复用已有 stripped：`1176…`=hand_r、`7055…`=hand_l，未新建物体 |
-| 4 | **`SyncFighterWeapon` 把盾塞给 `MeleeFighter`** | 🔴 高 | 主手槽排除盾；装盾后确认 `WeaponCollider` 仍指向剑 |
+| 4 | **`SyncFighterWeapon` 把盾塞给 `MeleeFighter`** | 🔴 高 | ✅ 已处理：只绑非盾近战；装盾后 `WeaponCollider` 仍指向剑 |
 | 5 | `Item.txt` 的 `Type=3` 可能不被解析器接受 | 🟠 中 | 动手前先读 `DataRepository` 解析代码 |
 | 5 | 盾预制体是设计文档**遗漏项**，容易漏做 | 🟠 中 | 已列入本节 5b |
 | 6/7 | 换覆盖器导致 animator 参数重置 | 🔴 高 | 步骤 7 的快照回灌；Gate 必须有"跑步中换武器不跳帧" |
@@ -576,10 +602,10 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 
 | 项 | 值 |
 |---|---|
-| 已完成 | 步骤 1、步骤 2、步骤 3（YAML 就绪，Play 验收待用户确认） |
-| 下一步 | **步骤 4 —— `WeaponManager` 装备规则（双持约束 + 目标槽优先 + SyncFighterWeapon 排除盾）** |
-| 步骤 4 的前置 | 步骤 3 的 Play 验收通过（Inspector 两槽 allowedTypes 正确、无 MissingReference） |
-| 步骤 4 的风险 | **`SyncFighterWeapon` 把盾塞给 `MeleeFighter`** 是 🔴 高风险：必须排除盾，否则 `WeaponCollider` 指向盾、剑砍不中人 |
+| 已完成 | 步骤 1–4（步骤 3/4 的 Play 验收待用户确认） |
+| 下一步 | **步骤 5 —— `Item.txt` 加盾行 + 盾预制体 + `ShieldConfig`**（完成后过阶段一 Gate） |
+| 步骤 5 前置 | ① 先读 `DataRepository` 确认 `Type=3` 不会被拒 ② 盾预制体路径建议 `Assets/GameMain/Entities/Shield/ShieldPrefab.prefab` ③ 需 `Resources/ItemConfigs/Item_RoundShield.asset` |
+| 步骤 5 风险 | ① 盾预制体是设计文档遗漏项 ② `Item.txt` 追加行要 12 列 Tab 对齐 ③ Gate 要求剑右盾左同时可见 + 盾碰撞体 enabled=false |
 
 **验收（阶段一 Gate 的前半，步骤 3）**：
 1. Play 中 Console 无 `MissingReferenceException`

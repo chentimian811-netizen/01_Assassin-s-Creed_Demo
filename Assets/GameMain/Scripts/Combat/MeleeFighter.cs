@@ -217,6 +217,11 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
 
     public void ToTryAttack(MeleeFighter target = null)
     {
+        // 演出中（处决受害者 / 正在处决的玩家）不发起攻击：
+        // Attack 协程第一件事就是把招式 CrossFade 到 Override Layer(1)，
+        // 会把受害动画顶掉 —— 表现就是"被处决的敌人站起来反击"。
+        if (inCounter) return;
+
         if (!inAction)
         {
             StartCoroutine(Attack(target));
@@ -312,6 +317,12 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         var attackerFighter = other.GetComponentInParent<MeleeFighter>();
         if (attackerFighter == null || attackerFighter == this) return;
 
+        // 尸体 / 已禁用单位不得造成伤害：
+        // 攻击方被 DeadState 禁用后自己的 OnTriggerEnter 不再回调，但它的命中盒碰撞体还在，
+        // 伤害会从受击方这条回调里漏进来（"死人打死人"）。这里做攻击方存活校验兜住。
+        if (!attackerFighter.enabled) return;
+        if (attackerFighter.HealthComponent != null && attackerFighter.HealthComponent.IsDead) return;
+
         // 攻击方已锁定别的目标时不误伤
         if (attackerFighter.currentTarget != null && attackerFighter.currentTarget != this) return;
 
@@ -392,58 +403,131 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         animator.CrossFade("Melee_FallBackDeath", 0.2f, 1);
     }
 
+    /// <summary>
+    /// 反击/处决演出（双人配对动画：玩家 Melee_CounterAttack / 敌人 Melee_CounterVictim）。
+    ///
+    /// ⚠️ 原实现两个致命点（本次修复）：
+    ///   1. 先给敌人 SetInvulnerable(Counter, true)，处决致死伤害却在末尾才结算，
+    ///      而 Health.TakeDamage 的第一道闸就是 `if (IsInvulnerable) return;`
+    ///      → 9999 伤害被静默丢弃：敌人不掉血、不进 DeadState。
+    ///   2. 收尾只清除了玩家自己的 "counter" 无敌（health? 指向自己），
+    ///      敌人身上那条 reason 永久残留 → 这只敌人之后再也不可能被打死。
+    /// 三个可见症状都源于此：处决后站起来继续攻击 / 看着被打死的敌人过一会又起来 / 敌人永不消失
+    /// （消失逻辑只写在 DeadState.Enter 的 Destroy 里，没进 Dead 就永远不会销毁）。
+    ///
+    /// 修复原则：
+    ///   - 演出期间双方免伤（防止第三方打断配对动画），但【结算致死伤害前必须先解除受害者无敌】；
+    ///   - 所有状态清理放 finally：协程被 StopAllCoroutines 打断时也不留残留无敌 / 残留 inCounter。
+    /// </summary>
     public IEnumerator PerformCounterAttack(EnemyController opponet)
     {
+        if (opponet == null || opponet.Fighter == null) yield break;
+
+        var victimHealth = opponet.Fighter.HealthComponent;
+
+        // 已死目标不再拉进演出：否则会把 Death 姿态切回 Melee_CounterVictim，看起来像复活
+        if (victimHealth == null || victimHealth.IsDead) yield break;
+
         inAction = true;
         inCounter = true;
         opponet.Fighter.inCounter = true;
 
-        // 处决无敌，避免演出中被二次命中
+        // 锁死受害者的 FSM 与导航：处决是双人配对动画，受害者不该在这期间自己走位/出手，
+        // 否则演出中它会顶着受害动画追玩家（"处决完先朝我跑一下"）
+        opponet.SetPerformanceLock(true);
+
+        // 演出期间双方免伤，避免演出中被二次命中
         health?.SetInvulnerable(InvulnReasons.Counter, true);
-        opponet.Fighter.HealthComponent?.SetInvulnerable(InvulnReasons.Counter, true);
+        victimHealth.SetInvulnerable(InvulnReasons.Counter, true);
 
-        var disVec = opponet.transform.position - transform.position;
-        disVec.y = 0;
-
-        transform.rotation = Quaternion.LookRotation(disVec);
-        opponet.transform.rotation = Quaternion.LookRotation(-disVec);
-
-        var targetPos = opponet.transform.position - disVec.normalized * 2f;
-
-        animator.CrossFade("Melee_CounterAttack", 0.2f, 1);
-        opponet.Animator.CrossFade("Melee_CounterVictim", 0.2f, 1);
-
-        yield return null;
-
-        var animState = animator.GetNextAnimatorStateInfo(1);
-
-        float timer = 0f;
-        float length = Mathf.Max(animState.length, 0.0001f);
-        while (timer <= length)
+        try
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, 2 * Time.deltaTime);
+            var disVec = opponet.transform.position - transform.position;
+            disVec.y = 0;
+
+            transform.rotation = Quaternion.LookRotation(disVec);
+            opponet.transform.rotation = Quaternion.LookRotation(-disVec);
+
+            var targetPos = opponet.transform.position - disVec.normalized * 2f;
+
+            animator.CrossFade("Melee_CounterAttack", 0.2f, 1);
+            opponet.Animator.CrossFade("Melee_CounterVictim", 0.2f, 1);
+
             yield return null;
-            timer += Time.deltaTime;
-        }
 
-        // 致死只走伤害唯一路径，不再直接 ChangeState(Dead)
-        var enemyCol = opponet.GetComponent<Collider>();
-        if (enemyCol != null)
+            var animState = animator.GetNextAnimatorStateInfo(1);
+
+            float timer = 0f;
+            float length = Mathf.Max(animState.length, 0.0001f);
+            while (timer <= length)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, targetPos, 2 * Time.deltaTime);
+                yield return null;
+                timer += Time.deltaTime;
+            }
+
+            // 目标在演出期间被销毁（场景卸载、外部清理等）：不再结算，
+            // 直接 yield break 走 finally 清理；否则下面会抛 MissingReferenceException
+            if (opponet == null || victimHealth == null) yield break;
+
+            // ① 结算前先解除受害者无敌：否则下面的致死伤害会被 Health.TakeDamage 直接 return 掉
+            victimHealth.SetInvulnerable(InvulnReasons.Counter, false);
+
+            // ② 致死只走伤害唯一路径，不再直接 ChangeState(Dead)
+            var enemyCol = opponet.GetComponent<Collider>();
+            if (enemyCol != null)
+            {
+                DamageRouter.ApplyAmount(
+                    enemyCol, gameObject, opponet.transform.position,
+                    9999f, E_DamageSource.Player, parryable: false, attackId: "counter_execute");
+            }
+
+            // ③ 兜底：若还有别的无敌来源挡下（霸体/剧情保护等），也必须进死亡终态，
+            //    绝不允许"处决完敌人还站着、还能打你"
+            if (!victimHealth.IsDead)
+            {
+                Debug.LogWarning($"[Counter] 处决伤害被拦截，强制进入死亡终态：{opponet.name}", opponet);
+                opponet.ForceDeath();
+            }
+        }
+        finally
         {
-            DamageRouter.ApplyAmount(
-                enemyCol, gameObject, opponet.transform.position,
-                9999f, E_DamageSource.Player, parryable: false, attackId: "counter_execute");
-        }
-        else
-        {
-            opponet.ChangeState(E_EnemyState.Dead);
-        }
+            // 正常结束 / 抛异常 / 协程被 Stop，都走这里：不留残留状态
+            inCounter = false;
+            inAction = false;
+            if (opponet != null && opponet.Fighter != null) opponet.Fighter.inCounter = false;
 
-        inCounter = false;
-        opponet.Fighter.inCounter = false;
-        health?.SetInvulnerable(InvulnReasons.Counter, false);
+            health?.SetInvulnerable(InvulnReasons.Counter, false);
+            // 目标可能已被销毁：finally 里抛异常会盖掉原异常，这里必须判一次
+            if (victimHealth != null) victimHealth.SetInvulnerable(InvulnReasons.Counter, false);
 
+            // 解锁受害者的演出锁。放在最后：若它已经死了，NavAgent 早被 DeadState 禁用，
+            // 这里只会复位标志位，不会把尸体重新拉回战斗
+            if (opponet != null) opponet.SetPerformanceLock(false);
+        }
+    }
+
+    /// <summary>
+    /// 死亡清理：停协程、复位攻击状态、关闭全部命中盒、清掉连击与目标。
+    ///
+    /// ⚠️ DeadState 必须在 `enabled = false` 之前调用它：
+    ///   组件一被禁用就触发 OnDisable 退订 OnEnemyKilled，而 Health.Die() 是在
+    ///   RaiseUnitDamaged 之后才发 OnEnemyKilled 的 —— MeleeFighter.HandleEnemyKilled
+    ///   里那句 DisableAllHitxboxes() 永远等不到，尸体会带着"攻击生效中(Impact)"的
+    ///   命中盒躺在地上，被活人撞上还会结算一次伤害。
+    /// </summary>
+    public void ForceStopCombat()
+    {
+        StopAllCoroutines();
+
+        AttackState = E_AttackState.idle;
         inAction = false;
+        inCounter = false;
+        doCombo = false;
+        combocount = 0;
+        currentTarget = null;
+
+        DisableAllHitxboxes();
     }
 
     void EnableHitbox(AttackData attack)

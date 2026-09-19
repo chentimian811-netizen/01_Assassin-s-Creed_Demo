@@ -59,10 +59,13 @@ public class PlayerCombat : MonoBehaviour
             }
         }
 
-        //检查是否可以反击
+        //检查是否可以反击（目标必须活着，否则会把 Death 姿态切成 Melee_CounterVictim，看着像复活）
         var enemy = EnemyManager.i.GetAttackingEnemy();
 
-        if (enemy != null && enemy.Fighter.IsCounterable && !meleeFighter.inAction && !meleeFighter.IsAttackingHit)
+        if (enemy != null
+            && (enemy.Health == null || !enemy.Health.IsDead)
+            && enemy.Fighter.IsCounterable
+            && !meleeFighter.inAction && !meleeFighter.IsAttackingHit)
         {
             // 反击是窗口期惩罚，不扣耐力（魂类惯例：处决/反击免费）
             StartCoroutine(meleeFighter.PerformCounterAttack(enemy));

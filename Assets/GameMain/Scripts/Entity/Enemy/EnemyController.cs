@@ -133,14 +133,79 @@ public class EnemyController : MonoBehaviour
         ChangeState(E_EnemyState.GettingHit);
     }
 
+    /// <summary>是否已进入死亡终态。不依赖 Health.IsDead —— 处决/剧情杀可能绕过血量置死</summary>
+    private bool m_inDeadState;
+
+    /// <summary>是否处于配对演出锁定（处决/暗杀的受害者）。锁定时不跑 FSM、不动导航</summary>
+    private bool m_inPerformance;
+
+    /// <summary>演出锁自动解锁时刻（真实时间）：演出方被销毁/停用、finally 没跑到时的保险</summary>
+    private float m_performanceUnlockRealtime;
+
+    [SerializeField, Tooltip("配对演出锁最长持续（真实秒）。超时自动解锁，避免演出方中途消失把敌人永久冻住")]
+    private float performanceLockTimeout = 10f;
+
     public void ChangeState(E_EnemyState state)
     {
         // 死亡为终态：GettingHit 协程、Attack 连段、EnemyManager 调度都可能在死后仍调 ChangeState，
         // 若放行会从 Dead 拉回 CombatMovement/Attack，表现为「倒地后又爬起来」。
-        if (Health != null && Health.IsDead && state != E_EnemyState.Dead)
+        if (state == E_EnemyState.Dead)
+        {
+            m_inDeadState = true;
+        }
+        else if (m_inDeadState || m_inPerformance || (Health != null && Health.IsDead))
+        {
+            // m_inPerformance：处决演出期间锁死状态机。受害者只是被"借走"播配对动画，
+            // 若放行 Attack→Retreat→CombatMovement，它会顶着受害动画追玩家，
+            // 还会被 EnemyManager 排到出手（CrossFade 招式把受害动画顶掉 = "被处决的人站起来打我"）。
             return;
+        }
 
         stateMachine.ChangeState(stateDict[state]);
+    }
+
+    /// <summary>
+    /// 配对演出（处决/暗杀）锁定开关，由 MeleeFighter.PerformCounterAttack 开关。
+    ///
+    /// 为什么要锁：
+    ///   处决是双人配对动画，受害者只是被借来播动画，它的 FSM 与 NavMeshAgent 仍在独立运行。
+    ///   不锁的话，受害者在演出期间会照常 Retreat/CombatMovement 追击（"处决完先朝我跑一下"），
+    ///   甚至被 EnemyManager 排到出手、用招式动画顶掉受害动画（"站起来朝我攻击"）。
+    /// </summary>
+    public void SetPerformanceLock(bool value)
+    {
+        if (m_inPerformance == value) return;
+        m_inPerformance = value;
+
+        // 上锁时记一个保险截止时刻：演出方（玩家）被销毁/停用时 finally 不一定跑得到
+        if (value) m_performanceUnlockRealtime = Time.unscaledTime + Mathf.Max(1f, performanceLockTimeout);
+
+        // 上锁时清掉在途寻路：否则 agent 会继续沿旧路径把"受害者"拖走
+        if (NavAgent != null && NavAgent.enabled && NavAgent.isOnNavMesh)
+        {
+            if (value)
+            {
+                NavAgent.ResetPath();
+                NavAgent.isStopped = true;
+            }
+            else
+            {
+                NavAgent.isStopped = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处决/剧情杀的兜底致死：无视无敌与血量直接进死亡终态。
+    /// 存在的意义见 Health.ForceKill —— 致死伤害和普通伤害共用同一道无敌闸，
+    /// 一旦被拦下就再也没有第二条致死路径可走。
+    /// </summary>
+    public void ForceDeath()
+    {
+        m_inDeadState = true;
+
+        if (Health != null) Health.ForceKill();   // 血量归零 + 补发 OnEnemyKilled（死亡表现订阅它）
+        ChangeState(E_EnemyState.Dead);           // DeadState 会禁用组件、播死亡姿态并排销毁
     }
 
 
@@ -151,10 +216,27 @@ public class EnemyController : MonoBehaviour
 
     private void Update()
     {
-        // 死亡后不再推进 FSM / 刷动画参数，避免与死亡姿态抢控制
-        if (Health != null && Health.IsDead)
+        // 死亡后不再推进 FSM / 刷动画参数，避免与死亡姿态抢控制。
+        // m_inDeadState 一起判：处决/剧情杀可能绕过血量置死，只信 Health.IsDead 会漏
+        if (m_inDeadState || (Health != null && Health.IsDead))
         {
             transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f);
+            return;
+        }
+
+        // 演出锁保险：演出方若被销毁/停用，finally 不一定跑得到，超时自动解锁，
+        // 避免这只敌人被永久冻在原地
+        if (m_inPerformance && Time.unscaledTime >= m_performanceUnlockRealtime)
+        {
+            Debug.LogWarning($"[EnemyController] {name} 演出锁超时，自动解锁", this);
+            SetPerformanceLock(false);
+        }
+
+        // 配对演出锁定：不跑状态机、不刷移动参数、不做分离推挤。
+        // 受害者这期间只负责播受害动画，位移/朝向全交给演出方（MeleeFighter.PerformCounterAttack）
+        if (m_inPerformance)
+        {
+            prevPos = transform.position;   // 保持速度基准，解锁那一帧不会算出巨大速度
             return;
         }
 

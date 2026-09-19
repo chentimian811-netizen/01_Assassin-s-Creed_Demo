@@ -78,10 +78,37 @@ public class Health : MonoBehaviour, IDamageable
         invulnerableReasons.Clear();
     }
 
+    /// <summary>
+    /// 无视无敌帧的强制致死（处决/剧情杀的兜底出口）。幂等，走与致命伤一致的死亡流程。
+    ///
+    /// 为什么必须有这条不经过无敌判定的出口：
+    ///   致死伤害与普通伤害共用 TakeDamage 那道 `if (IsInvulnerable) return;` 闸门，
+    ///   只要目标身上挂着任意一个无敌来源，致死伤害就会被静默丢弃 ——
+    ///   表现为"处决完敌人站起来继续打""敌人永远打不死、永不消失"。
+    /// </summary>
+    public void ForceKill()
+    {
+        if (isDead) return;
+        Die();
+    }
+
     public void TakeDamage(in DamageInfo info)
     {
         if (isDead) return;
-        if (IsInvulnerable) return;
+
+        if (IsInvulnerable)
+        {
+            // 无敌期间被吞掉的若是"致死量"，一定要吼一声：否则就是"明明打中了却打不死"的假死亡，
+            // 而且从 Console 完全看不出发生过什么（这条日志就是本次 bug 的照妖镜）。
+            if (info.Amount >= currentHealth)
+            {
+                Debug.LogWarning(
+                    $"[Health] {name} 处于无敌({string.Join(",", invulnerableReasons)})，" +
+                    $"致死伤害 {info.Amount} 被丢弃（攻击者：{(info.Source != null ? info.Source.name : "null")}）", this);
+            }
+            return;
+        }
+
         if (info.Amount <= 0f) return;
 
         lastAttacker = info.Source;

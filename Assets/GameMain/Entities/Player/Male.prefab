@@ -206,18 +206,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponConfigPath: WeaponConfigs
   weaponSlots:
-  - slotName: MainHand
+  - slotName: RightHand
     holdPoint: {fileID: 1176333465599525210}
-    allowedType: 0
+    allowedTypes:
+    - 0
+    - 1
+    - 2
     currentConfig: {fileID: 0}
     currentModel: {fileID: 0}
-    equippedUid: 
-  - slotName: AxeHand
-    holdPoint: {fileID: 1176333465599525210}
-    allowedType: 2
+    equippedUid:
+  - slotName: LeftHand
+    holdPoint: {fileID: 7055462120595353160}
+    allowedTypes:
+    - 5
     currentConfig: {fileID: 0}
     currentModel: {fileID: 0}
-    equippedUid: 
+    equippedUid:
   mainWeaponSlotIndex: 0
 --- !u!114 &722878919831647827
 MonoBehaviour:

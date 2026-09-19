@@ -66,7 +66,7 @@ public class WeaponManager : MonoBehaviour
 
         if (targetSlot == null) return false;
 
-        if (wType != targetSlot.allowedType) return false;
+        if (!targetSlot.Accepts(wType)) return false;
 
         if (targetSlot.currentModel != null)
             Destroy(targetSlot.currentModel);
@@ -131,7 +131,7 @@ public class WeaponManager : MonoBehaviour
     {
         foreach (var slot in weaponSlots)
         {
-            if (slot.allowedType == type && slot.currentConfig != null)
+            if (slot.Accepts(type) && slot.currentConfig != null)
                 return UnequipSlotInternal(slot);
         }
         return null;
@@ -185,13 +185,13 @@ public class WeaponManager : MonoBehaviour
         // 先找空槽位
         foreach (var slot in weaponSlots)
         {
-            if (slot.allowedType == type && slot.currentConfig == null)
+            if (slot.Accepts(type) && slot.currentConfig == null)
                 return slot;
         }
         // 找同类型已占用槽位替换
         foreach (var slot in weaponSlots)
         {
-            if (slot.allowedType == type)
+            if (slot.Accepts(type))
                 return slot;
         }
         return null;

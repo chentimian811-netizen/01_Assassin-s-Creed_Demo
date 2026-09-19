@@ -9,7 +9,7 @@
 > | 项目 | `01_Assassin's Creed_Demo`（Unity 2022.3.62f2c1） |
 > | 玩家资产 | `Assets/GameMain/Entities/Player/Male.prefab`（骨架 `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`） |
 > | 唯一场景 | `Assets/GameMain/Scenes/TestScene.unity` |
-> | 当前进度 | **阶段 0 完成 ｜ 步骤 1 完成** → 下一步 **步骤 2** |
+> | 当前进度 | **阶段 0 完成 ｜ 步骤 1–3 完成** → 下一步 **步骤 4** |
 
 ---
 
@@ -91,9 +91,9 @@ $crlf=0;$lf=0; for($i=0;$i -lt $b.Length;$i++){ if($b[$i] -eq 10){ if($i -gt 0 -
 ```
 步骤1 [✅] E_WeaponType 加 Shield（值=5）
    │
-   ├─> 步骤2 [ ] WeaponSlot.allowedType → allowedTypes[]
+   ├─> 步骤2 [✅] WeaponSlot.allowedType → allowedTypes[]
    │      │
-   │      ├─> 步骤3 [ ] Male.prefab 加左手挂点 + 两槽改名/重配   ★高风险
+   │      ├─> 步骤3 [✅] Male.prefab 加左手挂点 + 两槽改名/重配   ★高风险
    │      │      │
    │      │      ├─> 步骤4 [ ] WeaponManager 装备规则（双持约束 + 目标槽优先）
    │      │      │      │
@@ -144,13 +144,25 @@ $crlf=0;$lf=0; for($i=0;$i -lt $b.Length;$i++){ if($b[$i] -eq 10){ if($i -gt 0 -
 
 ---
 
-### 步骤 2 — `WeaponSlot.allowedType` → `allowedTypes[]`
+### 步骤 2 — `WeaponSlot.allowedType` → `allowedTypes[]` ✅ 已完成
 
 | 项 | 内容 |
 |---|---|
-| 文件 | `Assets/GameMain/Scripts/Entity/Player/WeaponSlot.cs`（改）+ `Assets/GameMain/Scripts/Entity/Player/WeaponManager.cs`（同步 6 处） |
+| 文件 | `Assets/GameMain/Scripts/Entity/Player/WeaponSlot.cs`（改）+ `Assets/GameMain/Scripts/Entity/Player/WeaponManager.cs`（同步 4 处） |
 | 依赖 | 步骤 1 |
 | 预估 | 小 |
+| 状态 | ✅ 已完成并 Roslyn 编译验证（零 `error CS`；UTF-8 无 BOM + CRLF） |
+
+**实施记录**：
+
+- `WeaponSlot.cs`：`allowedType`（单值）→ `allowedTypes`（`E_WeaponType[]`）+ `Accepts()` 方法
+- `WeaponManager.cs` 四处改调 `Accepts()`：
+  - `EquipWeapon`：`if (!targetSlot.Accepts(wType)) return false;`
+  - `UnequipSlotByType`：`slot.Accepts(type) && slot.currentConfig != null`
+  - `FindSlotForWeapon` 空槽：`slot.Accepts(type) && slot.currentConfig == null`
+  - `FindSlotForWeapon` 替换槽：`slot.Accepts(type)`
+- 代码内已无 `allowedType` 单数残留；`Male.prefab` / `TestScene.unity` 上的旧字段与 propertyPath override **故意未动**（步骤 3 处理）
+- 文档原写「同步 6 处」，实测代码引用是 **4 处**（`SwitchToSlot` 不直接读该字段）
 
 **现状**（`WeaponSlot.cs:10`）：
 
@@ -182,61 +194,53 @@ public E_WeaponType allowedType;      // 单值
 
 ---
 
-### 步骤 3 — `Male.prefab` 加左手挂点 + 两槽重配 ★高风险
+### 步骤 3 — `Male.prefab` 加左手挂点 + 两槽重配 ✅ 已完成 ★高风险
 
 | 项 | 内容 |
 |---|---|
 | 文件 | `Assets/GameMain/Entities/Player/Male.prefab` |
 | 依赖 | 步骤 2 |
 | 预估 | 中 |
+| 状态 | ✅ YAML 已写入并通过 fileID/引用校验；**Play 验收待用户在 Unity 中确认** |
 
-**现状**（已勘定）：
+**实施记录（含文档勘定纠错）**：
 
-```yaml
-weaponSlots:
-- slotName: MainHand
-  holdPoint: {fileID: 1176333465599525210}   # = Skin_1_4 的 hand_l
-  allowedType: 0                             # Sword
-- slotName: AxeHand
-  holdPoint: {fileID: 1176333465599525210}   # ← 同一个挂点！
-  allowedType: 2                             # Axe
-mainWeaponSlotIndex: 0
-```
+> ⚠️ **原文档勘定错误（已纠正）**：`holdPoint {fileID: 1176333465599525210}` **不是 `hand_l`，是 `hand_r`**。
+> `Skin_1_4.prefab`：`hand_r` Transform = `3589568896793260725`；`hand_l` Transform = `4641400885159566759`。
+> `Male.prefab` 里 **两个 stripped 引用本来就都已存在**，本步**不需要新建空物体**：
+>
+> | Male.prefab stripped | Skin_1_4 源 | 用途 |
+> |---|---|---|
+> | `1176333465599525210` | `3589568896793260725` = **hand_r** | RightHand.holdPoint |
+> | `7055462120595353160` | `4641400885159566759` = **hand_l** | LeftHand.holdPoint；盾的 `m_TransformParent` 也指向它 |
 
-**目标**：
+**最终 `weaponSlots`**（Q6：盾继续挂 `hand_l`，沿用已调好的手工数值）：
 
 ```yaml
 weaponSlots:
 - slotName: RightHand
-  holdPoint: <右手骨骼>
-  allowedTypes: [Sword, Dagger, Axe]          # 右手不放盾
+  holdPoint: {fileID: 1176333465599525210}   # hand_r
+  allowedTypes: [Sword=0, Dagger=1, Axe=2]    # 右手不放盾
 - slotName: LeftHand
-  holdPoint: <新建空物体，父级 = lowerarm_l 或 hand_l>
-  allowedTypes: [Shield]
+  holdPoint: {fileID: 7055462120595353160}   # hand_l
+  allowedTypes: [Shield=5]
 mainWeaponSlotIndex: 0                          # = RightHand
 ```
 
-**已勘定的骨架坐标（`Skin_1_4.prefab`，可直接用）**：
+**场景侧**：`TestScene.unity` 当前**没有** `weaponSlots`/`allowedType` 的 propertyPath override，无需清理。
+注意：场景实例里手工盾 `SkelMesh_RoundShield`（stripped `1344488741018628869`）被 override 成 **`m_IsActive: 0`（禁用）**——验收时若看不到盾，先在 Hierarchy 里把它勾上，或删掉该场景 override。
 
-| 骨骼 | Transform fileID | 局部位置（相对父） |
-|---|---|---|
-| `lowerarm_l`（左小臂） | `8449375469879590680` | `(-0.303, 0.017, 0.012)` |
-| `hand_l`（左手掌） | `4641400885159566759` | `(-0.244, 0.015, 0)` |
-| `hand_r`（右手掌） | **待勘**（步骤开始时先 grep `m_Name: hand_r`） | — |
-
-**⚠️ 关键技术点**：`holdPoint` 是**跨 prefab 的 stripped Transform**
-（`m_CorrespondingSourceObject` 指回 `Skin_1_4.prefab`）。新增挂点必须用同样形式的引用，
-**不能凭名字查找**。
-
-**Q6 决策点（盾挂手掌还是小臂）**：用户已把盾手工挂在 `hand_l` 上调好了
-`Position (-0.02, -0.033, 0)` / `Rotation (71.275, -94.847, -81.633)`。
-建议：**先沿用 `hand_l`**（已有可用数值，风险最低），
-阶段三配好 `Block_Loop` 动画后再评估是否迁到 `lowerarm_l`。
+**校验结果**：
+- 两个 holdPoint fileID 在 `Male.prefab` 中均有 stripped 定义且双向引用完整
+- RightHand → hand_r / LeftHand → hand_l 映射正确
+- 盾 `m_TransformParent` 仍为 hand_l，未被改动
+- 无残留 `allowedType` 单数字段；`allowedTypes` ×2
+- 编码：UTF-8 无 BOM（prefab 原文件为 LF，Unity 可接受）
 
 **验收（阶段一 Gate 的前半）**：
 1. Play 中 Console 无 `MissingReferenceException`
-2. Inspector 里两个槽的 `allowedTypes` 已正确勾选
-3. 盾的模型在左手位置正确（此时还没接装备链路，看的是手工挂的那个）
+2. Inspector 里两个槽的 `allowedTypes` 已正确勾选（RightHand=Sword/Dagger/Axe，LeftHand=Shield）
+3. 盾的模型在左手位置正确（看手工挂的那个；场景里若 `m_IsActive=0` 需先启用）
 
 ---
 
@@ -542,8 +546,8 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 
 | 步骤 | 风险 | 等级 | 缓解 |
 |---|---|---|---|
-| 2 | `allowedType` → 数组会**清空 prefab 原值** | 🟠 中 | 步骤 3 里重新勾选，别忘 |
-| 3 | `holdPoint` 是跨 prefab 的 stripped 引用 | 🟠 中 | 照现有槽的 YAML 形式写，不按名字找 |
+| 2 | `allowedType` → 数组会**清空 prefab 原值** | 🟠 中 | ✅ 已在步骤 3 重配 RightHand/LeftHand |
+| 3 | `holdPoint` 是跨 prefab 的 stripped 引用 | 🟠 中 | ✅ 复用已有 stripped：`1176…`=hand_r、`7055…`=hand_l，未新建物体 |
 | 4 | **`SyncFighterWeapon` 把盾塞给 `MeleeFighter`** | 🔴 高 | 主手槽排除盾；装盾后确认 `WeaponCollider` 仍指向剑 |
 | 5 | `Item.txt` 的 `Type=3` 可能不被解析器接受 | 🟠 中 | 动手前先读 `DataRepository` 解析代码 |
 | 5 | 盾预制体是设计文档**遗漏项**，容易漏做 | 🟠 中 | 已列入本节 5b |
@@ -572,10 +576,15 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 
 | 项 | 值 |
 |---|---|
-| 已完成 | 步骤 1 |
-| 下一步 | **步骤 2 —— `WeaponSlot.allowedType` → `allowedTypes[]`** |
-| 步骤 2 的前置确认 | ① 关掉 Unity 里打开的 prefab ② 确认 `Male.prefab` 是唯一使用方 |
-| 步骤 2 的风险提示 | 改完 `Male.prefab` 的 `allowedTypes` 会变空，**这是预期的**，步骤 3 补 |
+| 已完成 | 步骤 1、步骤 2、步骤 3（YAML 就绪，Play 验收待用户确认） |
+| 下一步 | **步骤 4 —— `WeaponManager` 装备规则（双持约束 + 目标槽优先 + SyncFighterWeapon 排除盾）** |
+| 步骤 4 的前置 | 步骤 3 的 Play 验收通过（Inspector 两槽 allowedTypes 正确、无 MissingReference） |
+| 步骤 4 的风险 | **`SyncFighterWeapon` 把盾塞给 `MeleeFighter`** 是 🔴 高风险：必须排除盾，否则 `WeaponCollider` 指向盾、剑砍不中人 |
+
+**验收（阶段一 Gate 的前半，步骤 3）**：
+1. Play 中 Console 无 `MissingReferenceException`
+2. Inspector 里 RightHand=`Sword/Dagger/Axe`、LeftHand=`Shield` 已正确勾选
+3. 盾的模型在左手位置正确（看手工挂的那个；场景里若 `m_IsActive=0` 需先启用）
 
 ---
 

@@ -13,7 +13,7 @@
 | **玩家资产** | **`Assets/GameMain/Entities/Player/Male.prefab`**（骨架 = `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`，`hand_l` / `lowerarm_l` 命名）。⚠️ `Player.prefab` 是**弃用的旧资产**，见 §12.1 |
 | 参考框架 | `C:\Unity\CBTFM`（Combat System，第三方战斗框架，仅作模式借鉴） |
 | 参考作品 | Elden Ring / Dark Souls III（FromSoftware） |
-| 文档状态 | 已批准 → **阶段 0 已完成**（0.1 已验收 / 0.2 代码就绪），**下一步阶段 1（双槽地基）**。<br>进度快照看 **§2.1.1** |
+| 文档状态 | 已批准 → **阶段 0 完成 ｜ 1.1–1.3 已完成**，**下一步阶段 1.4（WeaponManager 装备规则）**。<br>进度快照看 **§2.1.1** |
 
 ---
 
@@ -68,8 +68,8 @@
 | `PlayerMove.controller` 单套动作 | `Assets/GameMain/Scripts/Entity/Player/Animations/` | 无动作集概念 | 阶段 3 |
 | `CombatMode`(bool) 参数已声明但无 C# 写入 | `PlayerMove.controller` | 未接线；本期不使用（见 §3.3） | 决策：保持 |
 | `WeaponConfig.animOverride` 直接替换整个 controller | `MeleeFighter.SetWeaponConfig` | 语义错误：攻击 clip 覆盖器被当成整个控制器用 | 阶段 2.4 |
-| 两个武器槽指向**同一个**挂点 | **`Male.prefab`**（`hand_l`，fileID `1176333465599525210`） | 无左手位，双持无从谈起 | 阶段 1.3 |
-| `WeaponSlot.allowedType` 为单值枚举 | `WeaponSlot.cs` | 一个槽只能接受一种武器类型 | 阶段 1.2 |
+| 两个武器槽指向**同一个**挂点 | **`Male.prefab`** | 无左手位，双持无从谈起 | ✅ **阶段 1.3 已完成**（RightHand=hand_r / LeftHand=hand_l） |
+| `WeaponSlot.allowedType` 为单值枚举 | `WeaponSlot.cs` | 一个槽只能接受一种武器类型 | ✅ **阶段 1.2 已完成**（`allowedTypes[]` + `Accepts()`） |
 | 连招链是"整角色一条" | `MeleeFighter` 的 `List<AttackData> attacks` | 无法表达"左手攻击链 ≠ 右手攻击链" | 阶段 4.1 |
 | 敌人**没有可用命中盒** | `MeleeFighter.TryBindPreplacedWeapon()` | —— | ✅ **阶段 0.1 已修**（方案 C，见 §10） |
 | 盾的碰撞体常驻开启 | `Male.prefab` 的 `SkelMesh_RoundShield` | 盾走的是手工挂载，`ApplyInitialColliderState` 覆盖不到它 | ⚠️ 阶段 0.2，**实测待补** |
@@ -102,8 +102,8 @@
 | **0.1** 敌人命中盒 | ✅ **已验收** | `Enemy.prefab`（`mixamorig:Sword_joint` 挂 `BoxCollider`）、`MeleeFighter.cs` | — |
 | **0.2** 盾碰撞体默认关闭 | ⚠️ 代码已就绪，**实测待补** | `WeaponConfig.isShield`、`WeaponManager.ApplyInitialColliderState` | 盾还没走装备链路，`ApplyInitialColliderState` 覆盖不到手工挂的盾 |
 | **1.1** `E_WeaponType` 加 `Shield` | ✅ **已完成** | `WeaponType.cs` | — |
-| **1.2** `WeaponSlot.allowedTypes` 改数组 | ⬜ 未开始 | `WeaponSlot.cs` | — |
-| **1.3** 左手挂点 + 两槽改名 | ⬜ 未开始 | `Male.prefab` | 骨架/挂点 fileID 已勘定，见 §12.1 |
+| **1.2** `WeaponSlot.allowedTypes` 改数组 | ✅ **已完成** | `WeaponSlot.cs` + `WeaponManager.cs`（4 处改 `Accepts()`） | — |
+| **1.3** 左手挂点 + 两槽改名 | ✅ **已完成** | `Male.prefab`：RightHand→hand_r、LeftHand→hand_l，allowedTypes 已配 | Play 验收待确认；⚠️ 原文档误写 hand_l 的 fileID，已纠正 |
 | **1.4** 双持约束 + 目标槽优先 | ⬜ 未开始 | `WeaponManager.cs` | — |
 | **1.5** `Item.txt` 编码 + 盾行 | ⬜ 未开始 | `Resources/DataTables/Item.txt` | 原文件是 **GBK**，转换需逐行校对 |
 | **2** 动作集路由骨架 | ⬜ 未开始 | `MovesetConfig` / `MovesetResolver` / `PlayerAnimationSet` | — |
@@ -512,17 +512,24 @@ public class WeaponSlot
 > `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`（`hand_l` / `lowerarm_l` 命名）。
 > 下方"现状"引用的 `Player.prefab:4313~4326` 同理作废 —— 完整勘定见 §12.1。
 
-**真实现状（`Male.prefab`）—— 两个槽指向同一挂点**：
+**真实现状（`Male.prefab`，v1.3 后已改）—— 勘定纠错**：
+
+> ⚠️ 原文写「`holdPoint {fileID: 1176333465599525210}` = `hand_l`」是**错的**。
+> 该 stripped 指向 `Skin_1_4` 的 **`hand_r`**（Transform `3589568896793260725`）。
+> `hand_l`（Transform `4641400885159566759`）在 `Male.prefab` 中的 stripped 是
+> **`7055462120595353160`**，盾的手工挂载 `m_TransformParent` 一直指向它。
+
+**阶段 1.3 落地结果**：
 
 ```yaml
 weaponSlots:
-- slotName: MainHand
-  holdPoint: {fileID: 1176333465599525210}   # = Skin_1_4 的 hand_l
-  allowedType: 0                             # Sword
-- slotName: AxeHand
-  holdPoint: {fileID: 1176333465599525210}   # ← 同一个挂点！
-  allowedType: 2                             # Axe
-mainWeaponSlotIndex: 0
+- slotName: RightHand
+  holdPoint: {fileID: 1176333465599525210}   # hand_r
+  allowedTypes: [Sword, Dagger, Axe]          # 右手不放盾
+- slotName: LeftHand
+  holdPoint: {fileID: 7055462120595353160}   # hand_l（盾已挂此处，Q6 决策）
+  allowedTypes: [Shield]
+mainWeaponSlotIndex: 0   （= RightHand）
 ```
 
 <details>

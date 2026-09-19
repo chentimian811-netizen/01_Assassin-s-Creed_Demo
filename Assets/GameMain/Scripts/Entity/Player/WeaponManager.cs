@@ -99,6 +99,13 @@ public class WeaponManager : MonoBehaviour
             // 武器命中盒必须落在 Playehitbox(8)，不能跟角色身体层(Player/Enemy)相同。
             // 否则与自身 CharacterController / 敌友判定搅在一起，命中事件不可靠。
             SetLayerRecursive(targetSlot.currentModel, PlayeHitboxLayer);
+
+            // 命中盒的初始开关状态：武器开着、盾关着。
+            // 【为什么盾必须关】盾会挂到左臂上，若碰撞体全程 enabled，
+            // 走路时盾身刮到敌人就会触发 OnTriggerEnter —— 表现是"走着走着敌人掉血"。
+            // 判定窗口由 MeleeFighter.EnableHitbox / DisableAllHitxboxes 精确开，
+            // 那是阶段 4 的 E_AttackHitbox.Shield 分支，在那之前盾不会造成任何伤害。
+            ApplyInitialColliderState(targetSlot.currentModel, config);
         }
 
         SyncFighterWeapon();
@@ -206,6 +213,28 @@ public class WeaponManager : MonoBehaviour
         foreach (Transform child in obj.transform)
             SetLayerRecursive(child.gameObject, layer);
     }
+
+    /// <summary>
+    /// 装备瞬间统一决定模型上所有碰撞体的初始开关状态。
+    ///
+    /// 为什么要在这里"统一决定"，而不是各管各的：
+    /// 碰撞体默认是开的（Prefab 里如此），于是"盾走路误伤"这类问题取决于
+    /// 谁先跑、谁后跑，属于隐式约定。集中成一处之后，规则是显式的、可测的：
+    ///   武器 → 开（攻击窗口里 MeleeFighter 会直接操作它，初始状态不该是关的）
+    ///   盾   → 关（只允许在盾击判定窗口内开，由后续阶段的 HitboxToUse=Shield 控制）
+    /// </summary>
+    void ApplyInitialColliderState(GameObject model, WeaponConfig config)
+    {
+        if (model == null) return;
+
+        bool enable = config == null || !config.isShield;
+
+        var colliders = model.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null) colliders[i].enabled = enable;
+        }
+    }
     /// <summary>
     /// 切换到指定槽位（供 WeaponSwitcher 调用）
     /// </summary>
@@ -231,6 +260,10 @@ public class WeaponManager : MonoBehaviour
         if(targetConfig != null && weaponSlots[slotIndex].currentModel != null)
         {
             weaponSlots[slotIndex].currentModel.SetActive(true);
+            // 切槽位时同样复位一次碰撞体状态：
+            // MeleeFighter.DisableAllHitxboxes 会关掉它认识的那个命中盒，
+            // 但盾等其他槽位的碰撞体不归它管，状态会残留
+            ApplyInitialColliderState(weaponSlots[slotIndex].currentModel, targetConfig);
         }
 
         meleeFighter?.SetWeapon(weaponSlots[slotIndex].currentModel);

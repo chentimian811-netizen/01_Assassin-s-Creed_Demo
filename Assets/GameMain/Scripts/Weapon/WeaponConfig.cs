@@ -20,6 +20,9 @@ public class WeaponConfig : ScriptableObject
     [Tooltip("是否为远程武器")]
     public bool isRanged = false;
 
+    [Tooltip("是否盾类。走武器通道，但默认碰撞体状态与武器不同（见下）")]
+    public bool isShield = false;
+
     [Tooltip("投射物预制体(箭矢)")]
     public GameObject projectilePrefab;
 

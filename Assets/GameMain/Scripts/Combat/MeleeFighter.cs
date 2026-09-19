@@ -38,6 +38,26 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
 
     SphereCollider leftHandeConllider, rightHandeConllider, leftFootConllider, rightFootConllider;
 
+    [Header("预置命中盒（敌人等没走 WeaponManager 的单位）")]
+    [Tooltip("预置命中盒。留空 = 运行时自动查找（骨骼名 → Hitbox 标签子物体）")]
+    [SerializeField] private BoxCollider preplacedHitbox;
+
+    [Tooltip("【默认关闭】按武器网格顶点自动测量命中盒尺寸。\n" +
+             "⚠️ 目前是**未完成**的实验特性：网格顶点到底活在哪个坐标系里还没查清，\n" +
+             "实测会选错网格、把盒放大到角色体外。开启前请先读\n" +
+             "Moveset_System_Design.md §10 阶段 0.1 里记录的 bindpose 陷阱")]
+    [SerializeField] private bool autoFitWeaponHitbox = false;
+
+    [Tooltip("自动测得的盒长边超过该值即判定测量失败（米）")]
+    [SerializeField] private float autoFitMaxLength = 3f;
+
+    [Tooltip("自动测得的长边超过手工尺寸长边的这个倍数就拒绝（0 = 不检查）。\n" +
+             "防的是\"自动定尺选错网格、把盒放大到角色体外\"这类反向优化")]
+    [SerializeField] private float autoFitMaxOversizeRatio = 1.3f;
+
+    [Tooltip("每次绑定命中盒时输出日志（排查\"敌人砍不掉血\"时打开）")]
+    [SerializeField] private bool logHitboxBinding = false;
+
     public E_AttackState AttackState { get; private set; }
 
     BoxCollider WeaponCollider;
@@ -147,35 +167,409 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         GameEvents.OnEnemyKilled -= HandleEnemyKilled;
     }
 
-    private void Start()
+    void Start()
     {
-        // 敌人等未走 SetWeapon 的单位：自动接上预置武器
-        if (currentWeapon == null)
-        {
-            TryBindPreplacedWeapon();
-        }
-
-        if (currentWeapon != null && WeaponCollider == null)
-        {
-            WeaponCollider = currentWeapon.GetComponent<BoxCollider>();
-        }
+        // 敌人等未走 SetWeapon 的单位：自动接上预置命中盒。
+        // 放在协程里（末尾 yield return null）：命中盒挂在骨骼上，
+        // 必须等 Animator 至少求值过一次，自动测量才量得到正确的骨骼姿态
+        StartCoroutine(BindPreplacedWeaponAtEndOfFrame());
         DisableAllHitxboxes();
     }
 
+    IEnumerator BindPreplacedWeaponAtEndOfFrame()
+    {
+        yield return null;
+
+        if (currentWeapon != null) yield break;
+        TryBindPreplacedWeapon();
+    }
+
+    /// <summary>
+    /// 绑定预置于层级中的武器命中盒。
+    ///
+    /// 原实现只认名字【完全等于 "Sword"】且自带 BoxCollider 的子物体，而
+    /// Enemy.prefab 里的武器叫 Paladin_J_Nordstrom_Sword（SkinnedMeshRenderer，无碰撞体），
+    /// 真正能挂命中盒的骨骼叫 mixamorig:Sword_joint
+    /// → WeaponCollider 恒为 null，敌人攻击永远不掉血。
+    ///
+    /// 现按三级策略查找，任一命中即返回：
+    ///   1. Inspector 上手动指定的 preplacedHitbox（最明确，优先）
+    ///   2. 已知骨骼名精确匹配（Sword_joint 等）：这类物体上常刻意为省事不挂 Tag
+    ///   3. 兜底：任意带 "Hitbox" 标签的子物体（与玩家武器 Prefab 同一套约定）
+    ///
+    /// 全部找不到时只警告、不抛异常：缺命中盒的表现就是"打不掉血"，
+    /// 没有日志的话这条链路完全不可观测（本次修的正是这类静默失败）。
+    /// </summary>
     void TryBindPreplacedWeapon()
     {
-        var transforms = GetComponentsInChildren<Transform>(true);
-        foreach (var t in transforms)
+        // ① Inspector 直接指定
+        if (preplacedHitbox != null)
         {
-            if (t == null || t.name != "Sword") continue;
-            var box = t.GetComponent<BoxCollider>();
-            if (box == null) continue;
-            currentWeapon = t.gameObject;
-            WeaponCollider = box;
-            var rb = t.GetComponent<Rigidbody>();
-            if (rb != null) Destroy(rb);
+            BindPreplacedHitbox(preplacedHitbox.gameObject, preplacedHitbox, "Inspector 指定");
             return;
         }
+
+        var transforms = GetComponentsInChildren<Transform>(true);
+
+        // ② 已知骨骼名。⚠️ 不要改回按 "Sword" 精确匹配：
+        // Enemy.prefab 里叫 "Sword" 的是 SkinnedMeshRenderer 网格节点，
+        // 给它加 BoxCollider 是错的（网格顶点由骨骼驱动，节点自身不动）
+        string[] knownBoneNames = { "Sword_joint", "mixamorig:Sword_joint" };
+        for (int i = 0; i < knownBoneNames.Length; i++)
+        {
+            foreach (var t in transforms)
+            {
+                if (t == null || t.name != knownBoneNames[i]) continue;
+                var box = t.GetComponent<BoxCollider>();
+                if (box == null) continue;
+                BindPreplacedHitbox(t.gameObject, box, "骨骼名匹配");
+                return;
+            }
+        }
+
+        // ③ 兜底：Hitbox 标签
+        foreach (var t in transforms)
+        {
+            if (t == null || !t.CompareTag("Hitbox")) continue;
+            var box = t.GetComponent<BoxCollider>();
+            if (box == null) continue;
+            BindPreplacedHitbox(t.gameObject, box, "Hitbox 标签");
+            return;
+        }
+
+        Debug.LogWarning(
+            "[MeleeFighter] 没找到预置命中盒：本单位的攻击不会造成伤害。\n" +
+            "修法：给武器骨骼（如 mixamorig:Sword_joint）挂一个 IsTrigger 的 BoxCollider，\n" +
+            "并把该物体设到 Enemyhitbox(9) 层、打上 Hitbox 标签，或直接在 Inspector 上指定 preplacedHitbox。", this);
+    }
+
+    /// <summary>接管一个预置命中盒：存档引用、清残留刚体、按需自动定尺、先关掉等开窗</summary>
+    void BindPreplacedHitbox(GameObject hitboxObject, BoxCollider box, string matchedBy)
+    {
+        currentWeapon = hitboxObject;
+        WeaponCollider = box;
+
+        // 命中盒常驻开启 → 走路时剑身刮到玩家就掉血（玩家侧 WeaponManager 有同样的注释）。
+        // 这里统一关掉，由 EnableHitbox / DisableAllHitxboxes 精确开窗
+        box.enabled = false;
+
+        // 残留 Rigidbody 会让 Trigger 检测失效：命中盒变成独立刚体，
+        // 往往打不到目标身上的 CharacterController（玩家侧 WeaponManager 处理的是同一件事）
+        var rb = box.GetComponent<Rigidbody>();
+        if (rb != null) Destroy(rb);
+
+        TryAdoptWeaponMeshFit(box);
+
+        if (logHitboxBinding)
+        {
+            Debug.Log(
+                $"[MeleeFighter] {name} 命中盒已绑定：{hitboxObject.name}（{matchedBy}，" +
+                $"尺寸 {box.size}，中心 {box.center}）", this);
+        }
+    }
+
+    /// <summary>
+    /// 【默认关闭 · 实验性】按武器网格顶点自动测量命中盒尺寸。
+    ///
+    /// 出发点：骨骼上的命中盒尺寸只能靠肉眼试，想用网格顶点把剑身量出来。
+    /// 现状：**没做成**。网格顶点到底活在哪个坐标系里尚未查清 ——
+    /// `bindposes[i].inverse` 并没有给出预期的骨骼局部空间
+    /// （实测身体量出 1.22 米，而角色实际两米多），于是会选错网格、
+    /// 把命中盒放大到角色体外（实测 (2.04, 2.07, 0.41)、中心离骨骼 2.88 米）。
+    ///
+    /// 结论与后续排查方向记在 `Moveset_System_Design.md` §10 阶段 0.1 的实施记录里。
+    /// 当前**正确做法是手工填 preplacedHitbox 的 Size / Center**，并用
+    /// OnDrawGizmosSelected 画的线框在 Scene 里目视校准。
+    ///
+    /// 保留这套代码而不是删掉，是因为候选扫描、防呆、距离判据这几块是对的，
+    /// 一旦坐标系问题查清就能直接接上。
+    /// </summary>
+    void TryAdoptWeaponMeshFit(BoxCollider box)
+    {
+        if (!autoFitWeaponHitbox || box == null) return;
+
+        BoneBoundsMetric metric;
+        if (!TryMeasureWeaponMesh(box.transform, out Bounds local, out metric))
+        {
+            // 自动定尺是可选功能，但它失败的原因必须看得见：
+            // 默认尺寸恰好"看起来合理"时，人不会怀疑它其实一直没生效
+            if (logHitboxBinding)
+            {
+                Debug.LogWarning(
+                    $"[MeleeFighter] {name} 命中盒自动定尺未生效，沿用预制体尺寸。\n原因：{metric.reason}", this);
+            }
+            return;
+        }
+
+        Vector3 size = local.size;
+        float longest = Mathf.Max(size.x, Mathf.Max(size.y, size.z));
+        if (!IsFinite(size) || longest <= 0f || longest > autoFitMaxLength)
+        {
+            Debug.LogWarning(
+                $"[MeleeFighter] {name} 命中盒自动测量结果不合理（局部尺寸 {size}），" +
+                "已放弃自动定尺，沿用预制体上的尺寸。可在 Inspector 手动微调 preplacedHitbox。", this);
+            return;
+        }
+
+        // 反向保护：自动定尺是来**改进**命中盒的，不该把盒放大到角色体外。
+        // 预制体上的手工尺寸是人工确认过的基准，超出它太多就说明这次测量选错了网格
+        Vector3 authored = box.size;
+        float authoredLongest = Mathf.Max(authored.x, Mathf.Max(authored.y, authored.z));
+        if (autoFitMaxOversizeRatio > 0f && authoredLongest > 0f
+            && longest > authoredLongest * autoFitMaxOversizeRatio)
+        {
+            Debug.LogWarning(
+                $"[MeleeFighter] {name} 命中盒自动测得的长边 {longest:F2} 米，" +
+                $"是预制体手工尺寸 {authoredLongest:F2} 米的 {longest / authoredLongest:F2} 倍，" +
+                "判定为选错网格，沿用预制体尺寸。\n" +
+                $"（{metric.reason}）", this);
+            return;
+        }
+
+        box.size = size;
+        box.center = local.center;
+
+        if (logHitboxBinding)
+        {
+            // ⚠️ 不能写 {metric.meshLongest:F2}：UnityEngine.Vector3 没实现 IFormattable，
+            // 但 float 实现了 —— 这里只是拼字符串，用 ToString("F2") 更稳
+            Debug.Log(
+                $"[MeleeFighter] {name} 命中盒已按武器网格定尺：{size}，中心 {local.center}" +
+                $"（{metric.reason}，该网格自身长边 {metric.meshLongest.ToString("F2")}）", this);
+        }
+    }
+
+    /// <summary>自动定尺的诊断信息。失败原因要能直接读出来，而不是靠猜</summary>
+    struct BoneBoundsMetric
+    {
+        /// <summary>失败原因 / 成功时的测量路径</summary>
+        public string reason;
+
+        /// <summary>被选中网格自身的 AABB 长边（成功时有效，用于判断量出来的盒是否离谱）</summary>
+        public float meshLongest;
+    }
+
+    /// <summary>
+    /// 在骨骼所属的模型里挑出"蒙皮到该骨骼的那个网格"，并量出顶点在骨骼局部空间下的包围盒。
+    ///
+    /// ⚠️ 不能从骨骼往下找（bone.GetComponentInChildren&lt;SkinnedMeshRenderer&gt;）：
+    /// Enemy.prefab 的层级是
+    ///     Paladin WProp J Nordstrom
+    ///     ├── mixamorig:Hips → … → mixamorig:Sword_joint   （骨骼，本身是空物体）
+    ///     └── Paladin_J_Nordstrom_Sword                     （网格，骨骼的**兄弟节点**）
+    /// 骨骼出现在网格的 m_Bones 里，只代表"网格蒙皮到它"，不代表网格是它的子物体。
+    ///
+    /// 所以改为**从模型根扫描全部候选网格**，逐个用 bindpose 的逆矩阵把该网格的顶点
+    /// 搬进骨骼局部空间量一遍，再用防呆规则（点云不可能比网格自身轴对齐盒还大）
+    /// 筛掉"没蒙皮到这个骨骼"的网格，最后取体积最小的那个。
+    /// 但"体积最小"单独用会被骗：盾/头盔这类**刚性挂件**在骨骼空间里会塌成一个小点
+    /// （它们虽然声明蒙皮到这个骨骼，实际不跟着动），体积比剑还小，位置却离骨骼好几米。
+    /// 所以再加一条距离防呆：命中盒中心到骨骼原点的距离不该显著超过盒子自身尺寸 ——
+    /// 剑是握在手上的，它的包围盒中心必然贴着骨骼。
+    /// </summary>
+    static bool TryMeasureWeaponMesh(Transform bone, out Bounds best, out BoneBoundsMetric metric)
+    {
+        best = default;
+        metric = default;
+
+        Transform modelRoot = FindModelRoot(bone);
+        if (modelRoot == null)
+        {
+            metric.reason = "找不到模型根（骨骼上方没有 Animator 或 SkinnedMeshRenderer）";
+            return false;
+        }
+
+        var renderers = modelRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        if (renderers == null || renderers.Length == 0)
+        {
+            metric.reason = $"{modelRoot.name} 下没有任何 SkinnedMeshRenderer";
+            return false;
+        }
+
+        var report = new List<string>();
+        int accepted = 0;
+        float bestVolume = float.MaxValue;
+        float bestMeshLongest = 0f;
+        string bestName = null;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Mesh mesh = renderers[i].sharedMesh;
+            string meshName = mesh != null ? mesh.name : renderers[i].name;
+            if (mesh == null)
+            {
+                report.Add($"{meshName}: sharedMesh 为空");
+                continue;
+            }
+
+            // 网格自身的 AABB 与顶点无关、永远可读，是"这个网格多大"的旁证，
+            // 也是判断顶点测量结果是否跑偏的基准
+            Vector3 meshSize = mesh.bounds.size;
+            float meshLongest = Mathf.Max(meshSize.x, Mathf.Max(meshSize.y, meshSize.z));
+
+            if (!mesh.isReadable)
+            {
+                report.Add($"{meshName}: 未勾选 Read/Write");
+                continue;
+            }
+
+            if (!TryMeasureMeshInBoneSpace(renderers[i], bone, modelRoot, out Bounds local,
+                    out float boneLongest, out string failReason))
+            {
+                report.Add($"{meshName}: {failReason}");
+                continue;
+            }
+
+            // 距离防呆：盒中心离骨骼太远 = 这个网格不是握在手上的东西
+            float centerDistance = local.center.magnitude;
+            if (centerDistance > boneLongest * 2f)
+            {
+                report.Add(
+                    $"{meshName}: 测得 {local.size}，但中心离骨骼 {centerDistance:F2} 米" +
+                    "（远超盒自身尺寸，不是握持物）");
+                continue;
+            }
+
+            accepted++;
+            report.Add($"{meshName}: 测得 {local.size}，中心距骨骼 {centerDistance:F2} 米 ← 候选");
+
+            float volume = local.size.x * local.size.y * local.size.z;
+            if (volume < bestVolume)
+            {
+                bestVolume = volume;
+                best = local;
+                bestMeshLongest = meshLongest;
+                bestName = meshName;
+            }
+        }
+
+        string detail = string.Join("；", report);
+
+        if (accepted == 0)
+        {
+            metric.reason = $"没有网格能作为 {bone.name} 的握持物（逐个候选：{detail}）";
+            return false;
+        }
+
+        metric.meshLongest = bestMeshLongest;
+        metric.reason = $"bindpose 路线，{accepted} 个候选里取体积最小者 {bestName}（全部候选：{detail}）";
+        return true;
+    }
+
+    /// <summary>单个网格：顶点 → 骨骼局部空间的包围盒。失败原因写进 failReason</summary>
+    static bool TryMeasureMeshInBoneSpace(SkinnedMeshRenderer smr, Transform bone, Transform modelRoot,
+        out Bounds local, out float boneLongest, out string failReason)
+    {
+        local = default;
+        boneLongest = 0f;
+        failReason = null;
+
+        Mesh mesh = smr.sharedMesh;
+        if (mesh == null)
+        {
+            failReason = "sharedMesh 为空";
+            return false;
+        }
+
+        Vector3[] vertices = mesh.vertices;
+        if (vertices == null || vertices.Length < 3)
+        {
+            failReason = "顶点数不足";
+            return false;
+        }
+
+        int boneIndex = IndexOfBone(smr, bone);
+
+        Matrix4x4 meshToBone;
+        if (boneIndex >= 0 && mesh.bindposes != null && boneIndex < mesh.bindposes.Length)
+        {
+            // 蒙皮公式就是 bone.localToWorldMatrix * bindpose * vertex，
+            // 所以 bindpose 的逆矩阵正好把网格顶点搬到骨骼局部空间 —— 精确
+            meshToBone = mesh.bindposes[boneIndex].inverse;
+        }
+        else if (bone.IsChildOf(modelRoot))
+        {
+            // 退化路线：网格顶点本来就写在模型根空间时（道具网格常见）同样正确。
+            // 骨骼不在 SkinnedMeshRenderer.bones 里时才走这里
+            var path = new List<string>();
+            for (Transform t = bone; t != null && t != modelRoot; t = t.parent) path.Add(t.name);
+            if (path.Count == 0)
+            {
+                failReason = "骨骼不在 bones 列表里，也拼不出到模型根的路径";
+                return false;
+            }
+            path.Reverse();
+
+            Transform boneInModelSpace = modelRoot.Find(string.Join("/", path));
+            if (boneInModelSpace == null)
+            {
+                failReason = "骨骼不在 bones 列表里，且在模型根下找不到同名路径";
+                return false;
+            }
+            meshToBone = boneInModelSpace.worldToLocalMatrix;
+        }
+        else
+        {
+            failReason = "骨骼既不在 bones 列表里，也不在模型根层级下";
+            return false;
+        }
+
+        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 v = meshToBone.MultiplyPoint3x4(vertices[i]);
+            min = Vector3.Min(min, v);
+            max = Vector3.Max(max, v);
+        }
+
+        local = new Bounds((min + max) * 0.5f, max - min);
+
+        // 防呆：点云不可能比网格自身的轴对齐盒更大（旋转不改变点集直径）。
+        // 超了说明这个网格根本没蒙皮到这个骨骼 —— 比如拿头盔的 bindpose 去搬头盔顶点，
+        // 或者剑的 bindpose 在身体网格里指向的是"整具身体"。这类候选必须剔除，
+        // 否则命中盒会被放大成一个人那么大（"隔着半个屏幕被打"）
+        boneLongest = Mathf.Max(local.size.x, Mathf.Max(local.size.y, local.size.z));
+        Vector3 meshSize = mesh.bounds.size;
+        float meshLongest = Mathf.Max(meshSize.x, Mathf.Max(meshSize.y, meshSize.z));
+        if (boneLongest > meshLongest * 2f)
+        {
+            failReason = $"测得 {local.size} 超过网格自身尺寸 {meshSize} 的两倍（未蒙皮到该骨骼）";
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>沿父链找模型根：优先 Animator 所在节点（Avatar 的根），退化时找 SkinnedMeshRenderer 宿主</summary>
+    static Transform FindModelRoot(Transform from)
+    {
+        Transform fallback = null;
+        for (Transform t = from; t != null; t = t.parent)
+        {
+            if (t.GetComponent<Animator>() != null) return t;
+            if (fallback == null && t.GetComponent<SkinnedMeshRenderer>() != null) fallback = t;
+        }
+        return fallback;
+    }
+
+    /// <summary>骨骼在 SkinnedMeshRenderer.bones 里的下标（找不到返回 -1）</summary>
+    static int IndexOfBone(SkinnedMeshRenderer smr, Transform bone)
+    {
+        Transform[] bones = smr.bones;
+        if (bones == null) return -1;
+
+        for (int i = 0; i < bones.Length; i++)
+        {
+            if (bones[i] == bone) return i;
+        }
+        return -1;
+    }
+
+    static bool IsFinite(Vector3 v)
+    {
+        return !float.IsNaN(v.x) && !float.IsNaN(v.y) && !float.IsNaN(v.z)
+            && !float.IsInfinity(v.x) && !float.IsInfinity(v.y) && !float.IsInfinity(v.z);
     }
 
     public void SetWeapon(GameObject newWeapon)
@@ -196,7 +590,12 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     public void SetWeaponConfig(WeaponConfig config)
     {
         currentWeapConfig = config;
-        if(config != null && config.animOverride != null)
+
+        // ⚠️ 已知语义偏差（本阶段 0.1 不动它，见 Moveset_System_Design.md §1.3 / §10 阶段 2.4）：
+        // animOverride 是个【动画覆盖器】却被当成【整个控制器】直接赋值。
+        // 改走 MovesetResolver + "参数快照 → 赋值 → 等一帧 → 回灌" 是阶段 2 的任务，
+        // 现在动它会把跑步/翻滚中的动画打断，且没有替代链路
+        if (config != null && config.animOverride != null)
         {
             animator.runtimeAnimatorController = config.animOverride;
         }
@@ -532,6 +931,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
 
     void EnableHitbox(AttackData attack)
     {
+        // 每次开窗前重新取一次：装备/切换武器后可能已经换了一个碰撞体
         if (WeaponCollider == null && currentWeapon != null)
             WeaponCollider = currentWeapon.GetComponent<BoxCollider>();
 
@@ -550,7 +950,8 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
                 if(rightFootConllider != null) rightFootConllider.enabled = true;
                 break;
             case E_AttackHitbox.Weapon:
-                if (rightHandeConllider != null) rightHandeConllider.enabled = true;
+                // ⚠️ 这一段以前会把右手 SphereCollider 也一起打开。手部判定是"拳/掌"用的，
+                // 剑招开手部判定等于凭空多出一个贴身判定盒 —— 现在只开武器盒
                 if (WeaponCollider != null) WeaponCollider.enabled = true;
                 break;
             default:
@@ -574,4 +975,24 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     public void SetUpgradeLevel(int level) => upgradeLevel = level;
 
     public void SetWeaponID(int id) => weaponID = id;
+
+    /// <summary>
+    /// 选中本物体时画出武器命中盒。
+    ///
+    /// 为什么值得为这一个盒子写 Gizmos：命中盒的尺寸与朝向只能靠肉眼确认，
+    /// 而它平时是 disabled 的（只在判定窗口内开），Scene 里根本看不到 ——
+    /// "敌人挥剑却打不到人"这类问题没有可视化就只能靠猜。
+    /// 黄色 = 判定窗口已开，灰色 = 当前关闭（正常待机状态）。
+    /// </summary>
+    private void OnDrawGizmosSelected()
+    {
+        if (WeaponCollider == null) return;
+
+        Gizmos.color = WeaponCollider.enabled
+            ? new Color(1f, 0.85f, 0.1f, 0.9f)
+            : new Color(0.6f, 0.6f, 0.6f, 0.5f);
+
+        Gizmos.matrix = WeaponCollider.transform.localToWorldMatrix;
+        Gizmos.DrawWireCube(WeaponCollider.center, WeaponCollider.size);
+    }
 }

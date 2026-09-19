@@ -1,15 +1,19 @@
 # 动作集系统设计与实施计划（Moveset System）
 
 > 类魂战斗动作集 / 左右手双持 —— 简化版埃尔登法环动作框架
+>
+> **📋 施工入口**：按顺序动手请看 **`Moveset_Implementation_Steps.md`**（分步实施计划，可执行版）。
+> 本文回答"为什么这样设计"，那份回答"现在按什么顺序改哪个文件、怎么验证"。
 
 | 项目 | 内容 |
 |---|---|
-| 文档版本 | v1.1（v1.0 完成后，回填了 CBTFM 框架两份深度分析的结论） |
+| 文档版本 | v1.3（订正玩家资产为 `Male.prefab`；新增 §2.1.1 实施进度总览、§12.1 真实骨架） |
 | 目标项目 | `01_Assassin's Creed_Demo`（Unity 2022.3.62f2c1） |
 | 唯一场景 | `Assets/GameMain/Scenes/TestScene.unity` |
+| **玩家资产** | **`Assets/GameMain/Entities/Player/Male.prefab`**（骨架 = `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`，`hand_l` / `lowerarm_l` 命名）。⚠️ `Player.prefab` 是**弃用的旧资产**，见 §12.1 |
 | 参考框架 | `C:\Unity\CBTFM`（Combat System，第三方战斗框架，仅作模式借鉴） |
 | 参考作品 | Elden Ring / Dark Souls III（FromSoftware） |
-| 文档状态 | 待评审 → 批准后按 §10 路线图实施 |
+| 文档状态 | 已批准 → **阶段 0 已完成**（0.1 已验收 / 0.2 代码就绪），**下一步阶段 1（双槽地基）**。<br>进度快照看 **§2.1.1** |
 
 ---
 
@@ -59,17 +63,22 @@
 
 ### 1.3 现状差距
 
-| 现状 | 位置 | 差距 |
-|---|---|---|
-| `PlayerMove.controller` 单套动作 | `Assets/GameMain/Scripts/Entity/Player/Animations/` | 无动作集概念 |
-| `CombatMode`(bool) 参数已声明但无 C# 写入 | `PlayerMove.controller` | 未接线；本期不使用（见 §3.3） |
-| `WeaponConfig.animOverride` 直接替换整个 controller | `MeleeFighter.cs:196~207` | 语义错误：攻击 clip 覆盖器被当成整个控制器用 |
-| 两个武器槽指向**同一个**挂点，且名字都叫 `MainHand` | `Player.prefab:4313~4326` | 无左手位，双持无从谈起 |
-| `WeaponSlot.allowedType` 为单值枚举 | `WeaponSlot.cs:10` | 一个槽只能接受一种武器类型 |
-| 连招链是"整角色一条" | `MeleeFighter.cs:23` (`List<AttackData> attacks`) | 无法表达"左手攻击链 ≠ 右手攻击链" |
-| 敌人**没有可用命中盒** | `MeleeFighter.TryBindPreplacedWeapon()` | 敌人攻击不掉血，战斗无法验证（见 §4.1） |
-| 格挡 / 弹反未实现 | `PlayerController.GetBlockInput()` 为空，`ParrySystem` 未接线 | 盾无防御价值 |
-| 精力未与格挡/受击挂钩 | `StaminaConfig.heavyAttackCost` 无调用方 | 防御无代价，战斗节奏不成立 |
+| 现状 | 位置 | 差距 | 状态 |
+|---|---|---|---|
+| `PlayerMove.controller` 单套动作 | `Assets/GameMain/Scripts/Entity/Player/Animations/` | 无动作集概念 | 阶段 3 |
+| `CombatMode`(bool) 参数已声明但无 C# 写入 | `PlayerMove.controller` | 未接线；本期不使用（见 §3.3） | 决策：保持 |
+| `WeaponConfig.animOverride` 直接替换整个 controller | `MeleeFighter.SetWeaponConfig` | 语义错误：攻击 clip 覆盖器被当成整个控制器用 | 阶段 2.4 |
+| 两个武器槽指向**同一个**挂点 | **`Male.prefab`**（`hand_l`，fileID `1176333465599525210`） | 无左手位，双持无从谈起 | 阶段 1.3 |
+| `WeaponSlot.allowedType` 为单值枚举 | `WeaponSlot.cs` | 一个槽只能接受一种武器类型 | 阶段 1.2 |
+| 连招链是"整角色一条" | `MeleeFighter` 的 `List<AttackData> attacks` | 无法表达"左手攻击链 ≠ 右手攻击链" | 阶段 4.1 |
+| 敌人**没有可用命中盒** | `MeleeFighter.TryBindPreplacedWeapon()` | —— | ✅ **阶段 0.1 已修**（方案 C，见 §10） |
+| 盾的碰撞体常驻开启 | `Male.prefab` 的 `SkelMesh_RoundShield` | 盾走的是手工挂载，`ApplyInitialColliderState` 覆盖不到它 | ⚠️ 阶段 0.2，**实测待补** |
+| 盾模型没有可用的预制体 | 只有裸 FBX，无碰撞体、无预制体包装 | `WeaponConfig.weaponPrefab` 无资产可指 | ⚠️ 新增缺口，见 §12.2 |
+| 格挡 / 弹反未实现 | `PlayerController.GetBlockInput()` 为空，`ParrySystem` 未接线 | 盾无防御价值 | 阶段 5 |
+| 精力未与格挡/受击挂钩 | `StaminaConfig.heavyAttackCost` 无调用方 | 防御无代价，战斗节奏不成立 | 阶段 5 |
+
+> ⚠️ **路径订正**：原文此表把玩家资产写成 `Player.prefab:4313~4326`。
+> **那是弃用的旧资产**，真正的玩家是 `Male.prefab`（见 §12.1）。原文其余引用已在 v1.3 一并订正。
 
 ---
 
@@ -82,6 +91,38 @@
 3. **动作槽位命名标准化**：Layer1 状态重命名为中立名，两套动作集共用同一份 C# 代码。
 4. **左手攻击通道**：左手（盾击）有独立连招链与独立输入。
 5. **举盾**：播格挡动画（本期只做表现，不做判定）。
+
+### 2.1.1 实施进度总览（v1.3 快照）
+
+> 这一节是全文状态的单一入口。**下方各章节的设计文字保留原始形态**（作为当初的决策依据），
+> 实际是否落地、落地到什么程度，一律以本表和 §10 的实施记录为准。
+
+| 阶段 | 状态 | 产出 | 卡在哪 |
+|---|---|---|---|
+| **0.1** 敌人命中盒 | ✅ **已验收** | `Enemy.prefab`（`mixamorig:Sword_joint` 挂 `BoxCollider`）、`MeleeFighter.cs` | — |
+| **0.2** 盾碰撞体默认关闭 | ⚠️ 代码已就绪，**实测待补** | `WeaponConfig.isShield`、`WeaponManager.ApplyInitialColliderState` | 盾还没走装备链路，`ApplyInitialColliderState` 覆盖不到手工挂的盾 |
+| **1.1** `E_WeaponType` 加 `Shield` | ✅ **已完成** | `WeaponType.cs` | — |
+| **1.2** `WeaponSlot.allowedTypes` 改数组 | ⬜ 未开始 | `WeaponSlot.cs` | — |
+| **1.3** 左手挂点 + 两槽改名 | ⬜ 未开始 | `Male.prefab` | 骨架/挂点 fileID 已勘定，见 §12.1 |
+| **1.4** 双持约束 + 目标槽优先 | ⬜ 未开始 | `WeaponManager.cs` | — |
+| **1.5** `Item.txt` 编码 + 盾行 | ⬜ 未开始 | `Resources/DataTables/Item.txt` | 原文件是 **GBK**，转换需逐行校对 |
+| **2** 动作集路由骨架 | ⬜ 未开始 | `MovesetConfig` / `MovesetResolver` / `PlayerAnimationSet` | — |
+| **3** 三个覆盖器落地 | ⬜ 未开始 | `.overrideController` ×3 | 依赖 3.0 状态重命名 |
+| **4** 左手攻击通道 | ⬜ 未开始 | `MeleeFighter.cs` / `AttackData.cs` / 输入 | — |
+| **5** 举盾 + 格挡判定 + 精力 | ⬜ 未开始 | 控制器 + `ParrySystem` | — |
+| **6** 弹反 + 处决 | ⬜ 未开始 | — | 资产现成 |
+
+**已完成落地的文件清单（阶段 0 + 1.1）**：
+
+| 文件 | 改动 | 状态 |
+|---|---|---|
+| `Assets/GameMain/Entities/Enemy/Enemy.prefab` | `mixamorig:Sword_joint` 加 `BoxCollider`（IsTrigger / `enabled: 0`）+ `Hitbox` 标签 + `Enemyhitbox(9)` 层；`MeleeFighter` 的 `preplacedHitbox` 显式指向它 | ✅ |
+| `Assets/GameMain/Scripts/Combat/MeleeFighter.cs` | 命中盒三级查找 + 失败可见化 + Gizmos；`Weapon` 分支不再误开手部盒；自动定尺（默认关闭的实验特性） | ✅ |
+| `Assets/Art/Models/Characters/Enemy/Paladin WProp J Nordstrom.fbx.meta` | `isReadable: 0 → 1` | ✅ |
+| `Assets/GameMain/Scripts/Weapon/WeaponType.cs` | 末尾追加 `Shield`（值 = 5） | ✅ 阶段 1.1 |
+| `Assets/GameMain/Scripts/Weapon/WeaponConfig.cs` | 新增 `isShield` | ✅ |
+| `Assets/GameMain/Scripts/Entity/Player/WeaponManager.cs` | 新增 `ApplyInitialColliderState`，`EquipWeapon` / `SwitchToSlot` 两处调用 | ✅ |
+| `Assets/GameMain/Entities/Player/Male.prefab` | 手工挂载圆盾到 `hand_l`：Layer 8 / Tag `Hitbox` / `BoxCollider`(IsTrigger) / 移除空 Animator | ✅（用户操作） |
 
 ### 2.2 明确不做（Out of Scope）
 
@@ -193,7 +234,7 @@ SwordAndShield.overrideController
 
 ## 4. 前置阻塞项（必须先解决）
 
-### 4.1 🔴 P0：敌人没有可用的命中盒
+### 4.1 ✅ 已解除（阶段 0.1）：敌人没有可用的命中盒
 
 **现象**：敌人攻击不掉玩家血。
 
@@ -203,6 +244,10 @@ SwordAndShield.overrideController
 → `WeaponCollider` 恒为 `null`。
 
 **影响**：**"剑砍中敌人""盾挡住敌人"全部无法验证**。这是整个战斗系统的黑洞。
+
+> **✅ 状态：已按方案 C 解除，验收通过**（敌人攻击玩家 → 掉血）。
+> 实施记录、自动定尺的未完成项、以及两个踩过的坑，都在 §10 阶段 0.1 里。
+> 下方四条路线的评估保留原文，作为当初的决策依据。
 
 **方案（四条路线）**：
 
@@ -264,6 +309,10 @@ RaycastHit[] hits = Physics.CapsuleCastAll
 
 ### 4.2 🔴 P0：盾牌碰撞体的误伤风险
 
+> **✅ 状态：代码已完成（阶段 0.2）** —— `WeaponManager.ApplyInitialColliderState` 在装备/切槽位时
+> 统一把盾的碰撞体设为 `enabled = false`。**但"走动不误伤"这条验收待盾内容到位后才能实测**
+> （项目内目前无盾 Prefab / 无 `ShieldConfig.asset`）。详见 §10 阶段 0.2。
+
 `WeaponManager.EquipWeapon` 会把武器模型整个设为 `Playehitbox(8)` 层。
 盾挂到左臂后：
 
@@ -284,24 +333,40 @@ RaycastHit[] hits = Physics.CapsuleCastAll
 
 ### 5.1 枚举扩展
 
+**实际现状**（`Assets/GameMain/Scripts/Weapon/WeaponType.cs`，v1.3 核对）：
+
 ```csharp
-// Assets/GameMain/Scripts/Weapon/WeaponType.cs
 public enum E_WeaponType
 {
-    Unarmed,    // 空手（对应 FS 的 a00 动作集）
-    Sword,
-    Dagger,
-    Axe,
-    Bow,
-    Staff,
-    Shield,     // 新增：盾。不是武器但走武器通道
+    Sword,      // 0
+    Dagger,     // 1
+    Axe,        // 2
+    Bow,        // 3
+    Staff,      // 4
+}
+```
+
+> ⚠️ **文档原文在此处写错过一次**：原方案把枚举列成 `Unarmed, Sword, Dagger, Axe, Bow, Staff`（6 值，含 `Unarmed`）。
+> **实际代码里没有 `Unarmed`** —— `Sword` 就是 0。这个偏差会导致"追加值为 6"的错误结论，
+> 已订正。空手的表达方式见 §2.5 的 `WeaponConfig.isUnarmed`，**不占用 `E_WeaponType` 的值**。
+
+**目标**（阶段 1.1）：只在**末尾**追加 `Shield`，保证已有整数索引不变：
+
+```csharp
+public enum E_WeaponType
+{
+    Sword,      // 0
+    Dagger,     // 1
+    Axe,        // 2
+    Bow,        // 3
+    Staff,      // 4
+    Shield,     // 5  ← 新增：盾。不是武器但走武器通道
 }
 ```
 
 > ⚠️ **连带影响**：`Resources/DataTables/Item.txt` 的 `WeaponType` 列是整数。
-> 实测现有数据：`10001=0(Sword)`、`10002=1`、`10003=1`、`10004=3`、`10007=2`、食物行=`-1`。
-> **新增枚举值必须追加在末尾**，否则语义整体偏移。
-> 详见 §6.1 的数据订正。
+> 实测现有数据：`10001=0(Sword)`、`10002=1(Dagger)`、`10003=1(Dagger)`、`10004=3(Bow)`、`10007=2(Axe)`、食物行=`-1`。
+> **新增枚举值必须追加在末尾**（= 5），否则语义整体偏移。详见 §6.1 的数据订正。
 
 ```csharp
 // Assets/GameMain/Scripts/Weapon/MovesetType.cs（新建）
@@ -316,6 +381,16 @@ public enum E_MovesetType
 
 ### 5.2 `WeaponConfig` 扩展
 
+> **实施状态（v1.3）**：下表中**只有 `isShield` 已落地**（阶段 0.2 需要它来区分盾与武器）。
+> 其余 5 个字段随阶段 1 / 阶段 5 一起加，不必提前。
+
+| 字段 | 落地阶段 | 状态 |
+|---|---|---|
+| `isShield` | 0.2 | ✅ **已实现** |
+| `movesetCategory` | 1.1（配合 `E_WeaponType.Shield`） | ⬜ |
+| `isUnarmed` | 2.5（空手配置注入） | ⬜ |
+| `guardAbsorption` / `guardStaminaCost` / `guardBreakPoise` | 5.2 / 5.3 | ⬜ |
+
 ```csharp
 // Assets/GameMain/Scripts/Weapon/WeaponConfig.cs（在现有类上追加）
 [Header("动作集归属")]
@@ -325,7 +400,7 @@ public E_WeaponType movesetCategory = E_WeaponType.Sword;
 [Tooltip("是否为空手占位配置。空手不产生模型，不参与 id/等级通道")]
 public bool isUnarmed = false;
 
-[Tooltip("是否盾类。盾的默认碰撞体状态与武器不同")]
+[Tooltip("是否盾类。盾的默认碰撞体状态与武器不同")]   // ← ✅ 唯一已落地的字段
 public bool isShield = false;
 
 [Header("盾牌参数（isShield = true 时生效）")]
@@ -391,10 +466,17 @@ public class MovesetConfig : ScriptableObject
 
 **新增盾牌行（示例，ID 待定）**：
 
+```text
+	10008	3	5	0	0	3	Round Shield	...	...	Sprites/UI/Weapon/shield_01	Item_RoundShield
+列序：                ↑Type=3   ↑WeaponType=5(Shield)   ↑BaseDamage=0
 ```
-	10008	3	6	0	0	3	Round Shield	...	...	Sprites/UI/Weapon/shield_01	Item_RoundShield
-#        ↑Type=3  ↑WeaponType=6(Shield)  ↑BaseDamage=0
-```
+
+> ⚠️ `WeaponType` 填 **5**（不是 6）—— 因为实际枚举没有 `Unarmed`，`Shield` 追加后是第 6 个值、**下标 5**。
+> 本文早先把枚举列成含 `Unarmed` 的 6 值，那个版本会让这里填错。已订正，详见 §5.1。
+
+> ✅ **编码问题已排除**：原文说"`Item.txt` 是 GBK，按 UTF-8 读会失败"。
+> **实测不成立** —— 该文件主体是纯 ASCII（首字节 `23 09 49 64` = `#\tId`），
+> 只有个别中文标点。`TSVParser` 按 UTF-8 读不会失败，**不需要编码转换**。
 
 > 盾的 `BaseDamage = 0`，伤害全部来自其 `AttackData.DamageMultiplier`（盾击有伤害，但基础值为 0）。
 
@@ -406,7 +488,7 @@ public class MovesetConfig : ScriptableObject
 public class WeaponSlot
 {
     public string slotName;                    // "RightHand" / "LeftHand"
-    public Transform holdPoint;                // 右手: J_Bip_R_Hand  左手: J_Bip_L_Forearm
+    public Transform holdPoint;                // 右手: hand_r  左手: 挂在 lowerarm_l 下
     public E_WeaponType[] allowedTypes;        // ← 由单值改为数组
 
     [HideInInspector] public WeaponConfig currentConfig;
@@ -423,9 +505,28 @@ public class WeaponSlot
 }
 ```
 
-### 6.3 `Player.prefab` 改造
+### 6.3 玩家资产改造（`Male.prefab`，**不是** `Player.prefab`）
 
-**现状（`Player.prefab:4313~4326`）—— 两个槽指向同一挂点**：
+> ⚠️ **本节标题在 v1.3 订正**：原文写的是 `Player.prefab`，那是**弃用的旧资产**。
+> 真正的玩家是 `Assets/GameMain/Entities/Player/Male.prefab`，骨架为
+> `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`（`hand_l` / `lowerarm_l` 命名）。
+> 下方"现状"引用的 `Player.prefab:4313~4326` 同理作废 —— 完整勘定见 §12.1。
+
+**真实现状（`Male.prefab`）—— 两个槽指向同一挂点**：
+
+```yaml
+weaponSlots:
+- slotName: MainHand
+  holdPoint: {fileID: 1176333465599525210}   # = Skin_1_4 的 hand_l
+  allowedType: 0                             # Sword
+- slotName: AxeHand
+  holdPoint: {fileID: 1176333465599525210}   # ← 同一个挂点！
+  allowedType: 2                             # Axe
+mainWeaponSlotIndex: 0
+```
+
+<details>
+<summary>旧资产 <code>Player.prefab</code> 的原始记录（保留备查，勿再引用）</summary>
 
 ```yaml
 weaponSlots:
@@ -438,21 +539,31 @@ weaponSlots:
 mainWeaponSlotIndex: 0
 ```
 
+</details>
+
 **目标结构**：
 
 ```
 weaponSlots:
 - slotName: RightHand
-  holdPoint: J_Bip_R_Hand
+  holdPoint: hand_r                  ← Skin_1_4 的 right hand 骨骼
   allowedTypes: [Sword, Dagger, Axe, Shield]
 - slotName: LeftHand
-  holdPoint: J_Bip_L_Forearm        ← 新建空物体，父级设 J_Bip_L_Forearm
+  holdPoint: 新建空物体，父级设 lowerarm_l（左小臂）
   allowedTypes: [Shield, Sword]
 mainWeaponSlotIndex: 0   （= RightHand）
 ```
 
 > 盾挂 **左小臂** 而非左手掌，更接近真实持盾姿势；具体位置需在 Play 里对着
 > `SwordAndShield_Block_Loop` 调整。
+>
+> **⚠️ Q6 已有一半答案**：用户已把圆盾手工挂在 **`hand_l`（左手掌）** 上并调好了
+> `Position (-0.02, -0.033, 0)` / `Rotation (71.275, -94.847, -81.633)`。
+> 阶段 1.3 要么把这个数值迁到 `lowerarm_l` 挂点重新校准，要么就地改用左手掌 ——
+> 需在 Play 里对着格挡动画二选一。
+>
+> 新增挂点时注意：`holdPoint` 是**跨 prefab 的 stripped Transform**
+> （`m_CorrespondingSourceObject` 指回 `Skin_1_4.prefab`），不能凭名字找。
 
 ### 6.4 装备规则（两个必须实现的约束）
 
@@ -776,12 +887,101 @@ CBTFM 把这件事做到了工业级（`BlendData.m_BlendCurve` / `RootMotionDat
 
 ### 阶段 0：解除阻塞 🔴
 
-| 任务 | 产出 | 验收 |
+| 任务 | 产出 | 验收 | 状态 |
+|---|---|---|---|
+| 0.1 修敌人命中盒 | `Enemy.prefab` + `MeleeFighter` 改造 | 敌人攻击玩家，玩家掉血 | ✅ **已验收** |
+| 0.2 盾碰撞体默认关闭 | 盾 `BoxCollider.enabled = false` | 走动不误伤 | ⚠️ 代码完成，**待盾内容到位后补验** |
+
+**0.1 实施记录（方案 C · ✅ 已完成）**：
+
+| 改动 | 位置 | 内容 |
 |---|---|---|
-| 0.1 修敌人命中盒 | `Enemy.prefab` + `MeleeFighter` 改造 | 敌人攻击玩家，玩家掉血 |
-| 0.2 盾碰撞体默认关闭 | 盾 `BoxCollider.enabled = false` | 走动不误伤 |
+| 命中盒 | `Enemy.prefab` → `mixamorig:Sword_joint` | 新增 `BoxCollider`（`IsTrigger`，`enabled = 0`）+ `Hitbox` 标签 + `Enemyhitbox(9)` 层；`Size (1.6, 0.1, 0.1)`、`Center (0.8, 0, 0)` |
+| 绑定逻辑 | `MeleeFighter.TryBindPreplacedWeapon` | 三级查找：`preplacedHitbox`(Inspector) → 骨骼名 → `Hitbox` 标签；全部落空时 `LogWarning`（原实现只认名字 `Sword`，静默返回 null） |
+| 可视化 | `MeleeFighter.OnDrawGizmosSelected` | 画出命中盒（黄=判定窗口已开，灰=待机）。命中盒平时是 disabled 的，Scene 里根本看不到，这是唯一能确认朝向/尺寸的手段 |
+| 顺带修正 | `MeleeFighter.EnableHitbox` | `Weapon` 分支不再同时打开右手 `SphereCollider`（剑招不该带贴身判定盒） |
+| 导入设置 | `Paladin WProp J Nordstrom.fbx.meta` | `isReadable: 0 → 1`（自动定尺要读顶点；见下方"未完成项"） |
+
+**验收结果**：✅ 敌人攻击玩家 → 玩家掉血（每刀 5 点，`Health.maxHealth = 25`）。
+
+> **伤害数值 5 是兜底值**：`Enemy.prefab` 的 `weaponID = -1`，所以 `DamageRouter.ResolveAmount`
+> 落到 `FallbackBaseDamage = 5`。**不是 bug**，但意味着敌人伤害目前无法用数据表配置 ——
+> 要调它得走阶段 1.5（`Item.txt` 订正）并给敌人配上 `weaponID`。
+
+> **⚠️ 未完成项：自动定尺（`autoFitWeaponHitbox`，默认已关闭）**
+>
+> 动机是把"肉眼试命中盒尺寸"变成"从武器网格顶点量出来"。**没做成**，已默认关闭，
+> 当前正确做法是**手工填 `Size` / `Center`** 并用 Gizmos 目视校准。
+>
+> 已确认的事实：
+>
+> | 观察 | 数值 | 说明 |
+> |---|---|---|
+> | 身体网格在 `bindposes[i].inverse` 空间里的高度 | 1.22 米 | 角色实际两米多 → **这不是模型空间，也不是骨骼空间** |
+> | 剑网格在同一空间 | size `(2.04, 2.07, 0.41)`，中心离骨骼 **2.88 米** | 一把 1.6 米的剑不可能这样 |
+> | 剑网格自身 AABB 长边 | 2.07 米 | 与 mesh 数据一致 |
+> | 4 个候选网格（身体/头盔/盾/剑）距骨骼 | 3.46 ~ 3.87 米 | **全部**离得很远 —— 说明是坐标系问题，不是选错网格 |
+>
+> **结论**：`bindposes[i].inverse` 并不把顶点搬到骨骼局部空间，我原来推的
+> `vertex_bone = bindpose⁻¹ * vertex` 是错的。**"所有候选都离骨骼 3 米以上"这一条是关键证据** ——
+> 如果只是选错网格，剑自己应该量得准，但它也不准。
+>
+> **下一步排查方向**（没做完，留给以后）：
+> 按完整蒙皮公式 `world = boneNow.localToWorld × bindpose × vertex` 反推，
+> 搬回骨骼 bind 局部空间应该用 `(boneNow.localToWorld × bindpose).inverse` 而不是 `bindpose.inverse`
+> —— 两者只差一个骨骼自身变换，正好能解释那 2.88 米的偏移量级。验证方法：在 Play 中把
+> 几种候选空间并排量出来，看哪个同时满足「长边 ≈ 1.2~1.8 米」且「中心距原点 ≈ 0.5~1.0 米」。
+>
+> 代码保留在 `MeleeFighter.TryMeasureWeaponMesh` / `TryMeasureMeshInBoneSpace` 里：
+> **候选扫描、防呆检查（点云不可能比网格自身 AABB 还大）、距离判据、尺寸超额保护这四块是对的**，
+> 坐标系问题查清后可直接接上。诊断用的 `ContextMenu` 已在收尾时删除。
+
+> **两个踩过的坑（写下来避免复发）**：
+>
+> 1. **"骨骼出现在网格的 `m_Bones` 里" ≠ "网格是骨骼的子物体"**。
+>    `Enemy.prefab` 的层级是 `Paladin WProp J Nordstrom` 下并列着
+>    `mixamorig:Hips`（骨骼树）与 `Paladin_J_Nordstrom_Sword`（网格）。
+>    `Sword_joint` 是个 `m_Children: []` 的空物体，**从骨骼往下找网格必然落空**。
+>    碰撞体挂骨骼是对的（顶点由它驱动），但**找网格必须从模型根横向扫**。
+>
+> 2. **静默失败比报错危险得多**。原实现找不到命中盒就 return null，
+>    自动定尺失败也一声不响 —— 而默认值 `(1.6, 0.1, 0.1)` 恰好"看起来合理"
+>    （剑长估得没错），于是三轮排查里没人怀疑它其实从未生效。
+>    现在每条失败路径都会打出具体原因。
+
+> **为什么浏览器碰撞体随动画走**：`mixamorig:Sword_joint` 是 **`Paladin_J_Nordstrom_Sword` 网格的蒙皮骨骼**
+> （见 `Enemy.prefab` 的 `m_Bones` 列表），剑的顶点由它驱动，所以碰撞体挂在这个骨骼上
+> 与挂在剑模型上是同一件事，且天然跟随动画。
+> 而名字叫 `Paladin_J_Nordstrom_Sword` 的那个节点是 `SkinnedMeshRenderer` 的宿主，
+> 自身不随动画移动 —— 给它加 `BoxCollider` 是错的。
+
+**0.2 实施记录（✅ 代码完成 · 待内容验收）**：
+
+| 改动 | 位置 | 内容 |
+|---|---|---|
+| 盾标识 | `WeaponConfig.cs` | 新增 `isShield`（默认 `false`） |
+| 初始碰撞体状态 | `WeaponManager.ApplyInitialColliderState` | 装备时统一决定：武器 → 全部 collider `enabled = true`；盾 → 全部 `enabled = false` |
+| 调用点 | `WeaponManager.EquipWeapon` / `SwitchToSlot` | 两处都调用，避免切槽位时状态残留 |
+
+**验收结果**：⚠️ **部分待验**。代码层已闭环，但**项目里目前没有任何盾的内容**
+（无 `ShieldConfig.asset`、无盾 Prefab、`E_WeaponType` 也还没有 `Shield` 值），
+所以"装盾走动不误伤"这条**无法在当前状态下复现验收** —— 它要等阶段 1（双槽 + 盾内容）之后才能实测。
+
+在内容到位之前，这条改动的意义是**把隐式约定变成显式规则**：
+碰撞体默认是开的，"盾走路误伤"是否发生取决于谁先跑谁后跑；
+集中到 `ApplyInitialColliderState` 一处之后，规则可读、可测、可复现。
+
+> **⚠️ 与后续阶段的耦合（阶段 4 必须处理）**：
+> 盾的 `Collider` 被本阶段关掉了，但 **`MeleeFighter.EnableHitbox` 目前没有任何分支会把它打开** ——
+> 那需要阶段 4.2 的 `E_AttackHitbox.Shield` 枚举值 + `EnableHitbox` 分支 + `MeleeFighter` 持有盾碰撞体引用。
+> **在那之前，盾装上后不会造成任何伤害**（这正是本阶段想要的安全状态，但它不是终态）。
+>
+> 另一处要一并处理的遗留：`MeleeFighter` 只有一个 `WeaponCollider`，
+> 而 `WeaponManager.SyncFighterWeapon()` 把 `mainWeaponSlotIndex` 指向的模型交给它。
+> 主手槽若装了盾，`WeaponCollider` 就会指向盾 —— 这是阶段 1.3 / 1.4 改双槽时要顺手理清的地方。
 
 **Gate**：阶段 0 未通过，阶段 4 之后的验收全部无法执行。
+→ **0.1 已通过**（敌人攻击玩家 → 掉血）；**0.2 待盾内容到位后补验**，不阻塞后续阶段。
 
 ### 阶段 1：双槽地基
 
@@ -1327,7 +1527,7 @@ CBTFM 有 **18 个 Runtime 程序集文件**在 `#if UNITY_EDITOR` **之外**
 | 风险 | 等级 | 影响 | 缓解 |
 |---|---|---|---|
 | **换覆盖器导致 animator 参数重置** | 🔴 高 | 跑步中换武器 → `MoveSpeed`/`PlayerState` 回默认 → **动画瞬间跳回待机**。这是本方案最容易漏、且一旦漏掉非常显眼的问题 | 阶段 2.6：赋值前后"快照 → 赋值 → 等一帧 → 回灌"（§11.6）。Gate 里必须有"跑步中换武器不跳帧"这一条 |
-| **盾/剑模型在骨骼上的位置需要手工调** | 🔴 高 | `Sword_and_Shield_Anims` 的盾剑是**蒙皮在骨骼上**的网格，换角色后手上不会自动出现武器，必须用 `holdPoint` 挂载并调整偏移 | 阶段 1 先在 Play 里对着 `Idle_CombatReady` 调挂点，**再**进入阶段 3 |
+| **盾/剑模型在骨骼上的位置需要手工调** | 🔴 高 | `Sword_and_Shield_Anims` 的盾剑模型换角色后手上不会自动出现，必须用 `holdPoint` 挂载并调整偏移 | 阶段 1 先在 Play 里对着 `Idle_CombatReady` 调挂点，**再**进入阶段 3。**⚠️ 已修正**：原判断"盾是蒙皮在骨骼上的网格"**是错的**，实际是静态刚性道具，见下方 §12.2 |
 | **跨骨架动画重定向的手型不匹配** | 🟠 中 | 我方角色用 `J_Bip_*`（Biped），素材是 `Android_SkeletalMesh`。均为 Humanoid 可重定向，但手指/手腕细节可能不贴合 | 阶段 3 Gate 必须目视检查盾牌是否"握在手里"而非"浮在旁边" |
 | **Layer1 重命名漏改引用** | 🟠 中 | 重命名后旧名引用会静默失效（`CrossFade` 找不到状态不报错，只是不播） | 阶段 3.0 完成后全局搜索 `Melee_Attack` 确认无残留 |
 | **未来引入 socket 概念时扫描到武器自身的挂点** | 🟡 低 | CBTFM 的 `FindAllSocket` 用 `GetComponentsInChildren<Socket>()`，会把武器模型自带的 3 个 socket 扫进角色表，靠名字不撞车维持（§11.11） | 我方本期用 `WeaponSlot[]` 显式引用，**不引入字符串扫描**。若将来引入，必须过滤 `holdPoint` 子树 |
@@ -1335,6 +1535,85 @@ CBTFM 有 **18 个 Runtime 程序集文件**在 `#if UNITY_EDITOR` **之外**
 | **精力/破防推迟导致盾无价值** | 🟡 低 | 阶段 5 之前，盾在玩法上只是"换动画的道具" | 阶段 5 优先级高于阶段 6；中期评审时确认 |
 | **`Item.txt` 编码转换引入乱码** | 🟡 低 | GBK → UTF-8 转换错误会破坏现有数据 | 转换后逐行 diff 校对，特别是中文描述列 |
 | **`allowedTypes` 改数组后旧 prefab 数据丢失** | 🟡 低 | Unity 序列化字段类型变更会清空原值 | 改完后在 Inspector 里重新勾选，并 Play 验证 |
+| **蒙皮网格顶点坐标系未查清** | 🟡 低 | 自动定尺（`autoFitWeaponHitbox`）会选错空间、把命中盒放大到角色体外。**已默认关闭**，不影响手工配置的命中盒 | 排查方向见 §10 阶段 0.1 的"未完成项"。关闭状态下无风险，`autoFitMaxOversizeRatio` 是第二道闸 |
+| **盾的碰撞体被关闭后无人再打开** | 🟡 低 | 阶段 4.2 之前盾不会造成伤害 —— 这是阶段 0.2 想要的安全状态，但**不是终态**，容易被误当成"盾击不生效"的 bug | 阶段 4.2 落地 `E_AttackHitbox.Shield` + `EnableHitbox` 分支时一并处理 |
+| **盾模型没有可用的预制体** | 🟠 中 | 路线图 §15.1 只列了 `ShieldConfig.asset`，**漏了"盾预制体"**。而项目里只有裸 FBX（无碰撞体），装备链路拿不到可用的 `weaponPrefab` | 阶段 1 顺手补一个盾预制体（含 `BoxCollider`）。见 §12.2 |
+
+### 12.1 玩家资产的真相（v1.3 订正 · 重要）
+
+**本方案全文（含 v1.0）都假设玩家是 `Assets/GameMain/Entities/Player/Player.prefab`。这是错的。**
+
+| 项 | `Player.prefab` | **`Male.prefab`（真正的玩家）** |
+|---|---|---|
+| 路径 | `Assets/GameMain/Entities/Player/Player.prefab` | `Assets/GameMain/Entities/Player/Male.prefab` |
+| 状态 | ❌ **已弃用**，未被任何使用方引用 | ✅ `TestScene` 第 511 行的 PrefabInstance，**场景根对象** |
+| 层 / Tag | Player 层 8 / — | **Layer 6（Player）/ Tag `Player`** |
+| 骨架 | `J_Bip_*`（Biped，来自 Ada 模型） | **`Skin_1_4.prefab`**（来源：`Assets/Fantasy knight/Prefab/Skin_1_4.prefab`），mixamo 风格命名 `hand_l` / `lowerarm_l` |
+| 组件栈 | 不全 | `PlayerController` / `PlayerMovement` / `PlayerAnimator` / **`MeleeFighter`** / `PlayerCombat` / `PlayerLockOn` / **`WeaponManager`** / `RangedFighter` / `ProjectilePool` / `WeaponSwitcher` / `MinimapMarker` / `Health` / `PlayerStamina` / `PlayerDodge` |
+
+**真实骨架的左臂链条**（`Skin_1_4.prefab`，阶段 1.3 建左手挂点用）：
+
+| 骨骼 | Transform fileID | 局部位置（相对父） | 备注 |
+|---|---|---|---|
+| `clavicle_l` | — | — | |
+| `upperarm_l` | — | — | |
+| `lowerarm_l`（左小臂） | `8449375469879590680` | `(-0.303, 0.017, 0.012)` 相对 upperarm_l | 文档 §6.3 说的"左手挂点"就在这里 |
+| `hand_l`（左手掌） | `4641400885159566759` | `(-0.244, 0.015, 0)` 相对 lowerarm_l | **`WeaponManager` 现有两个槽都指向它**；盾目前挂在这里 |
+
+**真实 `WeaponManager` 配置的缺陷**（与 §6.3 描述的一致，只是路径错了）：
+
+```yaml
+weaponSlots:
+- slotName: MainHand
+  holdPoint: {fileID: 1176333465599525210}   # = Skin_1_4 的 hand_l
+  allowedType: 0                             # Sword
+- slotName: AxeHand
+  holdPoint: {fileID: 1176333465599525210}   # ← 同一个挂点！
+  allowedType: 2                             # Axe
+mainWeaponSlotIndex: 0
+```
+
+> 注意 `holdPoint` 是**跨 prefab 的 stripped Transform**（`m_CorrespondingSourceObject` 指向
+> `Skin_1_4.prefab` 的 `4641400885159566759`）。阶段 1.3 新增左手挂点时，
+> 同样要用这种 stripped 引用，不能凭名字找。
+
+**盾的现状**（用户已在 `Male.prefab` 上挂好，第 674~771 行）：
+
+| 项 | 值 |
+|---|---|
+| 挂点 | `hand_l`（Transform `7055462120595353160` → `Skin_1_4` 的 `4641400885159566759`） |
+| Position / Rotation / Scale | `(-0.02, -0.033, 0)` / `(71.275, -94.847, -81.633)` / `1` |
+| 层 / Tag | `8（Playehitbox）` / `Hitbox` |
+| 碰撞体 | 新增 `BoxCollider`（`IsTrigger`），`Size (0.6, 0.6, 0.1)`、`Center (0, 0, 0.05)` |
+| Animator | 已移除（`m_RemovedComponents` → `5866666021909216657`），符合 §12.1 的建议 |
+
+> **⚠️ 阶段 0.2 的实测缺口依然存在**：碰撞体目前 `m_Enabled: 1`（开），但因为
+> `MeleeFighter.DisableAllHitxboxes()` 与 `WeaponManager.ApplyInitialColliderState` **都不认识
+> 这个手工挂上去的盾**（它不走 `EquipWeapon` 链路，也不是 `mainWeaponSlotIndex` 指向的模型），
+> 所以**没有任何代码会去关它**。要么在预制体里手工取消勾选，要么等阶段 4.2 把它接入判定通道。
+
+---
+
+### 12.2 盾资产的实际形态（实测，修正了 v1.0 的假设）
+
+v1.0 在风险表里写过"盾剑是**蒙皮在骨骼上**的网格"。**实测证明这句话是错的**，两处证据：
+
+| 证据 | 来源 | 说明 |
+|---|---|---|
+| `SkelMesh_RoundShield.fbx` 只有 71.8 KB，内部节点仅 `RootNodeL` / `RoundShield_Root` / `MaxHandleS` | FBX 二进制字符串扫描 | 这是 3ds Max 导出的**静态刚性道具**，不是蒙皮网格 |
+| 素材包作者自己的挂法：`m_LocalPosition` / `m_LocalRotation` **全为 0** | `SwordandShieldAndroid.prefab:115-207` | 顶点本来就烘焙在那个骨骼的局部空间里，所以挂载时无需调任何数值 |
+| 但 FBX 导入设置里有 `SkelMesh_RoundShieldAvatar`（`animationType: 2`） | `.fbx.meta:98` | 导入器硬塞的空 Avatar，**这个道具不需要 Animator**，应移除以免干扰阶段 3 |
+
+> **这对方案的实际影响（重要）**：
+>
+> 盾的顶点烘焙在**素材包自己骨架**的 hand 骨骼空间里，而玩家用的是 `J_Bip_*`（Biped）骨架。
+> 两者原点位置、朝向、尺度都不同 → **"零变换挂在骨骼上"这个模式在我们这里不成立**，
+> 必须反过来：**调整盾的 transform 去贴合玩家的骨骼**。
+>
+> ⚠️ **本节原有的一段玩家骨架数据全部作废**（原写的是 `Player.prefab` 的 `J_Bip_*` 骨架）——
+> 那份 prefab **是弃用的旧资产**。正确的玩家资产与骨架见上方 §12.1。
+> 这正是"改代码前先确认真实资产路径"的一次教训。
+
 
 ---
 
@@ -1343,10 +1622,14 @@ CBTFM 有 **18 个 Runtime 程序集文件**在 `#if UNITY_EDITOR` **之外**
 全部在 `Assets/GameMain/Scenes/TestScene.unity` 执行。
 
 ### 阶段 0
-- [ ] 敌人攻击玩家 → 玩家血量下降，`GameEvents.OnUnitDamaged` 触发
-- [ ] 玩家站着不动、走动 → 不会因盾的碰撞体误伤敌人
+- [x] 敌人攻击玩家 → 玩家血量下降，`GameEvents.OnUnitDamaged` 触发 —— **已验**（每刀 5 点兜底伤害）
+- [ ] 玩家站着不动、走动 → 不会因盾的碰撞体误伤敌人 —— **待验**。
+      盾现在**已经挂在 `Male.prefab` 的 `hand_l` 上**（`BoxCollider` + IsTrigger + Hitbox 标签 + `Playehitbox(8)` 层），
+      但碰撞体 `m_Enabled: 1`（开），且**没有任何代码会关它**（见 §12.1 末的缺口说明）。
+      验之前先手工取消该碰撞体的组件启用勾，或等阶段 4.2 接入判定通道。
 
 ### 阶段 1
+- [x] `E_WeaponType` 末尾追加 `Shield`（值 = 5）—— **已完成**（阶段 1.1，编译通过）
 - [ ] 剑装右手、盾装左手 → 两个模型同时可见，位置正确
 - [ ] 尝试把同一把剑装到两手 → 右手自动卸下，不出现空引用
 - [ ] Console 无 `MissingReferenceException`
@@ -1378,10 +1661,28 @@ CBTFM 有 **18 个 Runtime 程序集文件**在 `#if UNITY_EDITOR` **之外**
 - [ ] 持弓时右键 → 瞄准而非举盾
 
 ### 通用
+- [x] 所有新增/修改 C# 为 **UTF-8 无 BOM + CRLF** —— **每轮已逐文件校验**（BOM=false / bareLF=0）
+- [x] 新代码可编译（`MeleeFighter.cs` / `WeaponConfig.cs` / `WeaponManager.cs` / `WeaponType.cs` 联合编译零错误，
+      仅 4 条 `CS1705` netstandard 门面版本噪音）—— 验证方法见下方备注
 - [ ] Console 无 mojibake、无 `NullReferenceException`
-- [ ] 所有新增 C# 为 **UTF-8 无 BOM + CRLF**
 - [ ] 伤害仍只走 `DamageRouter` 唯一路径
 - [ ] **任何 `using UnityEditor;` 都在 `#if UNITY_EDITOR` 内**（§11.18，我方无 asmdef，混入会直接导致打包失败）
+
+> **编译自检方法（本次排查中建立的，可复用）**：
+> `dotnet build Assembly-CSharp.csproj` **走不通** —— 这台机器的 .NET 10 SDK 缺两个 workload 目录
+> （`MSB4276`），`restore` 直接失败且**不打印任何错误**，很有迷惑性。
+> 可用做法是绕过 MSBuild，直接调 Unity 自带的 Roslyn：
+>
+> ```powershell
+> $csc = "C:\Program Files\dotnet\sdk\10.0.300\Roslyn\bincore\csc.dll"
+> # 引用集 = SDK 的 ref 包 + Unity 的 Data\Managed\UnityEngine\*.dll + Library\ScriptAssemblies\Assembly-CSharp.dll
+> # ⚠️ 不要引用 Data\Managed\UnityEngine.dll（兼容门面），否则每个类型都会 CS0433"同时存在于两个程序集"
+> dotnet $csc -nostdlib+ -langversion:9.0 -nowarn:1701,1702,1705,0436,0618 -target:library `
+>   -out:check.dll @refs 你的文件.cs
+> ```
+>
+> 判读标准：**只应剩 4 条 `CS1705`**（Unity 程序集要 netstandard 2.1、SDK ref 包给 2.0 的门面差异），
+> 任何其他 `error CS` 都是真问题。用"故意加一个重复成员"做过对照，确认这套检查能抓到错。
 
 ---
 
@@ -1394,7 +1695,8 @@ CBTFM 有 **18 个 Runtime 程序集文件**在 `#if UNITY_EDITOR` **之外**
 | Q3 | 盾的基础伤害是否为 0？ | 决定 `Item.txt` 盾行与 `AttackData` 的伤害来源 | 建议 `BaseDamage = 0`，盾击伤害全部来自 `AttackData.DamageMultiplier` |
 | Q4 | 是否需要"装备/卸下"独立按键？ | 当前靠数字键 1/2 切换，语义混淆 | 建议**需要**。`GetPickup_ShopInput` 已占用 E，可考虑 `R` 或 `Tab` |
 | Q5 | 空手动作素材是否充足？ | `ARPGWarrior` 包的空手动作数量未盘点 | 阶段 3 开始前先盘点；不足则 `Unarmed_Override` 只覆盖能覆盖的槽位，其余走 §7.3 fallback |
-| Q6 | 盾的挂点用左手掌还是左小臂？ | 影响持盾姿势是否自然 | 阶段 1 在 Play 里实测两种，对着 `Block_Loop` 决定 |
+| Q6 | 盾的挂点用左手掌还是左小臂？ | 影响持盾姿势是否自然 | **已有一半答案**：用户已把盾手工挂在 **`hand_l`（左手掌）** 上并调好 `Position (-0.02, -0.033, 0)` / `Rotation (71.275, -94.847, -81.633)`（见 §12.1）。阶段 1.3 需在 Play 里对着 `Block_Loop` 决定：迁到 `lowerarm_l` 重新校准，还是就地沿用左手掌 |
+| Q11 | 敌人命中盒修复用哪个方案？ | 直接决定阶段 0 的产出 | ✅ **已决：方案 C**，并已验收（`mixamorig:Sword_joint` 挂 `BoxCollider`）。长期演进方向仍是 **方案 D（socket 扫掠胶囊）**，见 §4.1.1 / §11.15 |
 | Q7 | 是否引入 Avatar Mask 分层？ | 决定能否"一边举盾一边移动上半身独立动作" | 本期**不引入**（§11.10），记录为演进方向 |
 | Q8 | 何时迁移到时序 Notify 系统？ | 决定"判定窗口"这个数据住在 `AttackData` 还是住在动画资产上 | **触发条件**：招式数量 > **15** 个，或出现"同一个 clip 在不同动作集里需要不同判定窗口"时，迁移到 §11.8 的 Notify 体系 |
 | Q9 | 何时需要 `RootMotionData` 式的逐帧位移开关？ | 决定能否做"突刺只在前半段位移" | **触发条件**：第一次出现"我想要某段攻击只在前半段有位移"的需求时。**阶段 4.5 的 `displacementScale` 曲线可先顶一阵** |
@@ -1409,41 +1711,45 @@ CBTFM 有 **18 个 Runtime 程序集文件**在 `#if UNITY_EDITOR` **之外**
 
 ### 15.1 涉及文件清单
 
+> 状态图例：✅ 已完成 ｜ ⚠️ 部分/待验 ｜ ⬜ 未开始
+
 **新建**
 
-| 文件 | 说明 |
-|---|---|
-| `Assets/GameMain/Scripts/Weapon/MovesetType.cs` | `E_MovesetType` 枚举 |
-| `Assets/GameMain/Scripts/Weapon/MovesetConfig.cs` | 动作集数据资产 |
-| `Assets/GameMain/Scripts/Weapon/MovesetResolver.cs` | 组合 → 动作集 路由（§3.1 宪法） |
-| `Assets/GameMain/Scripts/Combat/E_Hand.cs` | 手位枚举（或并入 `MeleeFighter.cs`） |
-| `Assets/GameMain/Scripts/Entity/Player/PlayerAnimationSet.cs` | 动作集应用器：快照/回灌 animator 参数、`CanSwitchMoveset` 准入、待切换请求暂存（§11.6 / §8.4） |
-| `Assets/Resources/Movesets/UnarmedMoveset.asset` | 动作集资产 |
-| `Assets/Resources/Movesets/OneHandedSwordMoveset.asset` | 动作集资产 |
-| `Assets/Resources/Movesets/SwordAndShieldMoveset.asset` | 动作集资产 |
-| `Assets/GameMain/Scripts/Entity/Player/Animations/Override/Unarmed_Override.overrideController` | 覆盖器 |
-| `Assets/GameMain/Scripts/Entity/Player/Animations/Override/OneHandedSword_Override.overrideController` | 覆盖器 |
-| `Assets/GameMain/Scripts/Entity/Player/Animations/Override/SwordAndShield_Override.overrideController` | 覆盖器 |
-| `Assets/Resources/WeaponConfigs/UnarmedConfig.asset` | 空手占位配置 |
-| `Assets/Resources/WeaponConfigs/ShieldConfig.asset` | 盾配置 |
+| 文件 | 说明 | 状态 |
+|---|---|---|
+| `Assets/GameMain/Scripts/Weapon/MovesetType.cs` | `E_MovesetType` 枚举 | ⬜ 阶段 2.1 |
+| `Assets/GameMain/Scripts/Weapon/MovesetConfig.cs` | 动作集数据资产 | ⬜ 阶段 2.2 |
+| `Assets/GameMain/Scripts/Weapon/MovesetResolver.cs` | 组合 → 动作集 路由（§3.1 宪法） | ⬜ 阶段 2.1 |
+| `Assets/GameMain/Scripts/Combat/E_Hand.cs` | 手位枚举（或并入 `MeleeFighter.cs`） | ⬜ 阶段 4.1 |
+| `Assets/GameMain/Scripts/Entity/Player/PlayerAnimationSet.cs` | 动作集应用器：快照/回灌 animator 参数、`CanSwitchMoveset` 准入、待切换请求暂存（§11.6 / §8.4） | ⬜ 阶段 2.6 / 2.7 |
+| `Assets/Resources/Movesets/UnarmedMoveset.asset` | 动作集资产 | ⬜ 阶段 2.3 |
+| `Assets/Resources/Movesets/OneHandedSwordMoveset.asset` | 动作集资产 | ⬜ 阶段 2.3 |
+| `Assets/Resources/Movesets/SwordAndShieldMoveset.asset` | 动作集资产 | ⬜ 阶段 2.3 |
+| `Assets/GameMain/Scripts/Entity/Player/Animations/Override/Unarmed_Override.overrideController` | 覆盖器 | ⬜ 阶段 3.1 |
+| `Assets/GameMain/Scripts/Entity/Player/Animations/Override/OneHandedSword_Override.overrideController` | 覆盖器 | ⬜ 阶段 3.2 |
+| `Assets/GameMain/Scripts/Entity/Player/Animations/Override/SwordAndShield_Override.overrideController` | 覆盖器 | ⬜ 阶段 3.3 |
+| `Assets/Resources/WeaponConfigs/UnarmedConfig.asset` | 空手占位配置 | ⬜ 阶段 2.5 |
+| `Assets/Resources/WeaponConfigs/ShieldConfig.asset` | 盾配置 | ⬜ 阶段 1.5 |
+| **盾预制体**（路径待定，如 `Assets/GameMain/Entities/Shield/ShieldPrefab.prefab`） | **⚠️ v1.0 遗漏项**：把 `SkelMesh_RoundShield.fbx` 包一层，含 `BoxCollider` + Hitbox 标签 + `Playehitbox(8)` 层。`WeaponConfig.weaponPrefab` 需要它 | ⬜ 建议并入阶段 1.5 |
 
 **修改**
 
-| 文件 | 改动 |
-|---|---|
-| `Assets/GameMain/Scripts/Weapon/WeaponType.cs` | 加 `Shield` |
-| `Assets/GameMain/Scripts/Weapon/WeaponConfig.cs` | 加 6 个字段 |
-| `Assets/GameMain/Scripts/Entity/Player/WeaponSlot.cs` | `allowedType` → `allowedTypes[]` |
-| `Assets/GameMain/Scripts/Entity/Player/WeaponManager.cs` | 空手注入、双持约束、目标槽优先 |
-| `Assets/GameMain/Scripts/Combat/MeleeFighter.cs` | `SetWeaponConfig` 走路由、双连招、`Shield` 判定、输入缓冲 |
-| `Assets/GameMain/Scripts/Combat/AttackData.cs` | `E_AttackHitbox` 加 `Shield` |
-| `Assets/GameMain/Scripts/Entity/Player/PlayerController.cs` | `GetLeftAttackInput`、`Aim`/`Block` 互斥 |
-| `Assets/GameMain/Scripts/Entity/Player/Animations/PlayerMove.controller` | Layer1 状态重命名 + 新增槽位 |
-| `Assets/GameMain/Entities/Player/Player.prefab` | 加左手挂点、两槽改名、`allowedTypes` 重配 |
-| `Assets/GameMain/Resources/DataTables/Item.txt` | 编码转 UTF-8、订正 WeaponType、加盾行 |
-| `Assets/InputActions/PlayerActions.inputactions` | 加 `LeftAttack` |
-| `Assets/GameMain/Scripts/Entity/Enemy/Enemy.prefab` 相关 | 阶段 0 命中盒修复 |
-| `CLAUDE.md` | 登记已知边界（`WeaponConfig` 承载盾、动作集系统） |
+| 文件 | 改动 | 状态 |
+|---|---|---|
+| `Assets/GameMain/Scripts/Weapon/WeaponType.cs` | 加 `Shield`（末尾，值 = 5） | ✅ **阶段 1.1** |
+| `Assets/GameMain/Scripts/Weapon/WeaponConfig.cs` | 加 6 个字段（`isShield` 已落地，其余 5 个待各阶段） | ⚠️ **1/6** |
+| `Assets/GameMain/Scripts/Entity/Player/WeaponSlot.cs` | `allowedType` → `allowedTypes[]` | ⬜ 阶段 1.2 |
+| `Assets/GameMain/Scripts/Entity/Player/WeaponManager.cs` | 空手注入、双持约束、目标槽优先；`ApplyInitialColliderState` | ⚠️ 仅碰撞体状态已落地 |
+| `Assets/GameMain/Scripts/Combat/MeleeFighter.cs` | 命中盒绑定/查找/Gizmos（已完成）；`SetWeaponConfig` 走路由、双连招、`Shield` 判定、输入缓冲（待做） | ⚠️ 部分 |
+| `Assets/GameMain/Scripts/Combat/AttackData.cs` | `E_AttackHitbox` 加 `Shield` + 两条 `AnimationCurve` | ⬜ 阶段 4.2 / 4.5 |
+| `Assets/GameMain/Scripts/Entity/Player/PlayerController.cs` | `GetLeftAttackInput`、`Aim`/`Block` 互斥 | ⬜ 阶段 4.3 / 5.4 |
+| `Assets/GameMain/Scripts/Entity/Player/Animations/PlayerMove.controller` | Layer1 状态重命名 + 新增槽位 | ⬜ 阶段 3.0 |
+| ~~`Assets/GameMain/Entities/Player/Player.prefab`~~ → **`Assets/GameMain/Entities/Player/Male.prefab`** | 加左手挂点、两槽改名、`allowedTypes` 重配。（盾已手工挂上，见 §12.1） | ⬜ 阶段 1.3 |
+| `Assets/GameMain/Resources/DataTables/Item.txt` | 编码转 UTF-8、订正 WeaponType、加盾行 | ⬜ 阶段 1.5 |
+| `Assets/InputActions/PlayerActions.inputactions` | 加 `LeftAttack` | ⬜ 阶段 4.3 |
+| `Assets/GameMain/Entities/Enemy/Enemy.prefab` | 阶段 0 命中盒修复（`Sword_joint` 加 BoxCollider + 标签 + 层） | ✅ **阶段 0.1** |
+| `Assets/Art/Models/Characters/Enemy/Paladin WProp J Nordstrom.fbx.meta` | `isReadable: 0 → 1` | ✅ **阶段 0.1** |
+| `CLAUDE.md` | 登记已知边界（`WeaponConfig` 承载盾、动作集系统、玩家资产是 `Male.prefab`） | ⬜ |
 
 ### 15.2 素材索引
 

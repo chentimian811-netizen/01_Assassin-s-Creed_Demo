@@ -14,10 +14,27 @@ public static class DataRepository
     public static void Initialize()
     {
         var itemText = Resources.Load<TextAsset>("DataTables/Item");
-        ItemTable = ParseItemTable(itemText.text);
+        if (itemText == null)
+        {
+            Debug.LogError("[DataRepository] Resources/DataTables/Item 未找到");
+            ItemTable = new Dictionary<int, DRItem>();
+        }
+        else
+        {
+            ItemTable = ParseItemTable(itemText.text);
+        }
 
         var shopText = Resources.Load<TextAsset>("DataTables/Shop");
-        (ShopTable, ShopByKeeper) = ParseShopTable(shopText.text);
+        if (shopText == null)
+        {
+            Debug.LogWarning("[DataRepository] Resources/DataTables/Shop 未找到");
+            ShopTable = new Dictionary<int, DRShop>();
+            ShopByKeeper = new Dictionary<int, List<DRShop>>();
+        }
+        else
+        {
+            (ShopTable, ShopByKeeper) = ParseShopTable(shopText.text);
+        }
 
         ItemConfigCache = new Dictionary<int, ItemConfig_SO>();
         ItemByAssetId = new Dictionary<string, DRItem>();

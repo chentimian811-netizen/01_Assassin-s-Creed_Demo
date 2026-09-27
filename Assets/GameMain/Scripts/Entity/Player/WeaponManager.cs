@@ -16,6 +16,15 @@ public class WeaponManager : MonoBehaviour
     Dictionary<int, WeaponConfig> weaponConfigMap;
     MeleeFighter meleeFighter;
 
+    [Header("动作集（步骤 6 路由骨架）")]
+    [SerializeField] MovesetConfig movesetUnarmed;
+    [SerializeField] MovesetConfig movesetOneHandedSword;
+    [SerializeField] MovesetConfig movesetSwordAndShield;
+
+    public MovesetConfig MovesetUnarmed => movesetUnarmed;
+    public MovesetConfig MovesetOneHandedSword => movesetOneHandedSword;
+    public MovesetConfig MovesetSwordAndShield => movesetSwordAndShield;
+
     public event Action<WeaponConfig> OnWeaponModelChanged;
 
     /// <summary>槽位数量（供 WeaponSwitcher 等按索引遍历）</summary>
@@ -23,6 +32,62 @@ public class WeaponManager : MonoBehaviour
 
     void Awake()
     {
+        EnsureConfigMap();
+        EnsureMovesets();
+        meleeFighter = GetComponent<MeleeFighter>();
+        HidePreplacedWeapons();
+    }
+
+    /// <summary>从 Resources/Movesets 装载三件套（Inspector 未指定时）</summary>
+    void EnsureMovesets()
+    {
+        if (movesetUnarmed == null)
+            movesetUnarmed = Resources.Load<MovesetConfig>("Movesets/UnarmedMoveset");
+        if (movesetOneHandedSword == null)
+            movesetOneHandedSword = Resources.Load<MovesetConfig>("Movesets/OneHandedSwordMoveset");
+        if (movesetSwordAndShield == null)
+            movesetSwordAndShield = Resources.Load<MovesetConfig>("Movesets/SwordAndShieldMoveset");
+
+        if (movesetUnarmed == null || movesetOneHandedSword == null || movesetSwordAndShield == null)
+            Debug.LogWarning("[WeaponManager] Moveset 三件套未找齐（Resources/Movesets/）");
+    }
+
+    /// <summary>右手动作集用配置（单手近战；盾/弓不算）</summary>
+    public WeaponConfig GetMovesetRightConfig()
+    {
+        if (weaponSlots == null) return null;
+        // 优先 mainWeaponSlotIndex（RightHand），再扫一遍
+        if (mainWeaponSlotIndex >= 0 && mainWeaponSlotIndex < weaponSlots.Length)
+        {
+            var s = weaponSlots[mainWeaponSlotIndex];
+            if (s != null && MovesetResolver.IsOneHandedMelee(s.currentConfig))
+                return s.currentConfig;
+        }
+        foreach (var slot in weaponSlots)
+        {
+            if (slot != null && MovesetResolver.IsOneHandedMelee(slot.currentConfig))
+                return slot.currentConfig;
+        }
+        return null;
+    }
+
+    /// <summary>左手动作集用配置（盾）</summary>
+    public WeaponConfig GetMovesetLeftConfig()
+    {
+        if (weaponSlots == null) return null;
+        foreach (var slot in weaponSlots)
+        {
+            if (slot != null && MovesetResolver.IsShield(slot.currentConfig))
+                return slot.currentConfig;
+        }
+        return null;
+    }
+
+    /// <summary>确保 weaponConfigMap 已从 Resources/WeaponConfigs 装载（Awake 前/失败后可重试）</summary>
+    void EnsureConfigMap()
+    {
+        if (weaponConfigMap != null && weaponConfigMap.Count > 0) return;
+
         weaponConfigMap = new Dictionary<int, WeaponConfig>();
         WeaponConfig[] configs = Resources.LoadAll<WeaponConfig>(weaponConfigPath);
         if (configs != null)
@@ -33,24 +98,87 @@ public class WeaponManager : MonoBehaviour
                     weaponConfigMap[config.weaponID] = config;
             }
         }
-        meleeFighter = GetComponent<MeleeFighter>();
-        HidePreplacedWeapons();
+        if (weaponConfigMap.Count == 0)
+            Debug.LogWarning("[WeaponManager] Resources/WeaponConfigs 下未加载到任何 WeaponConfig");
     }
 
     void HidePreplacedWeapons()
     {
+        if (weaponSlots == null) return;
         foreach (var slot in weaponSlots)
         {
-            if (slot.holdPoint == null) continue;
-            foreach (Transform child in slot.holdPoint)
+            if (slot == null || slot.holdPoint == null) continue;
+            HideWeaponVisualsUnder(slot.holdPoint, slot.currentModel != null ? slot.currentModel.transform : null);
+        }
+    }
+
+    /// <summary>
+    /// 隐藏挂点下的「预置武器外观」（不碰手指等骨骼子节点）。
+    /// 为什么不能 SetActive(false) 所有 child：hand_r/hand_l 下是手指骨骼。
+    /// </summary>
+    void HideWeaponVisualsUnder(Transform root, Transform keep)
+    {
+        if (root == null) return;
+        foreach (Transform child in root)
+        {
+            if (child == null) continue;
+            if (keep != null && (child == keep || child.IsChildOf(keep))) continue;
+
+            if (IsWeaponVisualName(child.name))
             {
-                if (child.name == "Sword")
-                {
-                    child.gameObject.SetActive(false);
-                    break;
-                }
+                if (child.gameObject.activeSelf)
+                    Debug.Log($"[WeaponManager] 隐藏残留/预置武器外观: {child.name}");
+                child.gameObject.SetActive(false);
+            }
+            else
+            {
+                HideWeaponVisualsUnder(child, keep);
             }
         }
+    }
+
+    static bool IsWeaponVisualName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        return name.IndexOf("Sword", System.StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("Shield", System.StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("Axe", System.StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("Bow", System.StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("SkelMesh", System.StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("Weapon", System.StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("Blade", System.StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    /// <summary>
+    /// 清掉槽上「已无背包装备记录」的残留模型，并隐藏预置外观。
+    /// 卸装后手上有剑/盾时必调。
+    /// </summary>
+    public void ClearOrphanWeaponModels()
+    {
+        if (weaponSlots == null) return;
+        foreach (var slot in weaponSlots)
+        {
+            if (slot == null) continue;
+
+            if (slot.currentModel != null)
+            {
+                bool stillEquipped = !string.IsNullOrEmpty(slot.equippedUid)
+                    && FindLocalItemSafe(slot.equippedUid) != null
+                    && FindLocalItemSafe(slot.equippedUid).isEquipped;
+                if (!stillEquipped)
+                {
+                    Debug.Log($"[WeaponManager] 清理残留装备模型: {slot.currentModel.name} @ {slot.slotName}");
+                    Destroy(slot.currentModel);
+                    slot.currentModel = null;
+                    slot.currentConfig = null;
+                    slot.equippedUid = null;
+                }
+            }
+
+            HideWeaponVisualsUnder(slot.holdPoint, slot.currentModel != null ? slot.currentModel.transform : null);
+        }
+        SyncFighterWeapon();
+        ApplyMeleeFighterWeaponState();
     }
 
     /// <summary>装备到自动推断的槽位（旧入口，行为兼容）</summary>
@@ -64,16 +192,39 @@ public class WeaponManager : MonoBehaviour
     /// targetSlotIndex &gt;= 0：目标槽优先，类型不匹配则失败（魂系不自动换手）；
     /// targetSlotIndex &lt; 0：FindSlotForWeapon 兜底（先空槽，再可接受该类型的槽）。
     /// </summary>
+    /// <summary>安全取本地物品：GameManager 未就绪时退回 PackageLocalData</summary>
+    static PackageLocalItem FindLocalItemSafe(string uid)
+    {
+        if (string.IsNullOrEmpty(uid)) return null;
+        if (GameManager.Instance != null)
+        {
+            var fromGm = GameManager.Instance.GetPackageLocalItemByUid(uid);
+            if (fromGm != null) return fromGm;
+        }
+        List<PackageLocalItem> list = PackageLocalData.Instance != null
+            ? PackageLocalData.Instance.LoadPackage()
+            : null;
+        if (list == null) return null;
+        foreach (PackageLocalItem it in list)
+        {
+            if (it != null && it.uid == uid) return it;
+        }
+        return null;
+    }
+
     public bool EquipWeapon(string uid, int targetSlotIndex)
     {
-        PackageLocalItem item = GameManager.Instance.GetPackageLocalItemByUid(uid);
+        PackageLocalItem item = FindLocalItemSafe(uid);
         if (item == null) return false;
 
+        EnsureConfigMap();
         WeaponConfig config;
-        if (!weaponConfigMap.TryGetValue(item.id, out config)) return false;
+        if (weaponConfigMap == null || !weaponConfigMap.TryGetValue(item.id, out config)) return false;
 
-        var wType = DataRepository.ItemTable.TryGetValue(config.weaponID, out var wItem)
-            ? wItem.WeaponType : E_WeaponType.Sword;
+        var wType = E_WeaponType.Sword;
+        if (DataRepository.ItemTable != null
+            && DataRepository.ItemTable.TryGetValue(config.weaponID, out var wItem))
+            wType = wItem.WeaponType;
 
         // isShield 优先于表类型：盾内容可能尚未写入 Item.txt 的 Type=3
         if (config != null && config.isShield)
@@ -98,6 +249,9 @@ public class WeaponManager : MonoBehaviour
 
         if (targetSlot.currentModel != null)
             Destroy(targetSlot.currentModel);
+
+        // 先藏预置/手工外观，再实例化，避免「预置剑 + 装备剑」叠两把
+        HideWeaponVisualsUnder(targetSlot.holdPoint, null);
 
         targetSlot.currentConfig = config;
         targetSlot.equippedUid = uid;
@@ -165,7 +319,13 @@ public class WeaponManager : MonoBehaviour
 
     string UnequipSlotInternal(WeaponSlot slot)
     {
-        if (slot == null || slot.currentConfig == null) return null;
+        if (slot == null || slot.currentConfig == null)
+        {
+            // 即使槽数据为空，也要扫一遍预置外观（卸下后手上仍有模型时）
+            if (slot != null && slot.holdPoint != null)
+                HideWeaponVisualsUnder(slot.holdPoint, null);
+            return null;
+        }
 
         string uid = slot.equippedUid;
         WeaponConfig oldConfig = slot.currentConfig;
@@ -178,6 +338,9 @@ public class WeaponManager : MonoBehaviour
 
         slot.currentConfig = null;
         slot.equippedUid = null;
+
+        // 预置/手工挂的 Sword、SkelMesh_RoundShield 等一并藏掉
+        HideWeaponVisualsUnder(slot.holdPoint, null);
 
         // 从剩余槽位重新推导，而不是一律清空 —— 卸盾时右手剑的判定不能被抹掉
         SyncFighterWeapon();
@@ -196,6 +359,8 @@ public class WeaponManager : MonoBehaviour
     //根据武器的Id获取武器配置
     public WeaponConfig GetWeaponConfig(int weaponId)
     {
+        EnsureConfigMap();
+        if (weaponConfigMap == null) return null;
         WeaponConfig config;
         weaponConfigMap.TryGetValue(weaponId, out config);
         return config;
@@ -274,9 +439,10 @@ public class WeaponManager : MonoBehaviour
         {
             meleeFighter.SetWeapon(meleeSlot.currentModel);
             meleeFighter.SetWeaponID(meleeCfg.weaponID);
-            var localItem = GameManager.Instance.GetPackageLocalItemByUid(meleeSlot.equippedUid);
+            var localItem = FindLocalItemSafe(meleeSlot.equippedUid);
             meleeFighter.SetUpgradeLevel(localItem?.level ?? 1);
             meleeFighter.SetWeaponConfig(meleeCfg);
+            Debug.Log($"[WeaponManager] 动作集={MovesetResolver.CurrentType} 近战={meleeCfg.weaponName} 左手盾={(GetMovesetLeftConfig() != null)}");
             return;
         }
 
@@ -288,12 +454,14 @@ public class WeaponManager : MonoBehaviour
             meleeFighter.SetWeaponID(rangedCfg.weaponID);
             meleeFighter.SetUpgradeLevel(1);
             meleeFighter.SetWeaponConfig(rangedCfg);
+            Debug.Log($"[WeaponManager] 动作集={MovesetResolver.CurrentType} 远程={rangedCfg.weaponName}");
         }
         else
         {
             meleeFighter.SetWeaponID(-1);
             meleeFighter.SetUpgradeLevel(1);
             meleeFighter.SetWeaponConfig(null);
+            Debug.Log($"[WeaponManager] 动作集={MovesetResolver.CurrentType} 空手");
         }
     }
 

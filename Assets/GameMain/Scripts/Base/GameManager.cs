@@ -178,15 +178,19 @@ public class GameManager : MonoBehaviour
 
     public DRItem GetPackageItemById(int id)
     {
+        if (DataRepository.ItemTable == null) return null;
         DataRepository.ItemTable.TryGetValue(id, out var item);
         return item;
     }
 
     public PackageLocalItem GetPackageLocalItemByUid(string uid)
     {
-        foreach (PackageLocalItem item in GetPackageLocalData())
+        if (string.IsNullOrEmpty(uid)) return null;
+        List<PackageLocalItem> list = GetPackageLocalData();
+        if (list == null) return null;
+        foreach (PackageLocalItem item in list)
         {
-            if (item.uid == uid) return item;
+            if (item != null && item.uid == uid) return item;
         }
         return null;
     }

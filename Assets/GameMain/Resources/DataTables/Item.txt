@@ -6,4 +6,5 @@
 	10004	1	1	10	0.15	3	Hunting Bow	A sturdy longbow carved from ancient oak. Favored by rangers of the northern valleys.	Use [Thunderclap] to call down a single devastating bolt from the heavens.	Sprites/UI/Weapon/weapon_08	Item_HuntingBow
 	10005	2	-1	0	0	5	Sandwich	GoodFood	Eating it!	Sprites/UI/Food/Food02	Item_Sandwich
 	10006	2	-1	0	0	3	Salmon caviar	Good!Good!Good!	Up!	Sprites/UI/Food/Food03	Item_Salmon caviar
-	10007	1	2	13	0.05	3	Axe	SharpAxe£¡	OhYes!	Sprites/UI/Weapon/weapon_03	Item_Axe
+	10007	1	2	13	0.05	3	Axe	SharpAxeï¿½ï¿½	OhYes!	Sprites/UI/Weapon/weapon_03	Item_Axe
+	10008	3	5	0	0	3	Round Shield	A sturdy round shield forged for the frontline.	Raise it to block incoming strikes.	Sprites/UI/Weapon/weapon_05	Item_RoundShield

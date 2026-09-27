@@ -58,9 +58,12 @@ public class PlayerAnimator : MonoBehaviour
         jumpSpeedHash = Animator.StringToHash("JumpSpeed");
 
         //初始化默认值
-        animator.SetFloat(postrueHash,standThreshold);
-        animator.SetFloat(moveSpeedHash,0f);
-        animator.SetFloat(turnSpeedHash,0f);
+        if (animator != null && animator.runtimeAnimatorController != null)
+        {
+            animator.SetFloat(postrueHash,standThreshold);
+            animator.SetFloat(moveSpeedHash,0f);
+            animator.SetFloat(turnSpeedHash,0f);
+        }
         
     }
 
@@ -71,6 +74,7 @@ public class PlayerAnimator : MonoBehaviour
 
     void SetupAnimator()
     {
+        if (animator == null || animator.runtimeAnimatorController == null) return;
         // 翻滚期间不更新 BlendTree 参数，避免 locomotion 抢状态
         if(playerController.playerDodge != null && playerController.playerDodge.IsDodging) return;
 

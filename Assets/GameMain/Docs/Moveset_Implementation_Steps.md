@@ -9,7 +9,7 @@
 > | 项目 | `01_Assassin's Creed_Demo`（Unity 2022.3.62f2c1） |
 > | 玩家资产 | `Assets/GameMain/Entities/Player/Male.prefab`（骨架 `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`） |
 > | 唯一场景 | `Assets/GameMain/Scenes/TestScene.unity` |
-> | 当前进度 | **阶段 0 完成 ｜ 步骤 1–4 完成** → 下一步 **步骤 5** |
+> | 当前进度 | **步骤 1–9 完成 ｜ 步骤 8 映射已填** → 下一步 **步骤 10 左手攻击通道** |
 
 ---
 
@@ -97,7 +97,7 @@ $crlf=0;$lf=0; for($i=0;$i -lt $b.Length;$i++){ if($b[$i] -eq 10){ if($i -gt 0 -
    │      │      │
    │      │      ├─> 步骤4 [✅] WeaponManager 装备规则（双持约束 + 目标槽优先）
    │      │      │      │
-   │      │      │      └─> 步骤5 [ ] Item.txt 加盾行 + 盾预制体（★漏项）
+   │      │      │      └─> 步骤5 [✅] Item.txt 加盾行 + 盾预制体（★漏项）
    │      │      │             │
    │      │      │             └──> ★★ 阶段一 Gate：剑右手 / 盾左手 同时可见
    │      │      │
@@ -321,13 +321,28 @@ meleeFighter.SetWeapon(mainSlot.currentModel);
 
 ---
 
-### 步骤 5 — `Item.txt` 加盾行 + 新建盾预制体
+### 步骤 5 — `Item.txt` 加盾行 + 新建盾预制体 ✅ 内容已就绪
 
 | 项 | 内容 |
 |---|---|
-| 文件 | `Assets/GameMain/Resources/DataTables/Item.txt` + **新建盾预制体** + `Assets/Resources/WeaponConfigs/ShieldConfig.asset` |
+| 文件 | `Item.txt` + `Shield/ShieldPrefab.prefab` + `ShieldConfig.asset` + `Item_RoundShield.asset` |
 | 依赖 | 步骤 4 |
 | 预估 | 中 |
+| 状态 | ✅ 磁盘内容已齐并核对一致；**阶段一 Gate 待 Play 验收** |
+
+**核对结果（本步以验漏补缺为主，下列资产均已在项目中）**：
+
+| 产出 | 路径 | 状态 |
+|---|---|---|
+| 5a 表行 | `Item.txt` L10 | ✅ `10008 / Type=3 / WeaponType=5 / BaseDamage=0 / AssetId=Item_RoundShield` |
+| 5b 预制体 | `Entities/Shield/ShieldPrefab.prefab` | ✅ Layer 8 / Tag Hitbox / BoxCollider enabled=0 / Size(0.6,0.6,0.1) / Animator 已移除 |
+| 5c 配置 | `Resources/WeaponConfigs/ShieldConfig.asset` | ✅ weaponID=10008 / isShield=1 / weaponPrefab→ShieldPrefab |
+| SO | `Resources/ItemConfigs/Item_RoundShield.asset` | ✅ |
+| 图标 | `weapon_05.png` | ✅（表里 ImagePath=`Sprites/UI/Weapon/weapon_05`） |
+
+**解析侧核实**：`DataRepository.ParseItemTable` **无 Type 白名单**，`Type=3` 可直接解析；`TSVParser` 跳过 `#` 行。
+
+**本步补的缺口**：`InventoryManager` 初始化列表并入 `PackageTypeShield`，盾可进背包/装备链路。
 
 #### 5a. `Item.txt` 加盾行
 
@@ -383,13 +398,33 @@ meleeFighter.SetWeapon(mainSlot.currentModel);
 
 ---
 
-### 步骤 6 — Moveset 路由骨架（纯逻辑，不需要动画资产）
+### 步骤 6 — Moveset 路由骨架 ✅ 已完成（纯逻辑，不需要动画资产）
 
 | 项 | 内容 |
 |---|---|
-| 文件 | **新建** `Assets/GameMain/Scripts/Weapon/MovesetType.cs`、`MovesetConfig.cs`、`MovesetResolver.cs`；改 `MeleeFighter.SetWeaponConfig` |
+| 文件 | 新建 `MovesetType.cs` / `MovesetConfig.cs` / `MovesetResolver.cs`；改 `MeleeFighter.SetWeaponConfig`、`WeaponManager` |
 | 依赖 | 步骤 4 |
-| 预估 | 中 |
+| 状态 | ✅ 已落地并通过 Roslyn 编译；**Play 验收待用户确认** |
+
+**实施记录**：
+
+| 产出 | 说明 |
+|---|---|
+| `E_MovesetType` | `Unarmed` / `OneHandedSword` / `SwordAndShield` |
+| `MovesetConfig` | SO：`movesetType` / `locomotionOverride` / 左右手 `AttackData` / Block 槽位名 / 移动档位 |
+| `MovesetResolver` | **唯一判定点** `Resolve(right, left)`；`IsOneHandedMelee`=剑/匕/斧；`IsShield` 优先 `isShield` |
+| 三件套资产 | `Assets/Resources/Movesets/{Unarmed,OneHandedSword,SwordAndShield}Moveset.asset`（**覆盖器留空**） |
+| `MeleeFighter.SetWeaponConfig` | 不再把 `animOverride` 当整个控制器；走 `ApplyMovesetFromResolver` |
+| `WeaponManager` | `EnsureMovesets` + `GetMovesetRight/LeftConfig`；换装后打日志 `动作集=...` |
+
+**兼容**：Moveset 覆盖器为空时，若旧 `WeaponConfig.animOverride` 仍有值则暂用（步骤 8 迁走）。
+
+**验收**：
+1. 空手 → Console `动作集=Unarmed`
+2. 右手剑 → `OneHandedSword`
+3. 右手剑 + 左手盾 → `SwordAndShield`
+4. 双盾 / 空手 → `Unarmed`
+5. 覆盖器空置时无报错、不跳动画（不换 controller）
 
 **(a) 新建三个文件**（设计文档 §5.3 / §3.1）：
 
@@ -424,13 +459,26 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 
 ---
 
-### 步骤 7 — 换覆盖器的参数快照回灌 + 准入属性 🔴 关键
+### 步骤 7 — 换覆盖器的参数快照回灌 + 准入属性 ✅ 已完成 🔴 关键
 
 | 项 | 内容 |
 |---|---|
-| 文件 | **新建** `Assets/GameMain/Scripts/Entity/Player/PlayerAnimationSet.cs`；改 `WeaponManager.cs` |
+| 文件 | **新建** `PlayerAnimationSet.cs`；改 `MeleeFighter.ApplyMovesetFromResolver` |
 | 依赖 | 步骤 6 |
-| 预估 | 中 |
+| 状态 | ✅ 已落地；**Play 验收待用户确认** |
+
+**实施记录**：
+
+| 项 | 落地 |
+|---|---|
+| 快照 → 赋值 → 等一帧 → 回灌 | `PlayerAnimationSet.SwitchRoutine`；参数：`PlayerState` / `MoveSpeed` / `TurnSpeed` / `JumpSpeed` / `FeetTween` |
+| `CanSwitchMoveset` | 死亡 / 翻滚 / `inAction` / `inCounter` 期间拒绝 |
+| 暂存请求 | `m_pending` + `Update` 重试，**不丢弃** |
+| 接线 | `MeleeFighter.ApplyMovesetFromResolver` 改走 `RequestController`，不再直接写 `runtimeAnimatorController` |
+
+**验收**：
+1. 跑步中换武器 → 动画**不跳回待机**
+2. 翻滚中换武器 → 请求暂存，翻滚结束后生效
 
 **为什么是必须项而不是优化项**（设计文档 §11.6）：
 `animator.runtimeAnimatorController = x` 这个赋值动作**会让全部 animator 参数回到默认值**。
@@ -449,7 +497,28 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 
 ---
 
-### 步骤 8 — 三个 `.overrideController`
+### 步骤 8 — 三个 `.overrideController` ✅ 映射已填（基础集）
+
+| 项 | 内容 |
+|---|---|
+| 文件 | `Animations/Override/{Unarmed,OneHandedSword,SwordAndShield}_Override.overrideController` |
+| 依赖 | 步骤 9 ✅ |
+| 状态 | ✅ SwordAndShield / OneHandedSword 各 **35 条** clip 映射；Unarmed `m_Clips: []` 继承 ARPG 基础 |
+
+**映射摘要（Original=ARPG_Warrior_* → Override=SwordAndShield_*）**：
+
+| 类别 | 映射 |
+|---|---|
+| 待机/走/跑/转向 | Idle_CombatReady、Walk_*、Run_*、Turn_* |
+| 攻击 Light 1/2/3 | Forward_Slash01 / Slash02 / Forward_Stab |
+| 受击 | Reaction_AttackRecoil01 |
+| 翻滚 | Evade_Roll_Forward / Evade_Back/Left/Right |
+| 跳跃 | Jump_InPlace_Loop / Land |
+| 盾击 1/2/3 | Shield_Forward_Bash / InPlace_QuickBash / Forward_UpwardSwing（单手剑套退回剑斩） |
+| 举盾 | Block_Start / Loop / End |
+
+**占位 motion（步骤 9 新状态）**：为使覆盖器能按 clip 区分槽位，`Shield_Bash_*` / `Block_*`
+在基础控制器里各挂了**互不相同**的 ARPG 占位 clip，再在覆盖器里换成真动画。
 
 | 项 | 内容 |
 |---|---|
@@ -471,7 +540,24 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 
 ---
 
-### 步骤 9 — Layer1 状态重命名 + 同步引用
+### 步骤 9 — Layer1 状态重命名 + 同步引用 ✅ 已完成
+
+| 项 | 内容 |
+|---|---|
+| 文件 | `PlayerMove.controller` + `Sword/Axe_Attack*.asset` + `MeleeFighter.cs` |
+| 状态 | ✅ 重命名与引用已同步；**Play 验收待确认** |
+
+**重命名结果**：
+
+| 旧名 | 新名 |
+|---|---|
+| `Melee_Attack_1/2/3` | `Attack_Light_1/2/3` |
+| `Melee_Impact` | `Attack_Impact` |
+| 新增占位状态 | `Shield_Bash_1/2/3`、`Block_Start/Loop/End`（motion 暂挂 Attack_Light_1 clip，步骤 8/10 换真动画） |
+| **不改** | `Melee_CounterAttack` / `Melee_CounterVictim` / `Melee_FallBackDeath` |
+
+**引用同步**：`Sword_Attack1/2/3`、`Axe_Attack1/2/3` 的 `AnimName`；`MeleeFighter` 的 `CrossFade("Attack_Impact")`。
+全局搜 `Melee_Attack` / `Melee_Impact`：**玩家侧 0 残留**（敌人 `EnemyController.controller` 自有同名状态，按计划不动）。
 
 | 项 | 内容 |
 |---|---|
@@ -602,10 +688,30 @@ public static E_MovesetType Resolve(WeaponConfig right, WeaponConfig left)
 
 | 项 | 值 |
 |---|---|
-| 已完成 | 步骤 1–4（步骤 3/4 的 Play 验收待用户确认） |
-| 下一步 | **步骤 5 —— `Item.txt` 加盾行 + 盾预制体 + `ShieldConfig`**（完成后过阶段一 Gate） |
-| 步骤 5 前置 | ① 先读 `DataRepository` 确认 `Type=3` 不会被拒 ② 盾预制体路径建议 `Assets/GameMain/Entities/Shield/ShieldPrefab.prefab` ③ 需 `Resources/ItemConfigs/Item_RoundShield.asset` |
-| 步骤 5 风险 | ① 盾预制体是设计文档遗漏项 ② `Item.txt` 追加行要 12 列 Tab 对齐 ③ Gate 要求剑右盾左同时可见 + 盾碰撞体 enabled=false |
+| 已完成 | 步骤 1–7 + **阶段一 Gate 已通过** |
+| **当前** | **下一步：步骤 8 三个覆盖器 / 步骤 9 Layer1 重命名**（9 与 8 同批，先定槽位名） |
+| 步骤 7 记录 | `PlayerAnimationSet` 快照回灌 + `CanSwitchMoveset` 暂存重试；换 controller 不再直接赋值 |
+| 下一步 | **步骤 6 —— Moveset 路由骨架**（`MovesetType` / `MovesetConfig` / `MovesetResolver`，覆盖器先留空） |
+
+**步骤 5 实施记录**：
+
+| 产出 | 路径 / 内容 |
+|---|---|
+| `Item.txt` 盾行 | `10008` / Type=**3** / WeaponType=**5** / BaseDamage=0 / AssetId=`Item_RoundShield`；图标暂用 `Sprites/UI/Weapon/weapon_05`（无 shield_01 资源） |
+| 盾预制体 | `Assets/GameMain/Entities/Shield/ShieldPrefab.prefab`：嵌套 `SkelMesh_RoundShield.fbx`，Layer8 / Tag Hitbox / BoxCollider(IsTrigger,**enabled=0**) Size(0.6,0.6,0.1) Center(0,0,0.05)；根节点烘焙了手部挂载位姿；已移除 FBX 空 Animator |
+| `ShieldConfig.asset` | `Assets/Resources/WeaponConfigs/ShieldConfig.asset`：`weaponID=10008`、`isShield=1`、`isRanged=0`、`weaponPrefab`→ShieldPrefab 根节点 |
+| `Item_RoundShield.asset` | `Assets/Resources/ItemConfigs/Item_RoundShield.asset`（`ItemConfig_SO`，可选缓存） |
+| 背包 UI | 武器页签同时显示 Type=Weapon 与 Type=Shield；装备按钮支持盾 |
+| GM | `GmCmd/创建双持测试数据`、`GmCmd/Gate：装备剑（右手）+盾（左手）` |
+| 解析器核实 | `DataRepository.ParseItemTable` **无 Type 白名单**，`Type=3` 可直接解析 |
+| 编译 | Roslyn 零非环境 `error CS`；新资产 GUID 无冲突 |
+
+**阶段一 Gate 验收清单**：
+1. Play → `GmCmd/Gate：装备剑+盾`（或背包手动装备）
+2. **右手剑 + 左手盾两个模型同时可见**（盾位置对齐 `hand_l`）
+3. 选中盾模型 → `BoxCollider.enabled == false`
+4. Console 无 `MissingReferenceException` / `NullReferenceException`
+5.（加验）`MeleeFighter` 的 `WeaponCollider` 仍指向剑
 
 **验收（阶段一 Gate 的前半，步骤 3）**：
 1. Play 中 Console 无 `MissingReferenceException`

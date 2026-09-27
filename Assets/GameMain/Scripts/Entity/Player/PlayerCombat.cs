@@ -33,11 +33,17 @@ public class PlayerCombat : MonoBehaviour
     public void HandleLightAttack(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
-        
+
         //如果正在使用远程武器 不触发近战攻击
         if(switcher != null && switcher.IsUsingRanged) return;
 
-        if(weapManager == null || !weapManager.HasMeeleWeaponEquipped()) return;
+        if (weapManager == null)
+            weapManager = GetComponent<WeaponManager>();
+        if (weapManager == null || !weapManager.HasMeeleWeaponEquipped())
+        {
+            Debug.Log("[PlayerCombat] 攻击被拦：未装备近战武器（盾/弓不算）");
+            return;
+        }
 
         //获取锁定目标
         MeleeFighter targetFighter = null;
@@ -47,23 +53,26 @@ public class PlayerCombat : MonoBehaviour
         }
 
         //攻击前平滑转向摄像机方向
-        if (!playerController.IsLocking)
+        if (!playerController.IsLocking && CameraManager.Instance != null)
         {
             Transform camTf = CameraManager.Instance.MainCameraTransform;
-            Vector3 camForward = new Vector3(camTf.forward.x,0,camTf.forward.z).normalized;
-            if(camForward.sqrMagnitude > 0.01f)
+            if (camTf != null)
             {
-                Quaternion targetRot = Quaternion.LookRotation(camForward);
-                //用一个较大的Larp 系数实现"快速但不瞬间"的转向
-                playerController.PlayerTransform.rotation = Quaternion.Slerp(playerController.PlayerTransform.rotation,targetRot,10f * Time.deltaTime);
+                Vector3 camForward = new Vector3(camTf.forward.x,0,camTf.forward.z).normalized;
+                if(camForward.sqrMagnitude > 0.01f)
+                {
+                    Quaternion targetRot = Quaternion.LookRotation(camForward);
+                    playerController.PlayerTransform.rotation = Quaternion.Slerp(playerController.PlayerTransform.rotation,targetRot,10f * Time.deltaTime);
+                }
             }
         }
 
         //检查是否可以反击（目标必须活着，否则会把 Death 姿态切成 Melee_CounterVictim，看着像复活）
-        var enemy = EnemyManager.i.GetAttackingEnemy();
+        var enemy = EnemyManager.i != null ? EnemyManager.i.GetAttackingEnemy() : null;
 
         if (enemy != null
             && (enemy.Health == null || !enemy.Health.IsDead)
+            && enemy.Fighter != null
             && enemy.Fighter.IsCounterable
             && !meleeFighter.inAction && !meleeFighter.IsAttackingHit)
         {
@@ -74,7 +83,11 @@ public class PlayerCombat : MonoBehaviour
         {
             // 轻攻击消耗：不足则整段攻击不发出
             float cost = staminaConfig != null ? staminaConfig.lightAttackCost : 12f;
-            if (stamina != null && !stamina.TryConsume(cost)) return;
+            if (stamina != null && !stamina.TryConsume(cost))
+            {
+                Debug.Log("[PlayerCombat] 攻击被拦：耐力不足");
+                return;
+            }
 
             meleeFighter.ToTryAttack(targetFighter ?? playerController.TargetEnemy?.Fighter);
         }

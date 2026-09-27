@@ -591,18 +591,50 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     {
         currentWeapConfig = config;
 
-        // ⚠️ 已知语义偏差（本阶段 0.1 不动它，见 Moveset_System_Design.md §1.3 / §10 阶段 2.4）：
-        // animOverride 是个【动画覆盖器】却被当成【整个控制器】直接赋值。
-        // 改走 MovesetResolver + "参数快照 → 赋值 → 等一帧 → 回灌" 是阶段 2 的任务，
-        // 现在动它会把跑步/翻滚中的动画打断，且没有替代链路
-        if (config != null && config.animOverride != null)
+        // 【步骤 6】不再把 animOverride 当整个控制器。
+        // 控制器切换只走 ApplyMoveset（MovesetResolver 解析后的 locomotionOverride）。
+        // 此处仅保存招式表来源；覆盖器为空时保持 originalController，不会顶掉跑步/翻滚。
+        ApplyMovesetFromResolver();
+    }
+
+    /// <summary>当前动作集（MovesetResolver 唯一判定后的结果）</summary>
+    public E_MovesetType CurrentMovesetType => MovesetResolver.CurrentType;
+
+    /// <summary>
+    /// 按当前左右手装备刷新动作集与控制器。
+    /// 覆盖器为空 = 不换 controller（步骤 8 再配动画）。
+    /// ⚠️ 步骤 7 才做「参数快照 → 赋值 → 等一帧 → 回灌」；本步只接路由。
+    /// </summary>
+    void ApplyMovesetFromResolver()
+    {
+        if (animator == null) return;
+
+        WeaponConfig right = null, left = null;
+        WeaponManager wm = GetComponent<WeaponManager>();
+        if (wm != null)
         {
-            animator.runtimeAnimatorController = config.animOverride;
+            right = wm.GetMovesetRightConfig();
+            left = wm.GetMovesetLeftConfig();
         }
-        else
-        {
-            animator.runtimeAnimatorController = originalController;
-        }
+
+        MovesetConfig ms = MovesetResolver.ResolveAndCache(
+            right, left,
+            wm != null ? wm.MovesetUnarmed : null,
+            wm != null ? wm.MovesetOneHandedSword : null,
+            wm != null ? wm.MovesetSwordAndShield : null);
+
+        RuntimeAnimatorController target = originalController;
+        if (ms != null && ms.locomotionOverride != null)
+            target = ms.locomotionOverride;
+        // 【临时】不再回退到 WeaponConfig.animOverride：旧资产引用不完整时会把 Animator 打断成 T-pose
+        // 覆盖器请在 MovesetConfig.locomotionOverride 上挂，并在 Inspector 确认 clip 无 Missing
+
+        // 🔴 必须走 PlayerAnimationSet：直接赋值会把 MoveSpeed/PlayerState 等打回默认值
+        PlayerAnimationSet animSet = GetComponent<PlayerAnimationSet>();
+        if (animSet == null)
+            animSet = gameObject.AddComponent<PlayerAnimationSet>();
+
+        animSet.RequestController(target);
     }
 
     private void InitBoneCollider()
@@ -641,10 +673,19 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         var activeAttacks = ActiveAttacks;
         if (activeAttacks == null || activeAttacks.Count == 0)
         {
+            Debug.LogWarning("[MeleeFighter] ActiveAttacks 为空，攻击未发出（检查 WeaponConfig.attacks / 组件 attacks）");
             inAction = false;
             yield break;
         }
 
+        if (animator == null)
+        {
+            Debug.LogWarning("[MeleeFighter] animator 为空，攻击未发出");
+            inAction = false;
+            yield break;
+        }
+
+        if (combocount >= activeAttacks.Count) combocount = 0;
         animator.CrossFade(activeAttacks[combocount].AnimName, 0.2f, 1);
 
         yield return null;
@@ -775,7 +816,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
             if (dispVec != Vector3.zero) transform.rotation = Quaternion.LookRotation(dispVec);
         }
 
-        animator.CrossFade("Melee_Impact", 0.2f, 1);
+        animator.CrossFade("Attack_Impact", 0.2f, 1);
         yield return null;
 
         var animState = animator.GetNextAnimatorStateInfo(1);

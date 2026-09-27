@@ -238,7 +238,7 @@ public class PackagePanel : BasePanel
             {
                 //根据id查询配置表判断逻辑
                 var config = GameManager.Instance.GetPackageItemById(localData.id);
-                if(config != null && config.Type != CurrentFilterType)
+                if(config != null && !PassesTypeFilter(config))
                 {
                     continue;//跳过不符合类型的物品
                 }
@@ -309,7 +309,8 @@ public class PackagePanel : BasePanel
             equipBtnText.text = "Equip";
             return;
         }
-        if(config.Type == GameConst.PackageTypeWeapon)
+        // 武器与盾（Type=3）同一套装备按钮状态
+        if(config.Type == GameConst.PackageTypeWeapon || config.Type == GameConst.PackageTypeShield)
         {
             equipBtnText.text = seleced.isEquipped ?"Unequip":"Equip";
         }else if(config.Type == GameConst.PackageTypeFood)
@@ -417,11 +418,12 @@ public class PackagePanel : BasePanel
     var config = GameManager.Instance.GetPackageItemById(selected.id);
     if (config == null) return;
 
-    if (config.Type == GameConst.PackageTypeWeapon)
+    if (config.Type == GameConst.PackageTypeWeapon || config.Type == GameConst.PackageTypeShield)
     {
         if (selected.isEquipped)
         {
-            InventoryManager.Instance.Unequip();
+            // 按当前选中的 uid 卸下；双持下不能卸掉另一只手
+            InventoryManager.Instance.UnequipItem(selected.uid);
             ToastMessage.Show("已卸下装备");
         }
         else
@@ -429,8 +431,14 @@ public class PackagePanel : BasePanel
             bool success = InventoryManager.Instance.EquipWeapon(selected.uid);
             if (success)
             {
-                DataRepository.ItemTable.TryGetValue(selected.id, out var item);
-                ToastMessage.Show("已装备: " + (item?.Name ?? ""));
+                string name = selected.id.ToString();
+                if (DataRepository.ItemTable != null
+                    && DataRepository.ItemTable.TryGetValue(selected.id, out var item)
+                    && item != null)
+                {
+                    name = item.Name;
+                }
+                ToastMessage.Show("已装备: " + name);
             }
             else
                 ToastMessage.Show("装备失败");
@@ -541,12 +549,26 @@ public class PackagePanel : BasePanel
             if(CurrentFilterType >= 0)
             {
                 var config = GameManager.Instance.GetPackageItemById(localData.id);
-                if(config != null && config.Type != CurrentFilterType)
+                if(config != null && !PassesTypeFilter(config))
                     continue;
             }
             count++;
         }
         return count;
+    }
+
+    /// <summary>
+    /// 背包页签筛选：武器页同时显示盾（Type=Shield），盾走武器装备链路。
+    /// </summary>
+    bool PassesTypeFilter(DRItem config)
+    {
+        if (config == null) return CurrentFilterType < 0;
+        if (CurrentFilterType < 0) return true;
+        if (config.Type == CurrentFilterType) return true;
+        if (CurrentFilterType == GameConst.PackageTypeWeapon
+            && config.Type == GameConst.PackageTypeShield)
+            return true;
+        return false;
     }
 
     private void OnClickClose()

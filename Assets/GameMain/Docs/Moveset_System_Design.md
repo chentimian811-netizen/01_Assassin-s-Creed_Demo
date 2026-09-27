@@ -13,7 +13,7 @@
 | **玩家资产** | **`Assets/GameMain/Entities/Player/Male.prefab`**（骨架 = `Assets/Fantasy knight/Prefab/Skin_1_4.prefab`，`hand_l` / `lowerarm_l` 命名）。⚠️ `Player.prefab` 是**弃用的旧资产**，见 §12.1 |
 | 参考框架 | `C:\Unity\CBTFM`（Combat System，第三方战斗框架，仅作模式借鉴） |
 | 参考作品 | Elden Ring / Dark Souls III（FromSoftware） |
-| 文档状态 | 已批准 → **阶段 0 完成 ｜ 1.1–1.4 已完成**，**下一步阶段 1.5（Item.txt 盾行 + 盾预制体 + ShieldConfig）**。<br>进度快照看 **§2.1.1** |
+| 文档状态 | 已批准 → **阶段 0｜1.1–1.5｜Gate ✅｜阶段 2 路由 + 2.6/2.7 参数回灌/准入已完成**，下一步覆盖器与槽位重命名。<br>进度快照看 **§2.1.1** |
 
 ---
 
@@ -105,8 +105,8 @@
 | **1.2** `WeaponSlot.allowedTypes` 改数组 | ✅ **已完成** | `WeaponSlot.cs` + `WeaponManager.cs`（4 处改 `Accepts()`） | — |
 | **1.3** 左手挂点 + 两槽改名 | ✅ **已完成** | `Male.prefab`：RightHand→hand_r、LeftHand→hand_l，allowedTypes 已配 | Play 验收待确认；⚠️ 原文档误写 hand_l 的 fileID，已纠正 |
 | **1.4** 双持约束 + 目标槽优先 | ✅ **已完成** | `WeaponManager.cs`（+ `InventoryManager`/`WeaponSwitcher` 连带） | Play 验收待确认 |
-| **1.5** `Item.txt` 编码 + 盾行 | ⬜ 未开始 | `Resources/DataTables/Item.txt` | 原文件是 **GBK**，转换需逐行校对 |
-| **2** 动作集路由骨架 | ⬜ 未开始 | `MovesetConfig` / `MovesetResolver` / `PlayerAnimationSet` | — |
+| **1.5** `Item.txt` 盾行 + 盾资产 | ✅ **已完成** | Item.txt 10008 + ShieldPrefab + ShieldConfig + ItemConfig_SO + GM/Gate 命令 | **阶段一 Gate 待 Play 验收**；图标暂用 weapon_05 |
+| **2** 动作集路由骨架 | ✅ **已完成** | `MovesetConfig` / `MovesetResolver` / `E_MovesetType` + 三件套资产 | Play 验收待确认 |
 | **3** 三个覆盖器落地 | ⬜ 未开始 | `.overrideController` ×3 | 依赖 3.0 状态重命名 |
 | **4** 左手攻击通道 | ⬜ 未开始 | `MeleeFighter.cs` / `AttackData.cs` / 输入 | — |
 | **5** 举盾 + 格挡判定 + 精力 | ⬜ 未开始 | 控制器 + `ParrySystem` | — |

@@ -1,0 +1,8 @@
+[
+  {
+    "fallback_base_damage": 5,
+    "default_hit_stop_duration": 0.1,
+    "default_hit_stop_time_scale": 0.05,
+    "max_hit_stop_duration": 0.3
+  }
+]

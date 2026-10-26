@@ -11,10 +11,11 @@ using UnityEngine;
 public static class DamageRouter
 {
     /// <summary>
-    /// 红线 4 的唯一例外：DamageRouter 是静态类无法序列化 SO。
-    /// 若未来需要调这个值，迁到 Config SO 并在 ProcedureGame.OnEnter 静态注入。
+    /// 兜底基础伤害：已迁到 CombatGlobal 表（Gameplay.xlsx），这里不再写死常量。
+    /// 只在"武器 ID 解析不出物品"时使用；正常武器伤害走 Item.BaseDamage × 招式倍率。
+    /// 取不到表时返回 0：宁可这次不结算，也不用旧常量静默掩盖配置缺失。
     /// </summary>
-    private const float FallbackBaseDamage = 5f;
+    private static float FallbackBaseDamage => DataRepository.GetCombatGlobal()?.FallbackBaseDamage ?? 0f;
 
     /// <summary>
     /// 是否把每次伤害结算打到 Console（调试用）。false = 完全不产生日志开销。

@@ -230,6 +230,14 @@ public static class DataRepository
         return row;
     }
 
+    /// <summary>全局战斗默认值（one 单行表）。读不到时返回 null，由调用方按 0 处理</summary>
+    public static CombatGlobal GetCombatGlobal()
+    {
+        var tables = EnsureTables("CombatGlobal", "<one>");
+        if (tables == null) return null;
+        return tables.TbCombatGlobal.Data;
+    }
+
     /// <summary>确保表已加载，未就绪时返回 null 并带上"哪张表、哪个 ID"的错误信息</summary>
     private static Tables EnsureTables(string tableName, string configId)
     {
@@ -352,6 +360,7 @@ public static class DataRepository
         if (tables.TbWeapon == null) throw new Exception("Luban 生成物缺少 TbWeapon，请重新导出");
         if (tables.TbWeaponUpgrade == null) throw new Exception("Luban 生成物缺少 TbWeaponUpgrade，请重新导出");
         if (tables.TbAttack == null) throw new Exception("Luban 生成物缺少 TbAttack，请重新导出");
+        if (tables.TbCombatGlobal == null) throw new Exception("Luban 生成物缺少 TbCombatGlobal，请重新导出");
 
         m_tables = tables;
     }

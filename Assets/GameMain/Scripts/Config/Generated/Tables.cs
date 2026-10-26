@@ -14,6 +14,10 @@ using Luban.SimpleJSON;
 public partial class Tables
 {
     /// <summary>
+    /// 全局战斗默认值：兜底伤害与卡肉参数（单行表）
+    /// </summary>
+    public TbCombatGlobal TbCombatGlobal {get; }
+    /// <summary>
     /// 所有招式数值（玩家/敌人共用，主键=AttackData 的稳定 attackId）
     /// </summary>
     public TbAttack TbAttack {get; }
@@ -48,6 +52,7 @@ public partial class Tables
 
     public Tables(System.Func<string, JSONNode> loader)
     {
+        TbCombatGlobal = new TbCombatGlobal(loader("combat_global"));
         TbAttack = new TbAttack(loader("attack"));
         TbWeapon = new TbWeapon(loader("weapon"));
         TbWeaponUpgrade = new TbWeaponUpgrade(loader("weapon_upgrade"));
@@ -61,6 +66,7 @@ public partial class Tables
     
     private void ResolveRef()
     {
+        TbCombatGlobal.ResolveRef(this);
         TbAttack.ResolveRef(this);
         TbWeapon.ResolveRef(this);
         TbWeaponUpgrade.ResolveRef(this);

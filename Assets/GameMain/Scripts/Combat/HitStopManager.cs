@@ -16,16 +16,18 @@ public class HitStopManager : MonoBehaviour
 {
     public static HitStopManager Instance { get; private set; }
 
-    [Header("默认卡肉参数")]
-    [Tooltip("顿帧时长（真实时间，不受 timeScale 影响）")]
-    [SerializeField] private float defaultDuration = 0.1f;
+    // 默认卡肉参数：来源 CombatGlobal 单行表（Gameplay.xlsx），Awake 解析一次。
+    // 本组件仍是 Time.timeScale 的唯一所有者：暂停优先、卡肉不覆盖暂停。
+    private CombatGlobal m_configRow;
 
-    [Tooltip("顿帧期间的时间缩放。0 = 完全冻结（Animator/物理/NavMesh 全停），建议 0.05 保留一点动感")]
-    [Range(0f, 1f)]
-    [SerializeField] private float defaultTimeScale = 0.05f;
+    /// <summary>顿帧时长（真实时间，不受 timeScale 影响）</summary>
+    private float defaultDuration => m_configRow != null ? m_configRow.DefaultHitStopDuration : 0f;
 
-    [Tooltip("单次卡肉时长上限，防止连续触发叠成长时间冻结")]
-    [SerializeField] private float maxDuration = 0.3f;
+    /// <summary>顿帧期间的时间缩放。0 = 完全冻结，建议 0.05 保留一点动感</summary>
+    private float defaultTimeScale => m_configRow != null ? m_configRow.DefaultHitStopTimeScale : 0f;
+
+    /// <summary>单次卡肉时长上限，防止连续触发叠成长时间冻结</summary>
+    private float maxDuration => m_configRow != null ? m_configRow.MaxHitStopDuration : 0f;
 
     // ---- 时间缩放状态 ----
     private bool isPaused;
@@ -50,6 +52,7 @@ public class HitStopManager : MonoBehaviour
             return;
         }
         Instance = this;
+        m_configRow = DataRepository.GetCombatGlobal();
     }
 
     private void OnDestroy()

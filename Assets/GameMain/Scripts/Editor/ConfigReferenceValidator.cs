@@ -93,6 +93,7 @@ public static class ConfigReferenceValidator
         CheckTableReferences(problems);
         CheckWeaponReferences(problems);
         CheckAttackReferences(problems);
+        CheckGlobalTables(problems);
     }
 
     /// <summary>
@@ -419,6 +420,36 @@ public static class ConfigReferenceValidator
             {
                 problems.Add(Make("Attack", $"attack_id={row.AttackId} 没有对应的 AttackData 资产"));
             }
+        }
+    }
+
+    /// <summary>单行表（CombatGlobal / 以后的 EnemyGlobal）的取值范围检查</summary>
+    private static void CheckGlobalTables(List<Problem> problems)
+    {
+        var tables = DataRepository.ConfigTables;
+
+        var combat = tables.TbCombatGlobal.Data;
+        if (combat == null)
+        {
+            problems.Add(Make("CombatGlobal", "单行表没有数据行"));
+            return;
+        }
+
+        if (combat.FallbackBaseDamage < 0f)
+        {
+            problems.Add(Make("CombatGlobal", $"fallback_base_damage 不能为负：{combat.FallbackBaseDamage}"));
+        }
+        if (combat.DefaultHitStopDuration < 0f)
+        {
+            problems.Add(Make("CombatGlobal", $"default_hit_stop_duration 不能为负：{combat.DefaultHitStopDuration}"));
+        }
+        if (combat.DefaultHitStopTimeScale < 0f || combat.DefaultHitStopTimeScale > 1f)
+        {
+            problems.Add(Make("CombatGlobal", $"default_hit_stop_time_scale 必须在 0~1：{combat.DefaultHitStopTimeScale}"));
+        }
+        if (combat.MaxHitStopDuration < 0f)
+        {
+            problems.Add(Make("CombatGlobal", $"max_hit_stop_duration 不能为负：{combat.MaxHitStopDuration}"));
         }
     }
 

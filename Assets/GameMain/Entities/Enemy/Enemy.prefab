@@ -1411,6 +1411,7 @@ MonoBehaviour:
   <AlertRange>k__BackingField: 20
   minSeparationDistance: 1.2
   separationForce: 5
+  performanceLockTimeout: 10
 --- !u!114 &1342149859006696479
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1433,9 +1434,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad5306f128adaaf4b98fdbc6f409238e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  weaponID: -1
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weaponID: 10001
   attacks:
   - {fileID: 11400000, guid: ac0c29b7b65405247b8d850d08e98675, type: 2}
   - {fileID: 11400000, guid: 3c5b7744a4f889f47bf29fae2b0528d1, type: 2}
@@ -1447,21 +1448,8 @@ MonoBehaviour:
   autoFitMaxLength: 3
   autoFitMaxOversizeRatio: 1.3
   logHitboxBinding: 0
---- !u!114 &8811223344556677002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4769488866850045155}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c4e9a1b2d3f4056a8b9c0d1e2f30415, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  maxHealth: 100
-  refillOnEnable: 1
-  unitId:
+  shieldHitbox: {fileID: 0}
+  hitReactionStateName: 
 --- !u!143 &8684321585978170563
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1481,7 +1469,7 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 2.17
+  m_Height: 2.15
   m_Radius: 0.5
   m_SlopeLimit: 45
   m_StepOffset: 0.3
@@ -1544,6 +1532,7 @@ MonoBehaviour:
   adjustDistanceThreshold: 1
   idleTimeRange: {x: 2, y: 5}
   circlingTimeRange: {x: 3, y: 6}
+  keepAttackingDeadTargetSeconds: 4
 --- !u!195 &3779881558062216638
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -1563,7 +1552,7 @@ NavMeshAgent:
   m_AutoBraking: 0
   m_AutoRepath: 1
   m_Height: 2
-  m_BaseOffset: 0.2
+  m_BaseOffset: 0.3
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!114 &1847130694280441761
@@ -1672,6 +1661,21 @@ MonoBehaviour:
   markerColor: {r: 1, g: 0, b: 0, a: 1}
   markerYOffset: 9.5
   markerSize: 1
+--- !u!114 &8811223344556677002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769488866850045155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e9a1b2d3f4056a8b9c0d1e2f30415, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 1000
+  refillOnEnable: 1
+  unitId: 
 --- !u!1 &4997539610557008081
 GameObject:
   m_ObjectHideFlags: 0
@@ -3393,12 +3397,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b21ed3581a87c834eb6947da7a8c7dc2, type: 3}
---- !u!1 &3139722781369767024 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1725509709468344114, guid: b21ed3581a87c834eb6947da7a8c7dc2,
-    type: 3}
-  m_PrefabInstance: {fileID: 4350676029881584450}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8679712388509520824 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4905612562613983482, guid: b21ed3581a87c834eb6947da7a8c7dc2,

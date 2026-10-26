@@ -17,10 +17,15 @@ public static class ConfigIdentityMigration
     private const string MalePrefabPath = "Assets/GameMain/Entities/Player/Male.prefab";
     private const string PlayerConfigId = "player_main";
 
+    /// <summary>普通敌人 Prefab 与配置 ID。生命先迁到 Character 表（Task 5 期间不打断 Play），AI 数值留给 Task 10</summary>
+    private const string EnemyPrefabPath = "Assets/GameMain/Entities/Enemy/Enemy.prefab";
+    private const string EnemyConfigId = "enemy_default";
+
     [MenuItem("ACDemo/Config/Migration/Apply Character Identities", priority = 40)]
     public static void ApplyCharacterIdentities()
     {
         ApplyPrefabIdentity(MalePrefabPath, PlayerConfigId);
+        ApplyPrefabIdentity(EnemyPrefabPath, EnemyConfigId);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();

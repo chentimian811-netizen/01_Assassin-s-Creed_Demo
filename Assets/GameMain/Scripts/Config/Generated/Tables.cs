@@ -14,25 +14,43 @@ using Luban.SimpleJSON;
 public partial class Tables
 {
     /// <summary>
+    /// 物品与武器基础数值（背包/商店/伤害链路共用）
+    /// </summary>
+    public TbItem TbItem {get; }
+    /// <summary>
     /// 角色基础生命（玩家/敌人/Boss 共用，主键=角色配置ID）
     /// </summary>
     public TbCharacter TbCharacter {get; }
     /// <summary>
+    /// 玩家移动/翻滚/锁定手感数值
+    /// </summary>
+    public TbPlayer TbPlayer {get; }
+    /// <summary>
     /// 耐力配置（玩家/敌人共用，主键引用 Character.id）
     /// </summary>
     public TbStamina TbStamina {get; }
+    /// <summary>
+    /// 弹反/格挡数值（未启用功能的开发初始值）
+    /// </summary>
+    public TbParry TbParry {get; }
 
     public Tables(System.Func<string, JSONNode> loader)
     {
+        TbItem = new TbItem(loader("item"));
         TbCharacter = new TbCharacter(loader("character"));
+        TbPlayer = new TbPlayer(loader("player"));
         TbStamina = new TbStamina(loader("stamina"));
+        TbParry = new TbParry(loader("parry"));
         ResolveRef();
     }
     
     private void ResolveRef()
     {
+        TbItem.ResolveRef(this);
         TbCharacter.ResolveRef(this);
+        TbPlayer.ResolveRef(this);
         TbStamina.ResolveRef(this);
+        TbParry.ResolveRef(this);
     }
 }
 

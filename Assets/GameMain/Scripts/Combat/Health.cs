@@ -15,8 +15,8 @@ using UnityEngine;
 public class Health : MonoBehaviour, IDamageable
 {
     [Header("血量")]
-    [Tooltip("最大血量。修复了原 MeleeFighter 没有 MaxHealth、clamp 上限用当前血的 bug")]
-    [SerializeField] private float maxHealth = 25f;
+    [Tooltip("最大血量。运行时由 Character 表按 CharacterConfigIdentity 的配置 ID 解析，Prefab 不再保存该数值")]
+    private float maxHealth;
 
     [Tooltip("复活/篝火后是否回满")]
     [SerializeField] private bool refillOnEnable = true;
@@ -61,7 +61,26 @@ public class Health : MonoBehaviour, IDamageable
             unitId = isPlayer ? "player" : $"unit_{GetInstanceID()}";
         }
 
+        // 生命上限必须先解析，否则 ResetToFull 会把当前血量填成 0
+        ResolveMaxHealthFromConfig();
+
         if (refillOnEnable) ResetToFull();
+    }
+
+    /// <summary>
+    /// 从 Character 表解析生命上限（唯一数值来源）。
+    /// 解析失败时保持 0 并报错：宁可当场露馅，也不用 Prefab 旧值静默掩盖配置问题。
+    /// </summary>
+    private void ResolveMaxHealthFromConfig()
+    {
+        var row = CharacterConfigIdentity.GetCharacterRow(this);
+        if (row == null) return;   // 具体错误已由解析入口打印（含组件名与配置 ID）
+
+        maxHealth = row.MaxHealth;
+        if (maxHealth <= 0f)
+        {
+            Debug.LogError($"[Health] {name} 的 Character 配置 max_health 必须大于 0，当前 {maxHealth}", this);
+        }
     }
 
     private void OnEnable()

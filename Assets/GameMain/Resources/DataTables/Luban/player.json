@@ -1,0 +1,26 @@
+[
+  {
+    "id": "player_main",
+    "crouch_speed": 1.12,
+    "walk_speed": 2.33,
+    "run_speed": 3.43,
+    "gravity": -9.8,
+    "max_height": 1,
+    "fall_multiplier": 1.5,
+    "jump_cooldown": 0.15,
+    "ground_check_offset": 0.5,
+    "fall_height": 0.5,
+    "run_hold_threshold": 0.2,
+    "lock_on_distance": 15,
+    "lock_on_turn_speed": 8,
+    "dodge_duration": 0.9,
+    "dodge_cooldown": 0.2,
+    "dodge_distance": 3.5,
+    "move_start_delay": 0,
+    "move_duration": 0.45,
+    "iframe_start_delay": 0.05,
+    "iframe_duration": 0.4,
+    "turn_to_dodge_dir_time": 0.1,
+    "allow_neutral_dodge": true
+  }
+]

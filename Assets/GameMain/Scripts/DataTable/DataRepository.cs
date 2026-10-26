@@ -98,14 +98,17 @@ public static class DataRepository
         m_state = EInitState.Initializing;
         try
         {
-            LoadItemAndShop();
+            // Item 的来源已经切到 Luban，必须先有 Tables 才能构建 DRItem 兼容视图
             LoadLubanTables();
+            LoadItemAndShop();
 
             m_state = EInitState.Ready;
             m_lastError = null;
             Debug.Log($"[DataRepository] 加载完成：{ItemTable.Count} items, {ShopTable.Count} shop rows, " +
                       $"Luban 表 {m_tables.TbCharacter.DataList.Count} character / " +
-                      $"{m_tables.TbStamina.DataList.Count} stamina");
+                      $"{m_tables.TbPlayer.DataList.Count} player / " +
+                      $"{m_tables.TbStamina.DataList.Count} stamina / " +
+                      $"{m_tables.TbParry.DataList.Count} parry");
         }
         catch (Exception e)
         {
@@ -162,6 +165,34 @@ public static class DataRepository
         return row;
     }
 
+    /// <summary>按配置 ID 取玩家手感行；缺失时返回 null 并报出具体 ID</summary>
+    public static Player GetPlayer(string configId)
+    {
+        var tables = EnsureTables("Player", configId);
+        if (tables == null) return null;
+
+        var row = tables.TbPlayer.GetOrDefault(configId);
+        if (row == null)
+        {
+            Debug.LogError($"[DataRepository] Player 表缺少配置行：id={FormatId(configId)}。请检查 Gameplay.xlsx 的 Player Sheet");
+        }
+        return row;
+    }
+
+    /// <summary>按配置 ID 取弹反/格挡行；缺失时返回 null 并报出具体 ID</summary>
+    public static Parry GetParry(string configId)
+    {
+        var tables = EnsureTables("Parry", configId);
+        if (tables == null) return null;
+
+        var row = tables.TbParry.GetOrDefault(configId);
+        if (row == null)
+        {
+            Debug.LogError($"[DataRepository] Parry 表缺少配置行：id={FormatId(configId)}。请检查 Gameplay.xlsx 的 Parry Sheet");
+        }
+        return row;
+    }
+
     /// <summary>确保表已加载，未就绪时返回 null 并带上"哪张表、哪个 ID"的错误信息</summary>
     private static Tables EnsureTables(string tableName, string configId)
     {
@@ -195,15 +226,42 @@ public static class DataRepository
         BuildItemCaches();
     }
 
+    /// <summary>
+    /// 从 Luban Item 表构建旧 DRItem 兼容视图。
+    /// DRItem 只是运行时兼容类型（背包/商店/抽卡 UI 在用），数值来源只有 Excel 一处；
+    /// 旧 Resources/DataTables/Item.txt 保留在工程里作为回退对照，但初始化不再读取它。
+    /// </summary>
     private static Dictionary<int, DRItem> LoadItemTable()
     {
-        var itemText = Resources.Load<TextAsset>("DataTables/Item");
-        if (itemText == null)
+        var dict = new Dictionary<int, DRItem>();
+        foreach (var row in m_tables.TbItem.DataList)
         {
-            // 空表而不是 null：现有背包/商店/抽卡调用方会直接 TryGetValue，null 会 NRE
-            throw new FileNotFoundException("[DataRepository] Resources/DataTables/Item 未找到");
+            if (dict.ContainsKey(row.Id))
+            {
+                throw new Exception($"[DataRepository] Item 表主键重复：id={row.Id}");
+            }
+            dict[row.Id] = ToDRItem(row);
         }
-        return ParseItemTable(itemText.text);
+        return dict;
+    }
+
+    /// <summary>Luban Item 行 → 现有 DRItem 视图（字段逐一对应，含义与旧 TSV 列一致）</summary>
+    private static DRItem ToDRItem(Item row)
+    {
+        return new DRItem
+        {
+            Id = row.Id,
+            Type = row.Type,
+            WeaponType = (E_WeaponType)row.WeaponType,
+            BaseDamage = row.BaseDamage,
+            CritRate = row.CritRate,
+            Star = row.Star,
+            Name = row.Name,
+            Description = row.Description,
+            SkillDescription = row.SkillDescription,
+            ImagePath = row.ImagePath,
+            AssetId = row.AssetId,
+        };
     }
 
     private static (Dictionary<int, DRShop> byId, Dictionary<int, List<DRShop>> byKeeper) LoadShopTable()
@@ -249,8 +307,11 @@ public static class DataRepository
         var tables = new Tables(LoadLubanJson);
 
         // 生成代码与实际 JSON 对不上时，这里会最早暴露（缺表 = 生成过程没跑完）
+        if (tables.TbItem == null) throw new Exception("Luban 生成物缺少 TbItem，请重新导出");
         if (tables.TbCharacter == null) throw new Exception("Luban 生成物缺少 TbCharacter，请重新导出");
+        if (tables.TbPlayer == null) throw new Exception("Luban 生成物缺少 TbPlayer，请重新导出");
         if (tables.TbStamina == null) throw new Exception("Luban 生成物缺少 TbStamina，请重新导出");
+        if (tables.TbParry == null) throw new Exception("Luban 生成物缺少 TbParry，请重新导出");
 
         m_tables = tables;
     }
@@ -310,32 +371,6 @@ public static class DataRepository
         => ShopByKeeper != null && ShopByKeeper.TryGetValue(shopKeeperId, out var list) ? list : new List<DRShop>();
 
     // ==================== TSV 解析（Item 在 Task 6 前仍是来源，Shop 第一阶段保留） ====================
-
-    private static Dictionary<int, DRItem> ParseItemTable(string text)
-    {
-        var rows = TSVParser.Parse(text);
-        var dict = new Dictionary<int, DRItem>();
-        foreach (var cols in rows)
-        {
-            var item = new DRItem
-            {
-                Id = int.Parse(cols[0]),
-                Type = int.Parse(cols[1]),
-                WeaponType = (E_WeaponType)int.Parse(cols[2]),
-                BaseDamage = int.Parse(cols[3]),
-                CritRate = float.Parse(cols[4]),
-                Star = int.Parse(cols[5]),
-                Name = cols[6],
-                Description = cols[7],
-                SkillDescription = cols[8],
-                ImagePath = cols[9],
-                AssetId = cols[10]
-
-            };
-            dict[item.Id] = item;
-        }
-        return dict;
-    }
 
     private static (Dictionary<int, DRShop> byId, Dictionary<int, List<DRShop>> byKeeper) ParseShopTable(string text)
     {

@@ -1371,6 +1371,7 @@ GameObject:
   - component: {fileID: 4273704250487801590}
   - component: {fileID: 1485882695008051471}
   - component: {fileID: 8811223344556677002}
+  - component: {fileID: 598103387596555253}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Enemy
@@ -1673,9 +1674,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c4e9a1b2d3f4056a8b9c0d1e2f30415, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 1000
   refillOnEnable: 1
   unitId: 
+--- !u!114 &598103387596555253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769488866850045155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a823596a96a0c74088e8933e58fbfa5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  configId: enemy_default
 --- !u!1 &4997539610557008081
 GameObject:
   m_ObjectHideFlags: 0

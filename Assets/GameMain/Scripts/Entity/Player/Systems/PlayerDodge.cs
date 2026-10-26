@@ -26,16 +26,20 @@ public class PlayerDodge : MonoBehaviour
     // 无敌帧来源 key：必须在 Health 的全工程唯一常量里注册
     public const string InvulnerableReason = InvulnReasons.DodgeIFrame;
 
-    [SerializeField] private float dodgeDuration = 0.9f;
-    [SerializeField] private float dodgeCooldown = 0.2f;
+    // 【数值来源】Player 表（Gameplay.xlsx 的 Player Sheet），Init 时解析一次。
+    //   moveCurve 依然留在 Prefab —— 它是一整条曲线，不是单个数值（计划 §3.3）。
+    private Player m_configRow;
 
-    [Header("位移（对齐 CBTFM DodgeV2：曲线插值，非匀速）")]
-    [Tooltip("翻滚总位移（米）")]
-    [SerializeField] private float dodgeDistance = 3.5f;
-    [Tooltip("进入 Roll 状态后再等这么久才开始位移（秒）。0 = 立刻跟上，减少「先滑后滚」")]
-    [SerializeField] private float moveStartDelay = 0f;
-    [Tooltip("位移耗时（秒）。仅在无法读到 Animator 状态时作为兜底")]
-    [SerializeField] private float moveDuration = 0.45f;
+    float dodgeDuration => m_configRow != null ? m_configRow.DodgeDuration : 0f;
+    float dodgeCooldown => m_configRow != null ? m_configRow.DodgeCooldown : 0f;
+
+    // ---- 位移（对齐 CBTFM DodgeV2：曲线插值，非匀速）----
+    // 翻滚总位移（米）
+    float dodgeDistance => m_configRow != null ? m_configRow.DodgeDistance : 0f;
+    // 进入 Roll 状态后再等这么久才开始位移（秒）。0 = 立刻跟上，减少「先滑后滚」
+    float moveStartDelay => m_configRow != null ? m_configRow.MoveStartDelay : 0f;
+    // 位移耗时（秒）。仅在无法读到 Animator 状态时作为兜底
+    float moveDuration => m_configRow != null ? m_configRow.MoveDuration : 0f;
     [Tooltip("0→1 的位移曲线。前段压平（动画下蹲蓄力期不位移），中段前扑爆发，0.84（= Roll 过渡 ExitTime）收满，淡出期不再位移")]
     [SerializeField] private AnimationCurve moveCurve =
         new AnimationCurve(
@@ -45,18 +49,18 @@ public class PlayerDodge : MonoBehaviour
             new Keyframe(0.84f, 1f, 0.4f, 0f),
             new Keyframe(1f, 1f, 0f, 0f));
 
-    [Header("无敌帧（动画事件未配置时的兜底窗口）")]
-    [Tooltip("翻滚开始后多久进入无敌（秒，真实时间）")]
-    [SerializeField] private float iframeStartDelay = 0.05f;
-    [Tooltip("无敌持续时长（秒，真实时间）。动画事件 OpenIFrame/CloseIFrame 仍可覆盖")]
-    [SerializeField] private float iframeDuration = 0.4f;
+    // ---- 无敌帧（动画事件未配置时的兜底窗口）----
+    // 翻滚开始后多久进入无敌（秒，真实时间）
+    float iframeStartDelay => m_configRow != null ? m_configRow.IframeStartDelay : 0f;
+    // 无敌持续时长（秒，真实时间）。动画事件 OpenIFrame/CloseIFrame 仍可覆盖
+    float iframeDuration => m_configRow != null ? m_configRow.IframeDuration : 0f;
 
-    [Header("转向（仅非锁定翻滚）")]
-    [Tooltip("非锁定翻滚的转身时长（秒）。0 = 瞬时转向（生硬），0.08~0.12 较自然")]
-    [SerializeField] private float turnToDodgeDirTime = 0.1f;
+    // ---- 转向（仅非锁定翻滚）----
+    // 非锁定翻滚的转身时长（秒）。0 = 瞬时转向（生硬），0.08~0.12 较自然
+    float turnToDodgeDirTime => m_configRow != null ? m_configRow.TurnToDodgeDirTime : 0f;
 
-    [Tooltip("无方向输入时是否允许原地翻滚（false = 必须有移动输入）")]
-    [SerializeField] private bool allowNeutralDodge = true;
+    // 无方向输入时是否允许原地翻滚（false = 必须有移动输入）
+    bool allowNeutralDodge => m_configRow != null && m_configRow.AllowNeutralDodge;
 
     private Animator animator;
     private PlayerController playerController;
@@ -87,6 +91,7 @@ public class PlayerDodge : MonoBehaviour
         stamina = staminaRef;
         health = healthRef;
         characterController = cc;
+        m_configRow = CharacterConfigIdentity.GetPlayerRow(this);
 
         LogRollClipLengths();
     }

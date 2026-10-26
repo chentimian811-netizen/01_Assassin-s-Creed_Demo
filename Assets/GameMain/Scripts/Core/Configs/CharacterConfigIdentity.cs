@@ -51,4 +51,53 @@ public class CharacterConfigIdentity : MonoBehaviour
     {
         return owner != null ? owner.GetComponentInParent<CharacterConfigIdentity>() : null;
     }
+
+    // ==================== 统一的"按身份取表行"入口 ====================
+    // 把"沿父链找身份 → 读哪张表 → 缺配置怎么报错"收敛到一处，
+    // 避免 Health / PlayerMovement / PlayerDodge / ParrySystem 各写一遍解析逻辑。
+
+    /// <summary>取 Character（生命）行</summary>
+    public static Character GetCharacterRow(Component owner)
+    {
+        string configId = ResolveIdOrLog(owner, "Character");
+        return configId == null ? null : DataRepository.GetCharacter(configId);
+    }
+
+    /// <summary>取 Player（移动/翻滚/锁定）行</summary>
+    public static Player GetPlayerRow(Component owner)
+    {
+        string configId = ResolveIdOrLog(owner, "Player");
+        return configId == null ? null : DataRepository.GetPlayer(configId);
+    }
+
+    /// <summary>取 Stamina 行</summary>
+    public static Stamina GetStaminaRow(Component owner)
+    {
+        string configId = ResolveIdOrLog(owner, "Stamina");
+        return configId == null ? null : DataRepository.GetStamina(configId);
+    }
+
+    /// <summary>取 Parry 行</summary>
+    public static Parry GetParryRow(Component owner)
+    {
+        string configId = ResolveIdOrLog(owner, "Parry");
+        return configId == null ? null : DataRepository.GetParry(configId);
+    }
+
+    /// <summary>解析配置 ID；缺失时报错并返回 null（不静默退回默认值）</summary>
+    private static string ResolveIdOrLog(Component owner, string tableName)
+    {
+        string configId = ResolveConfigId(owner);
+        if (!string.IsNullOrEmpty(configId)) return configId;
+
+        Debug.LogError(
+            $"[Config] {Describe(owner)} 缺少 CharacterConfigIdentity 或配置 ID 为空，" +
+            $"无法读取 {tableName} 表", owner);
+        return null;
+    }
+
+    private static string Describe(Component owner)
+    {
+        return owner == null ? "<null>" : $"{owner.GetType().Name}@{owner.name}";
+    }
 }

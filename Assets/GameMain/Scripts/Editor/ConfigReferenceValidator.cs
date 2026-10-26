@@ -134,9 +134,10 @@ public static class ConfigReferenceValidator
         }
 
         var tables = DataRepository.ConfigTables;
-        if (tables.TbCharacter == null || tables.TbStamina == null)
+        if (tables.TbCharacter == null || tables.TbPlayer == null ||
+            tables.TbStamina == null || tables.TbParry == null)
         {
-            problems.Add(Make(GeneratedCodeDir, "Tables 缺少 TbCharacter / TbStamina"));
+            problems.Add(Make(GeneratedCodeDir, "Tables 缺少 TbCharacter / TbPlayer / TbStamina / TbParry"));
             return false;
         }
 
@@ -219,6 +220,74 @@ public static class ConfigReferenceValidator
         if (tables.TbStamina.GetOrDefault(PlayerConfigId) == null)
         {
             problems.Add(Make("Stamina", $"缺少玩家配置行：id={PlayerConfigId}"));
+        }
+
+        // Player / Parry 目前只有玩家一行；敌人与 Boss 的行由各自迁移批次补
+        foreach (var playerRow in tables.TbPlayer.DataList)
+        {
+            if (characterTable.GetOrDefault(playerRow.Id) == null)
+            {
+                problems.Add(Make("Player", $"id={playerRow.Id} 在 Character 表里没有对应行"));
+            }
+        }
+        if (tables.TbPlayer.GetOrDefault(PlayerConfigId) == null)
+        {
+            problems.Add(Make("Player", $"缺少玩家配置行：id={PlayerConfigId}"));
+        }
+        if (tables.TbParry.GetOrDefault(PlayerConfigId) == null)
+        {
+            problems.Add(Make("Parry", $"缺少玩家配置行：id={PlayerConfigId}"));
+        }
+
+        CheckItemAndShopReferences(problems, tables);
+    }
+
+    /// <summary>
+    /// Item 与 Shop 的引用：asset_id 非空且唯一，Shop 引用的 ItemAssetId 必须存在。
+    /// Shop 第一阶段仍来自 TSV，但它的 ItemAssetId 指向 Item 表，必须一起校验。
+    /// </summary>
+    private static void CheckItemAndShopReferences(List<Problem> problems, Tables tables)
+    {
+        var assetIdToItemId = new Dictionary<string, int>();
+
+        foreach (var item in tables.TbItem.DataList)
+        {
+            if (string.IsNullOrEmpty(item.AssetId))
+            {
+                problems.Add(Make("Item", $"id={item.Id} 的 asset_id 为空"));
+            }
+            else if (assetIdToItemId.TryGetValue(item.AssetId, out int otherId))
+            {
+                problems.Add(Make("Item", $"asset_id 重复：{item.AssetId}（id={otherId} 与 id={item.Id}）"));
+            }
+            else
+            {
+                assetIdToItemId[item.AssetId] = item.Id;
+            }
+
+            if (item.BaseDamage < 0)
+            {
+                problems.Add(Make("Item", $"id={item.Id} 的 base_damage 不能为负：{item.BaseDamage}"));
+            }
+            if (item.CritRate < 0f || item.CritRate > 1f)
+            {
+                problems.Add(Make("Item", $"id={item.Id} 的 crit_rate 必须在 0~1：{item.CritRate}"));
+            }
+        }
+
+        if (DataRepository.ShopTable == null) return;
+
+        foreach (var shop in DataRepository.ShopTable.Values)
+        {
+            if (string.IsNullOrEmpty(shop.ItemAssetId))
+            {
+                problems.Add(Make("Shop", $"id={shop.Id} 的 ItemAssetId 为空"));
+                continue;
+            }
+            if (!assetIdToItemId.ContainsKey(shop.ItemAssetId))
+            {
+                problems.Add(Make("Shop", $"id={shop.Id} 引用的 ItemAssetId={shop.ItemAssetId} 在 Item 表里不存在"));
+            }
         }
     }
 

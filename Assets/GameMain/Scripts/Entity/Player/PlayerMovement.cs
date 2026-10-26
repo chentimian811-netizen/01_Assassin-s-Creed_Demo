@@ -15,7 +15,15 @@ public class PlayerMovement : MonoBehaviour
     Animator Animator;
     MeleeFighter meleeFighter;
     PlayerController playerController;
+
+    /// <summary>玩家手感配置行（Player 表），Awake 解析一次</summary>
+    private Player m_configRow;
     #endregion
+
+    private void Awake()
+    {
+        m_configRow = CharacterConfigIdentity.GetPlayerRow(this);
+    }
 
     #region 移动速度
     // 【这三个值 = 动画 clip 的「自然速度」，不是随便调的手感数字】
@@ -23,22 +31,19 @@ public class PlayerMovement : MonoBehaviour
     //   两者对齐后 Animator.speed 恒为 1，完全按动画师原始节奏播放，滑步最小。
     //   想让人走快一点：改 walkSpeed，Animator.speed 会自动补偿（夹在 min/maxAnimSpeed 内）。
     //   注意：蹲下以外的位移都来自 root motion，所以改这里=同时改动画节奏和实际速度，不会脱节。
-    [Tooltip("蹲下移动速度 m/s。仅当 HumanoidCrouch 剪辑没有根位移时作为代码位移的兜底")]
-    public float crouchSpeed = 1.12f;
-    [Tooltip("行走速度 m/s。实测 ARPG_Warrior_Walk_Forward_Rootmotion：2.2854m ÷ 0.98333s = 2.33 m/s")]
-    public float walkSpeed = 2.33f;
-    [Tooltip("奔跑速度 m/s。实测 ARPG_Warrior_Run_Forward_Rootmotion：2.5162m ÷ 0.73333s = 3.43 m/s")]
-    public float runSpeed = 3.43f;
+    // 【数值来源】Player 表（Gameplay.xlsx 的 Player Sheet），Awake 解析一次；Prefab 不再保存这些数值。
+    public float crouchSpeed => m_configRow != null ? m_configRow.CrouchSpeed : 0f;
+    public float walkSpeed => m_configRow != null ? m_configRow.WalkSpeed : 0f;
+    public float runSpeed => m_configRow != null ? m_configRow.RunSpeed : 0f;
     #endregion
 
     #region 重力与跳跃参数
-    
-    public float gravity = -9.8f;        // 重力加速度
-    public float maxHeight = 1.5f;       // 最大跳跃高度
-    float fallMultiplier = 1.5f;         // 下落加速度倍数
-    float jumpCD = 0.15f;                // 跳跃冷却时间
-    float groundCheckOffset = 0.5f;  //地面检测射线的偏移量
-    float fallHeight = 0.5f; //跌落的最小阈值
+    public float gravity => m_configRow != null ? m_configRow.Gravity : 0f;                 // 重力加速度（负值）
+    public float maxHeight => m_configRow != null ? m_configRow.MaxHeight : 0f;             // 最大跳跃高度
+    float fallMultiplier => m_configRow != null ? m_configRow.FallMultiplier : 0f;          // 下落加速度倍数
+    float jumpCD => m_configRow != null ? m_configRow.JumpCooldown : 0f;                    // 跳跃冷却时间
+    float groundCheckOffset => m_configRow != null ? m_configRow.GroundCheckOffset : 0f;    // 地面检测射线的偏移量
+    float fallHeight => m_configRow != null ? m_configRow.FallHeight : 0f;                  // 跌落的最小阈值
     #endregion
 
     #region 运行时状态

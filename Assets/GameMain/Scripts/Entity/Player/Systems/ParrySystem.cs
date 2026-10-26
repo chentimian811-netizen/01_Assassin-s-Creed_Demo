@@ -9,9 +9,13 @@ using UnityEngine;
 /// </summary>
 public class ParrySystem : MonoBehaviour
 {
-    [SerializeField] private ParryConfig config;
     [SerializeField] private PlayerStamina stamina;
     [SerializeField] private Health health;
+
+    // 【数值来源】Parry 表（Gameplay.xlsx），Awake 时解析一次。
+    //   注意：本工程当前没有 ParrySystem 实例，也没有 ParryConfig 资产，
+    //   表里的 player_main 行只是"未启用功能的开发初始值"，不代表弹反玩法已验证。
+    private Parry m_configRow;
 
     private float blockStartTime = float.MinValue;
 
@@ -24,8 +28,13 @@ public class ParrySystem : MonoBehaviour
 
     /// <summary>是否处于弹反窗口内（按下后的 parryWindow 秒）</summary>
     public bool IsInParryWindow =>
-        config != null && IsBlocking &&
-        (Time.unscaledTime - blockStartTime) <= config.parryWindow;
+        m_configRow != null && IsBlocking &&
+        (Time.unscaledTime - blockStartTime) <= m_configRow.ParryWindow;
+
+    private void Awake()
+    {
+        m_configRow = CharacterConfigIdentity.GetParryRow(this);
+    }
 
     private void Update()
     {
@@ -46,14 +55,14 @@ public class ParrySystem : MonoBehaviour
     /// <summary>由承伤流程调用：判断能否弹反当前这次攻击</summary>
     public bool TryParry(IParryTarget target)
     {
-        if (config == null || target == null) return false;
+        if (m_configRow == null || target == null) return false;
         if (!IsInParryWindow || !target.IsInParryWindow) return false;
 
         target.OnParried(gameObject);
 
         // 弹反成功后短暂无敌，避免被同一招的后续判定二次命中
         health?.SetInvulnerable(InvulnReasons.ParrySuccess, true);
-        parryInvulnUntilRealtime = Time.unscaledTime + config.parryInvulnDuration;
+        parryInvulnUntilRealtime = Time.unscaledTime + m_configRow.ParryInvulnDuration;
 
         GameEvents.RaiseParrySuccess();
         return true;
@@ -62,9 +71,9 @@ public class ParrySystem : MonoBehaviour
     /// <summary>格挡减伤：由 Health 在扣血前查询，返回减伤后的伤害</summary>
     public float ApplyBlockReduction(float incoming)
     {
-        if (!IsBlocking || config == null) return incoming;
+        if (!IsBlocking || m_configRow == null) return incoming;
         if (IsInParryWindow) return 0f;   // 弹反窗口内完全免伤
-        return incoming * (1f - config.blockDamageReduction);
+        return incoming * (1f - m_configRow.BlockDamageReduction);
     }
 
     private void OnDisable()

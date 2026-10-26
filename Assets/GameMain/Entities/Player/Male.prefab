@@ -321,11 +321,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c212f253fe9bdb14a8b0584475450cdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  crouchSpeed: 1.12
-  walkSpeed: 2.33
-  runSpeed: 3.43
-  gravity: -9.8
-  maxHeight: 1
   walkRootMotionRefSpeed: 2.33
   runRootMotionRefSpeed: 3.43
   minAnimSpeed: 0.85
@@ -793,7 +788,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c4e9a1b2d3f4056a8b9c0d1e2f30415, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
   refillOnEnable: 1
   unitId: 
 --- !u!114 &7538556551087629659
@@ -808,7 +802,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1cc0303b2cbcf045bc778adb9aa4892, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: 3c8a9e1f5b2d4a6790c1e4f8a7b6d5c4, type: 2}
+  identity: {fileID: 0}
 --- !u!114 &8007948029551252009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -821,12 +815,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 974b322a02c72884fa47248996aab71f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  staminaConfig: {fileID: 0}
-  dodgeDuration: 0.9
-  dodgeCooldown: 0.2
-  dodgeDistance: 3.5
-  moveStartDelay: 0
-  moveDuration: 0.45
   moveCurve:
     serializedVersion: 2
     m_Curve:
@@ -878,10 +866,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  iframeStartDelay: 0.05
-  iframeDuration: 0.4
-  turnToDodgeDirTime: 0.1
-  allowNeutralDodge: 1
 --- !u!114 &4730786107447769294
 MonoBehaviour:
   m_ObjectHideFlags: 0

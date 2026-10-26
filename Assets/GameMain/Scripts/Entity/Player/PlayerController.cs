@@ -89,8 +89,10 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public bool acceptInput = true;
     bool  isMainMenuOpen;
 
-    // Shift 双功能：短按翻滚 / 长按疾跑
-    const float SprintHoldThreshold = 0.2f;
+    // Shift 双功能：短按翻滚 / 长按疾跑。
+    // 阈值来自 Player 表的 run_hold_threshold（Awake 解析一次，运行中不查表）
+    private Player m_configRow;
+    private float SprintHoldThreshold => m_configRow != null ? m_configRow.RunHoldThreshold : 0f;
     float shiftPressedRealtime;
     bool shiftHeld;
     bool sprintEngaged;
@@ -110,6 +112,7 @@ public class PlayerController : MonoBehaviour
     {
         MeleeFighter = GetComponent<MeleeFighter>();
         RangedFighter = GetComponent<RangedFighter>();
+        m_configRow = CharacterConfigIdentity.GetPlayerRow(this);
     }
 
     /// <summary>

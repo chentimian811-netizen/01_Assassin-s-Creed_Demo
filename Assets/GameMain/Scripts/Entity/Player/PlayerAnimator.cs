@@ -21,7 +21,12 @@ public class PlayerAnimator : MonoBehaviour
     float crouchThreshold = 0f;         //蹲下状态阈值
     float standThreshold = 1f;          //站立状态阈值
     float midAirThreshold = 2.2f;       //滞空状态阈值
-    float lockRotateSpeed = 8f;         //锁定时旋转速度
+
+    /// <summary>玩家手感配置行（Player 表），Init 时解析一次</summary>
+    private Player m_configRow;
+
+    /// <summary>锁定时旋转速度（度/秒），来自 Player 表 lock_on_turn_speed</summary>
+    float lockRotateSpeed => m_configRow != null ? m_configRow.LockOnTurnSpeed : 0f;
 
     [Tooltip("非锁定转身增益：每弧度误差每秒转多少度。200 ≈ 0.3s 收敛，调大更跟手")]
     [SerializeField] private float turnGainDegPerRad = 200f;
@@ -50,6 +55,7 @@ public class PlayerAnimator : MonoBehaviour
         animator = anim;
         playerController = pc;
         playerMovement = pm;
+        m_configRow = CharacterConfigIdentity.GetPlayerRow(this);
 
         //缓存ainimator 参数Hash
         postrueHash = Animator.StringToHash("PlayerState");

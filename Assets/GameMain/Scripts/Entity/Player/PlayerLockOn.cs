@@ -13,8 +13,12 @@ public class PlayerLockOn : MonoBehaviour
     PlayerController playerController;
 
     //锁定参数
-    float lockRotateSpeed = 8f;     //锁定时转向敌人的速度
-    float lockDistance = 15f;       //锁定最大距离 超出范围自动解锁
+    // 【数值来源】Player 表（Gameplay.xlsx），Init 时解析一次。
+    //   原 lockRotateSpeed 字段在工程里没有任何消费方（真正生效的是 PlayerAnimator 的同名字段），已删除。
+    private Player m_configRow;
+
+    /// <summary>锁定最大距离（米），超出即自动解锁</summary>
+    float lockDistance => m_configRow != null ? m_configRow.LockOnDistance : 0f;
 
     //是否正在锁定敌人
     public bool IsLocking {get;private set;}
@@ -28,6 +32,7 @@ public class PlayerLockOn : MonoBehaviour
     public void Init(PlayerController pc)
     {
         playerController = pc;
+        m_configRow = CharacterConfigIdentity.GetPlayerRow(this);
     }
 
     /// <summary>

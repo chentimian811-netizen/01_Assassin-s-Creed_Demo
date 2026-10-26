@@ -1,0 +1,11 @@
+[
+  {
+    "id": "player_main",
+    "parry_window": 0.15,
+    "enemy_stagger_duration": 1.5,
+    "riposte_window": 2,
+    "parry_invuln_duration": 0.3,
+    "block_damage_reduction": 0.5,
+    "block_still_knockback": true
+  }
+]

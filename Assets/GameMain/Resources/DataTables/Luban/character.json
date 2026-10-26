@@ -2,5 +2,9 @@
   {
     "id": "player_main",
     "max_health": 100
+  },
+  {
+    "id": "enemy_default",
+    "max_health": 1000
   }
 ]

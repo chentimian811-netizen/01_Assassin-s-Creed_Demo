@@ -6,8 +6,7 @@ using UnityEngine;
 /// </summary>
 public class GettingHitState : State<EnemyController>
 {
-    [SerializeField] float stunnTime = 0.5f;
-
+    // 硬直时长来自 Enemy 表 stun_time
     EnemyController enemy;
 
     public override void Enter(EnemyController owner)
@@ -19,7 +18,7 @@ public class GettingHitState : State<EnemyController>
     private IEnumerator GoToCombatMovement()
     {
         // 卡肉期间该等待会被略微拉长，属可接受误差
-        yield return new WaitForSeconds(stunnTime);
+        yield return new WaitForSeconds(enemy != null && enemy.Config != null ? enemy.Config.StunTime : 0f);
         // 协程可能在切到 Dead 后才恢复（Exit 已 StopAllCoroutines，这里是兜底）
         if (enemy == null || (enemy.Health != null && enemy.Health.IsDead))
             yield break;

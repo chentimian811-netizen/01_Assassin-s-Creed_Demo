@@ -230,6 +230,20 @@ public static class DataRepository
         return row;
     }
 
+    /// <summary>按配置 ID 取敌人 AI/FSM 行；缺失时返回 null 并报出具体 ID</summary>
+    public static Enemy GetEnemy(string configId)
+    {
+        var tables = EnsureTables("Enemy", configId);
+        if (tables == null) return null;
+
+        var row = tables.TbEnemy.GetOrDefault(configId);
+        if (row == null)
+        {
+            Debug.LogError($"[DataRepository] Enemy 表缺少配置行：id={FormatId(configId)}。请检查 Gameplay.xlsx 的 Enemy Sheet");
+        }
+        return row;
+    }
+
     /// <summary>全局战斗默认值（one 单行表）。读不到时返回 null，由调用方按 0 处理</summary>
     public static CombatGlobal GetCombatGlobal()
     {
@@ -361,6 +375,7 @@ public static class DataRepository
         if (tables.TbWeaponUpgrade == null) throw new Exception("Luban 生成物缺少 TbWeaponUpgrade，请重新导出");
         if (tables.TbAttack == null) throw new Exception("Luban 生成物缺少 TbAttack，请重新导出");
         if (tables.TbCombatGlobal == null) throw new Exception("Luban 生成物缺少 TbCombatGlobal，请重新导出");
+        if (tables.TbEnemy == null) throw new Exception("Luban 生成物缺少 TbEnemy，请重新导出");
 
         m_tables = tables;
     }

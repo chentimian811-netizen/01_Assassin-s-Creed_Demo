@@ -77,6 +77,13 @@ public class CharacterConfigIdentity : MonoBehaviour
         return configId == null ? null : DataRepository.GetStamina(configId);
     }
 
+    /// <summary>取 Enemy（AI/FSM）行</summary>
+    public static Enemy GetEnemyRow(Component owner)
+    {
+        string configId = ResolveIdOrLog(owner, "Enemy");
+        return configId == null ? null : DataRepository.GetEnemy(configId);
+    }
+
     /// <summary>取 Parry 行</summary>
     public static Parry GetParryRow(Component owner)
     {

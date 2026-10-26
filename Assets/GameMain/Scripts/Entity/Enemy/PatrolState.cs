@@ -12,17 +12,14 @@ public class PatrolState : State<EnemyController>
     private static readonly int AnimStrafeSpeed = Animator.StringToHash("strafeSpeed");
     private static readonly int AnimCombatMode = Animator.StringToHash("combatMode");
 
-    //巡逻移动速度（对应走路动画 forwardSpeed=0.2）
-    [SerializeField] private float patrolSpeed = 0.4f;
-
-    //巡逻时的动画前进速度参数（对应 Walking 动画）
-    [SerializeField] private float patrolForwardAnimSpeed = 0.2f;
-
-    //到达路径点的判定距离
-    [SerializeField] private float arrivalDistance = 0.5f;
+    // 巡逻速度/动画参数/到点距离都来自 Enemy 表，由 EnemyController 统一解析后供本状态读取；
+    // 巡逻路线属于关卡接线，继续留在 Prefab/场景。
 
     //巡逻路径引用
     [SerializeField] private PatrolPoute patrolRoute;
+
+    //当前敌人（Enter 时赋值，Execute/Exit 复用）
+    private EnemyController enemy;
 
     //当前目标路径点
     private PatrolPiont currentPoint;
@@ -36,6 +33,8 @@ public class PatrolState : State<EnemyController>
     //进入巡逻状态
     public override void Enter(EnemyController owner)
     {
+        enemy = owner;
+
         //如果没有指定路径，尝试从同物体或子物体获取
         if (patrolRoute == null)
         {
@@ -61,12 +60,12 @@ public class PatrolState : State<EnemyController>
         }
 
         //设置 NavMeshAgent 巡逻参数
-        owner.NavAgent.speed = patrolSpeed;
-        owner.NavAgent.stoppingDistance = arrivalDistance;
+        owner.NavAgent.speed = enemy?.Config?.PatrolSpeed ?? 0f;
+        owner.NavAgent.stoppingDistance = enemy?.Config?.ArrivalDistance ?? 0f;
         owner.NavAgent.isStopped = false;
 
         //设置巡逻动画（走路）
-        owner.Animator.SetFloat(AnimForwardSpeed, patrolForwardAnimSpeed);
+        owner.Animator.SetFloat(AnimForwardSpeed, enemy?.Config?.PatrolForwardAnimSpeed ?? 0f);
         owner.Animator.SetFloat(AnimStrafeSpeed, 0f);
         owner.Animator.SetBool(AnimCombatMode, false);
 
@@ -86,7 +85,7 @@ public class PatrolState : State<EnemyController>
     /// </summary>
     public override void Execute()
     {
-        EnemyController owner = GetComponent<EnemyController>();
+        EnemyController owner = enemy;
 
         //优先检测：发现玩家则切换到战斗
         if (owner.FindTarget() != null)
@@ -108,17 +107,17 @@ public class PatrolState : State<EnemyController>
                 isWaiting = false;
                 currentPoint = patrolRoute.GetNextPoint();
                 SetDestination(owner);
-                owner.Animator.SetFloat(AnimForwardSpeed, patrolForwardAnimSpeed);
+                owner.Animator.SetFloat(AnimForwardSpeed, enemy?.Config?.PatrolForwardAnimSpeed ?? 0f);
             }
             return;
         }
 
         //移动阶段：持续设置走路动画参数
-        owner.Animator.SetFloat(AnimForwardSpeed, patrolForwardAnimSpeed, 0.2f, Time.deltaTime);
+        owner.Animator.SetFloat(AnimForwardSpeed, enemy?.Config?.PatrolForwardAnimSpeed ?? 0f, 0.2f, Time.deltaTime);
         owner.Animator.SetFloat(AnimStrafeSpeed, 0f, 0.2f, Time.deltaTime);
 
         //检查是否到达路径点
-        if (!owner.NavAgent.pathPending && owner.NavAgent.remainingDistance <= arrivalDistance)
+        if (!owner.NavAgent.pathPending && owner.NavAgent.remainingDistance <= (enemy?.Config?.ArrivalDistance ?? 0f))
         {
             //如果路径点有等待时间，进入等待
             if (currentPoint != null && currentPoint.WaiteTime > 0f)
@@ -139,10 +138,10 @@ public class PatrolState : State<EnemyController>
     //退出巡逻状态
     public override void Exit()
     {
-        EnemyController owner = GetComponent<EnemyController>();
+        EnemyController owner = enemy;
 
-        //恢复默认速度
-        owner.NavAgent.speed = 3.5f;
+        //恢复默认速度（原来硬编码 3.5，现由 Enemy 表 combat_nav_speed 控制）
+        owner.NavAgent.speed = enemy?.Config?.CombatNavSpeed ?? 0f;
         owner.NavAgent.isStopped = false;
     }
 

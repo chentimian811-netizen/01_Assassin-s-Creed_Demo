@@ -5,7 +5,7 @@ using UnityEngine;
 public class DeadState : State<EnemyController>
 {
 
-    [SerializeField] private float destroyDelay = 5f;
+    // 销毁延迟来自 Enemy 表 destroy_delay（真实时间，不受 timeScale 影响）
 
 
     public override void Enter(EnemyController owner)
@@ -57,7 +57,7 @@ public class DeadState : State<EnemyController>
             // 改用真实时间销毁：Destroy(go, t) 与 Invoke 一样走【缩放时间】，
             // 一旦 Time.timeScale 被卡肉/暂停压到 0，延迟会被无限拉长，
             // 表现就是"敌人明明死了却一直躺在地上不消失"。
-            StartCoroutine(CoDestroyAfterRealtime(owner.gameObject, destroyDelay));
+            StartCoroutine(CoDestroyAfterRealtime(owner.gameObject, owner.Config != null ? owner.Config.DestroyDelay : 0f));
         }
     }
 

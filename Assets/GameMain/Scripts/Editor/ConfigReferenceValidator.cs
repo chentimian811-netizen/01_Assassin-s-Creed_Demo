@@ -94,6 +94,7 @@ public static class ConfigReferenceValidator
         CheckWeaponReferences(problems);
         CheckAttackReferences(problems);
         CheckGlobalTables(problems);
+        CheckEnemyReferences(problems);
     }
 
     /// <summary>
@@ -450,6 +451,52 @@ public static class ConfigReferenceValidator
         if (combat.MaxHitStopDuration < 0f)
         {
             problems.Add(Make("CombatGlobal", $"max_hit_stop_duration 不能为负：{combat.MaxHitStopDuration}"));
+        }
+    }
+
+    /// <summary>
+    /// 敌人引用：带 EnemyController 的 Prefab 必须有 Enemy 行；Enemy 行必须能对上 Character 行；
+    /// 时间区间必须 min &lt;= max；FOV 必须落在 (0, 360]。
+    /// </summary>
+    private static void CheckEnemyReferences(List<Problem> problems)
+    {
+        var tables = DataRepository.ConfigTables;
+        var characterTable = tables.TbCharacter;
+
+        foreach (var path in FindAssets("t:Prefab", EntityPrefabRoot))
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) continue;
+
+            if (prefab.GetComponent<EnemyController>() == null) continue;
+
+            var identity = prefab.GetComponent<CharacterConfigIdentity>();
+            if (identity == null || !identity.HasConfigId) continue;
+
+            if (tables.TbEnemy.GetOrDefault(identity.ConfigId) == null)
+            {
+                problems.Add(Make(path, $"Enemy 表缺少配置行：id={identity.ConfigId}"));
+            }
+        }
+
+        foreach (var row in tables.TbEnemy.DataList)
+        {
+            if (characterTable.GetOrDefault(row.Id) == null)
+            {
+                problems.Add(Make("Enemy", $"id={row.Id} 在 Character 表里没有对应行"));
+            }
+            if (row.Fov <= 0f || row.Fov > 360f)
+            {
+                problems.Add(Make("Enemy", $"id={row.Id} 的 fov 必须在 (0,360]：{row.Fov}"));
+            }
+            if (row.IdleTimeMin > row.IdleTimeMax)
+            {
+                problems.Add(Make("Enemy", $"id={row.Id} 的待机时间区间倒置：{row.IdleTimeMin} > {row.IdleTimeMax}"));
+            }
+            if (row.CirclingTimeMin > row.CirclingTimeMax)
+            {
+                problems.Add(Make("Enemy", $"id={row.Id} 的环绕时间区间倒置：{row.CirclingTimeMin} > {row.CirclingTimeMax}"));
+            }
         }
     }
 

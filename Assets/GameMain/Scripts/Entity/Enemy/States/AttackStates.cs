@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class AttackStates : State<EnemyController>
 {
-    [SerializeField] float attackDistance = 2.5f;
-
     EnemyController enemy;
 
     bool isAttacking;
@@ -14,7 +12,7 @@ public class AttackStates : State<EnemyController>
     public override void Enter(EnemyController owner)
     {
         enemy = owner;
-        enemy.NavAgent.stoppingDistance  = attackDistance;
+        enemy.NavAgent.stoppingDistance = enemy?.Config?.AttackDistance ?? 0f;
     }
 
     public override void Execute()
@@ -32,7 +30,9 @@ public class AttackStates : State<EnemyController>
 
         enemy.NavAgent.SetDestination(enemy.Target.transform.position);
 
-        if (Vector3.Distance(enemy.Target.transform.position, enemy.transform.position) <= attackDistance + 0.3f)
+        // 起手容差原来硬编码 0.3，现由 Enemy 表 attack_distance_tolerance 控制
+        if (Vector3.Distance(enemy.Target.transform.position, enemy.transform.position)
+            <= (enemy.Config?.AttackDistance ?? 0f) + (enemy.Config?.AttackDistanceTolerance ?? 0f))
         {
             attackCoroutine = StartCoroutine(Attack(Random.Range(0,enemy.Fighter.Attacks.Count + 1)));
         }

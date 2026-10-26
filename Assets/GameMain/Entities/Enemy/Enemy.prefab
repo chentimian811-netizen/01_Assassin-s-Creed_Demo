@@ -1408,11 +1408,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38818d610b82d254c9baa05506087bc0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Fov>k__BackingField: 180
-  <AlertRange>k__BackingField: 20
-  minSeparationDistance: 1.2
-  separationForce: 5
-  performanceLockTimeout: 10
 --- !u!114 &1342149859006696479
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1528,12 +1523,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d726e7a239886d4ebb76a8d9d3b5200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  circlingSpeed: 20
-  distanceToSand: 3
-  adjustDistanceThreshold: 1
-  idleTimeRange: {x: 2, y: 5}
-  circlingTimeRange: {x: 3, y: 6}
-  keepAttackingDeadTargetSeconds: 4
 --- !u!195 &3779881558062216638
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -1568,7 +1557,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a2955aee042b4843a77f309ae242a69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackDistance: 1
 --- !u!114 &8081065872394179666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1581,8 +1569,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9340b3f37a592a4f8e0d60909e06e78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  backwardWalkSpeed: 1.5
-  distanceToRetreat: 3
 --- !u!114 &1614487551561762821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1595,7 +1581,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be2ce16a731c6d24597b5e061cd7fdb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stunnTime: 0.5
 --- !u!114 &4621072309094632632
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1608,7 +1593,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2af3d7d299c3d554aa662355a7eb358a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destroyDelay: 4
 --- !u!114 &7313202557231490922
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1621,9 +1605,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bba094b1e4f50514fa573b74907aa802, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patrolSpeed: 2
-  patrolForwardAnimSpeed: 0.2
-  arrivalDistance: 0.5
   patrolRoute: {fileID: 0}
 --- !u!114 &4273704250487801590
 MonoBehaviour:

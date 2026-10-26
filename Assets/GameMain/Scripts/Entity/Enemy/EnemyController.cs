@@ -17,9 +17,18 @@ public enum E_EnemyState
 
 public class EnemyController : MonoBehaviour
 {
-    [field: SerializeField] public float Fov { get; private set; } = 180f;
+    // ---- 数值来源：Enemy 表（Gameplay.xlsx 的 Enemy Sheet），Awake 解析一次 ----
+    //   各 FSM 状态统一通过 Config 读数值，不各自查表、不各自保存配置 ID。
+    private Enemy m_configRow;
 
-    [field: SerializeField] public float AlertRange { get; private set; } = 20f;
+    /// <summary>本敌人的配置行。可能为 null（缺配置时已由解析入口报错）</summary>
+    public Enemy Config => m_configRow;
+
+    /// <summary>视野角度（度）</summary>
+    public float Fov => m_configRow != null ? m_configRow.Fov : 0f;
+
+    /// <summary>警戒范围（米）</summary>
+    public float AlertRange => m_configRow != null ? m_configRow.AlertRange : 0f;
 
     public List<MeleeFighter> TargetsInRange { get; set; } = new List<MeleeFighter>();
 
@@ -41,8 +50,16 @@ public class EnemyController : MonoBehaviour
 
     Vector3 prevPos;
 
-    [SerializeField] private float minSeparationDistance = 1.2f; // 与玩家的最小距离
-    [SerializeField] private float separationForce = 5f;         // 分离推力强度
+    // 与玩家的最小距离（米）
+    private float minSeparationDistance => m_configRow != null ? m_configRow.MinSeparationDistance : 0f;
+    // 分离推力强度
+    private float separationForce => m_configRow != null ? m_configRow.SeparationForce : 0f;
+
+    private void Awake()
+    {
+        // 必须在 Start 建状态机之前解析：PatrolState.Enter 等会在 Start 里立刻读数值
+        m_configRow = CharacterConfigIdentity.GetEnemyRow(this);
+    }
 
     private void Start()
     {
@@ -142,8 +159,8 @@ public class EnemyController : MonoBehaviour
     /// <summary>演出锁自动解锁时刻（真实时间）：演出方被销毁/停用、finally 没跑到时的保险</summary>
     private float m_performanceUnlockRealtime;
 
-    [SerializeField, Tooltip("配对演出锁最长持续（真实秒）。超时自动解锁，避免演出方中途消失把敌人永久冻住")]
-    private float performanceLockTimeout = 10f;
+    /// <summary>配对演出锁最长持续（真实秒）。超时自动解锁，避免演出方中途消失把敌人永久冻住</summary>
+    private float performanceLockTimeout => m_configRow != null ? m_configRow.PerformanceLockTimeout : 0f;
 
     public void ChangeState(E_EnemyState state)
     {

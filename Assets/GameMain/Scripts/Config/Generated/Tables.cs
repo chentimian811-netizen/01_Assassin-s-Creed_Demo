@@ -14,6 +14,10 @@ using Luban.SimpleJSON;
 public partial class Tables
 {
     /// <summary>
+    /// 普通敌人控制器与 FSM 数值（主键=Character.id）
+    /// </summary>
+    public TbEnemy TbEnemy {get; }
+    /// <summary>
     /// 全局战斗默认值：兜底伤害与卡肉参数（单行表）
     /// </summary>
     public TbCombatGlobal TbCombatGlobal {get; }
@@ -52,6 +56,7 @@ public partial class Tables
 
     public Tables(System.Func<string, JSONNode> loader)
     {
+        TbEnemy = new TbEnemy(loader("enemy"));
         TbCombatGlobal = new TbCombatGlobal(loader("combat_global"));
         TbAttack = new TbAttack(loader("attack"));
         TbWeapon = new TbWeapon(loader("weapon"));
@@ -66,6 +71,7 @@ public partial class Tables
     
     private void ResolveRef()
     {
+        TbEnemy.ResolveRef(this);
         TbCombatGlobal.ResolveRef(this);
         TbAttack.ResolveRef(this);
         TbWeapon.ResolveRef(this);

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "enemy_default",
+    "fov": 180,
+    "alert_range": 20,
+    "min_separation_distance": 1.2,
+    "separation_force": 5,
+    "performance_lock_timeout": 10,
+    "patrol_speed": 2,
+    "patrol_forward_anim_speed": 0.2,
+    "arrival_distance": 0.5,
+    "combat_nav_speed": 3.5,
+    "attack_distance": 1,
+    "attack_distance_tolerance": 0.3,
+    "circling_speed": 20,
+    "distance_to_sand": 3,
+    "adjust_distance_threshold": 1,
+    "idle_time_min": 2,
+    "idle_time_max": 5,
+    "circling_time_min": 3,
+    "circling_time_max": 6,
+    "keep_attacking_dead_target_seconds": 4,
+    "backward_walk_speed": 1.5,
+    "distance_to_retreat": 3,
+    "retreat_turn_speed": 500,
+    "stun_time": 0.5,
+    "destroy_delay": 4
+  }
+]

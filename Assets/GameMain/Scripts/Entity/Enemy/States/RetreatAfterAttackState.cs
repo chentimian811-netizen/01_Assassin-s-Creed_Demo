@@ -5,8 +5,7 @@ using UnityEngine;
 
 public class RetreatAfterAttackState : State<EnemyController>
 {
-    [SerializeField] float backwardWalkSpeed = 1.5f;
-    [SerializeField] float distanceToRetreat = 3f;
+    // 后撤速度/距离/转身速度都来自 Enemy 表（转身速度原来硬编码 500）
     EnemyController enemy;
 
     Vector3 targetPos;  
@@ -23,7 +22,7 @@ public class RetreatAfterAttackState : State<EnemyController>
 
     public override void Execute()
     {
-        if(Vector3.Distance(enemy.transform.position,targetPos )>= distanceToRetreat)
+        if(Vector3.Distance(enemy.transform.position,targetPos )>= (enemy.Config?.DistanceToRetreat ?? 0f))
         {
             enemy.ChangeState(E_EnemyState.CombatMovement);
             return;
@@ -31,8 +30,9 @@ public class RetreatAfterAttackState : State<EnemyController>
 
         var vecToTarget = enemy.Target.transform.position - enemy.transform.position;
         vecToTarget.y = 0f; 
-        enemy.NavAgent.Move(-vecToTarget.normalized * backwardWalkSpeed * Time.deltaTime);
-        transform.rotation=Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(vecToTarget),500 * Time.deltaTime);
+        enemy.NavAgent.Move(-vecToTarget.normalized * (enemy.Config?.BackwardWalkSpeed ?? 0f) * Time.deltaTime);
+        transform.rotation=Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(vecToTarget),
+            (enemy.Config?.RetreatTurnSpeed ?? 0f) * Time.deltaTime);
     }
 
     public override void Exit()

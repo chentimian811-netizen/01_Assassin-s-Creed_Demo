@@ -52,6 +52,12 @@ public static class DataRepository
     private static Tables m_tables;
     private static string m_lastError;
 
+    /// <summary>Boss 阶段按 boss_id 分组的缓存（首次查询时构建，按 phase_index 升序）</summary>
+    private static Dictionary<string, List<BossPhase>> m_bossPhaseByBossId;
+
+    /// <summary>空列表常量：避免每次查询都 new 一个 List 产生 GC</summary>
+    private static readonly List<BossPhase> EmptyBossPhases = new List<BossPhase>();
+
     /// <summary>是否已成功加载全部表</summary>
     public static bool IsReady => m_state == EInitState.Ready;
 
@@ -74,6 +80,7 @@ public static class DataRepository
         m_state = EInitState.NotInitialized;
         m_tables = null;
         m_lastError = null;
+        m_bossPhaseByBossId = null;
         ItemTable = null;
         ShopTable = null;
         ShopByKeeper = null;
@@ -244,6 +251,47 @@ public static class DataRepository
         return row;
     }
 
+    /// <summary>
+    /// 按 boss_id 取阶段列表（按 phase_index 升序）。返回的是内部缓存列表，调用方只读不改。
+    /// 当前工程没有 Boss 实例，表也是空的 —— 空列表是合法结果，不代表读取失败。
+    /// </summary>
+    public static IReadOnlyList<BossPhase> GetBossPhases(string bossId)
+    {
+        var tables = EnsureTables("BossPhase", bossId);
+        if (tables == null) return EmptyBossPhases;
+
+        if (m_bossPhaseByBossId == null)
+        {
+            BuildBossPhaseIndex(tables.TbBossPhase.DataList);
+        }
+
+        return m_bossPhaseByBossId.TryGetValue(bossId ?? string.Empty, out var list)
+            ? list
+            : EmptyBossPhases;
+    }
+
+    /// <summary>按 boss_id 分组并按 phase_index 升序排序（控制器从高序号反向遍历，顺序必须确定）</summary>
+    private static void BuildBossPhaseIndex(IReadOnlyList<BossPhase> rows)
+    {
+        m_bossPhaseByBossId = new Dictionary<string, List<BossPhase>>();
+
+        foreach (var row in rows)
+        {
+            string key = row.BossId ?? string.Empty;
+            if (!m_bossPhaseByBossId.TryGetValue(key, out var list))
+            {
+                list = new List<BossPhase>();
+                m_bossPhaseByBossId[key] = list;
+            }
+            list.Add(row);
+        }
+
+        foreach (var pair in m_bossPhaseByBossId)
+        {
+            pair.Value.Sort((a, b) => a.PhaseIndex.CompareTo(b.PhaseIndex));
+        }
+    }
+
     /// <summary>敌人管理器全局出手排程（one 单行表）。读不到时返回 null，由调用方按 0 处理</summary>
     public static EnemyGlobal GetEnemyGlobal()
     {
@@ -385,6 +433,7 @@ public static class DataRepository
         if (tables.TbCombatGlobal == null) throw new Exception("Luban 生成物缺少 TbCombatGlobal，请重新导出");
         if (tables.TbEnemy == null) throw new Exception("Luban 生成物缺少 TbEnemy，请重新导出");
         if (tables.TbEnemyGlobal == null) throw new Exception("Luban 生成物缺少 TbEnemyGlobal，请重新导出");
+        if (tables.TbBossPhase == null) throw new Exception("Luban 生成物缺少 TbBossPhase，请重新导出");
 
         m_tables = tables;
     }
@@ -411,6 +460,7 @@ public static class DataRepository
         ItemConfigCache = null;
         ItemByAssetId = null;
         m_tables = null;
+        m_bossPhaseByBossId = null;
     }
 
     // ==================== 旧公开查询入口（行为保持不变） ====================

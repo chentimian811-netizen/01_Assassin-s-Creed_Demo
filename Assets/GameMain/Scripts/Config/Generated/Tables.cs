@@ -14,6 +14,10 @@ using Luban.SimpleJSON;
 public partial class Tables
 {
     /// <summary>
+    /// Boss 阶段阈值（联合主键 boss_id+phase_index，当前工程无 Boss 实例故为空表）
+    /// </summary>
+    public TbBossPhase TbBossPhase {get; }
+    /// <summary>
     /// 敌人管理器全局出手排程（单行表）
     /// </summary>
     public TbEnemyGlobal TbEnemyGlobal {get; }
@@ -60,6 +64,7 @@ public partial class Tables
 
     public Tables(System.Func<string, JSONNode> loader)
     {
+        TbBossPhase = new TbBossPhase(loader("boss_phase"));
         TbEnemyGlobal = new TbEnemyGlobal(loader("enemy_global"));
         TbEnemy = new TbEnemy(loader("enemy"));
         TbCombatGlobal = new TbCombatGlobal(loader("combat_global"));
@@ -76,6 +81,7 @@ public partial class Tables
     
     private void ResolveRef()
     {
+        TbBossPhase.ResolveRef(this);
         TbEnemyGlobal.ResolveRef(this);
         TbEnemy.ResolveRef(this);
         TbCombatGlobal.ResolveRef(this);

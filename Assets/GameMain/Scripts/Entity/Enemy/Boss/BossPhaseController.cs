@@ -5,8 +5,8 @@ using UnityEngine;
 /// </summary>
 public class BossPhaseController : MonoBehaviour
 {
+    [Tooltip("Boss 配置/事件标识，对应 BossPhase 表的 boss_id")]
     [SerializeField] private string bossId = "boss_01";
-    [SerializeField] private BossPhaseConfig[] phases;
 
     private Health health;
     private int currentPhase = -1;
@@ -37,16 +37,22 @@ public class BossPhaseController : MonoBehaviour
 
     private void EvaluatePhase()
     {
-        if (health == null || phases == null || phases.Length == 0) return;
+        if (health == null) return;
+
+        // 阶段阈值来自 BossPhase 表（按 boss_id 分组、phase_index 升序）
+        var phases = DataRepository.GetBossPhases(bossId);
+        if (phases == null || phases.Count == 0) return;
+
         float ratio = health.MaxHealth > 0f ? health.CurrentHealth / health.MaxHealth : 0f;
 
-        for (int i = phases.Length - 1; i >= 0; i--)
+        // 反向遍历：先命中序号最高的阶段
+        for (int i = phases.Count - 1; i >= 0; i--)
         {
-            if (phases[i] != null && ratio <= phases[i].healthThreshold)
+            if (ratio <= phases[i].HealthThreshold)
             {
-                if (currentPhase != phases[i].phaseIndex)
+                if (currentPhase != phases[i].PhaseIndex)
                 {
-                    currentPhase = phases[i].phaseIndex;
+                    currentPhase = phases[i].PhaseIndex;
                     GameEvents.RaiseBossPhaseChanged(bossId, currentPhase);
                 }
                 return;

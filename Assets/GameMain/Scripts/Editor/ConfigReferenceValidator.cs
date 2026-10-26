@@ -95,6 +95,7 @@ public static class ConfigReferenceValidator
         CheckAttackReferences(problems);
         CheckGlobalTables(problems);
         CheckEnemyReferences(problems);
+        CheckBossPhaseReferences(problems);
     }
 
     /// <summary>
@@ -424,7 +425,7 @@ public static class ConfigReferenceValidator
         }
     }
 
-    /// <summary>单行表（CombatGlobal / 以后的 EnemyGlobal）的取值范围检查</summary>
+    /// <summary>单行表（CombatGlobal / EnemyGlobal）的取值范围检查</summary>
     private static void CheckGlobalTables(List<Problem> problems)
     {
         var tables = DataRepository.ConfigTables;
@@ -530,6 +531,64 @@ public static class ConfigReferenceValidator
             if (row.CirclingTimeMin > row.CirclingTimeMax)
             {
                 problems.Add(Make("Enemy", $"id={row.Id} 的环绕时间区间倒置：{row.CirclingTimeMin} > {row.CirclingTimeMax}"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Boss 阶段：联合主键 boss_id+phase_index 唯一、阈值在 0~1、同一 Boss 阈值不重复，
+    /// 且按 phase_index 升序时阈值必须严格递减（控制器从高序号反向遍历）。
+    /// 当前工程没有 Boss 实例，表为空 → 这些检查会全部通过，不代表 Boss 玩法已验证。
+    /// </summary>
+    private static void CheckBossPhaseReferences(List<Problem> problems)
+    {
+        var rows = DataRepository.ConfigTables.TbBossPhase.DataList;
+        if (rows.Count == 0) return;
+
+        var seenKeys = new HashSet<string>();
+        var thresholdsByBoss = new Dictionary<string, List<BossPhase>>();
+
+        foreach (var row in rows)
+        {
+            if (string.IsNullOrEmpty(row.BossId))
+            {
+                problems.Add(Make("BossPhase", $"phase_index={row.PhaseIndex} 的 boss_id 为空"));
+                continue;
+            }
+
+            if (!seenKeys.Add(row.BossId + "#" + row.PhaseIndex))
+            {
+                problems.Add(Make("BossPhase", $"联合主键重复：boss_id={row.BossId}, phase_index={row.PhaseIndex}"));
+            }
+
+            if (row.HealthThreshold < 0f || row.HealthThreshold > 1f)
+            {
+                problems.Add(Make("BossPhase",
+                    $"boss_id={row.BossId} 的 health_threshold 必须在 0~1：{row.HealthThreshold}"));
+            }
+
+            if (!thresholdsByBoss.TryGetValue(row.BossId, out var list))
+            {
+                list = new List<BossPhase>();
+                thresholdsByBoss[row.BossId] = list;
+            }
+            list.Add(row);
+        }
+
+        foreach (var pair in thresholdsByBoss)
+        {
+            var list = pair.Value;
+            list.Sort((a, b) => a.PhaseIndex.CompareTo(b.PhaseIndex));
+
+            for (int i = 1; i < list.Count; i++)
+            {
+                if (list[i].HealthThreshold >= list[i - 1].HealthThreshold)
+                {
+                    problems.Add(Make("BossPhase",
+                        $"boss_id={pair.Key} 的阶段阈值没有严格递减：" +
+                        $"phase {list[i - 1].PhaseIndex}={list[i - 1].HealthThreshold} → " +
+                        $"phase {list[i].PhaseIndex}={list[i].HealthThreshold}"));
+                }
             }
         }
     }

@@ -1,0 +1,68 @@
+Luban 工具链版本记录（Task 1）
+================================
+
+一、命令行工具 Luban
+--------------------
+版本      : v5.1.0
+发布页    : https://github.com/focus-creative-games/luban/releases/tag/v5.1.0
+发布时间  : 2026-09-10T12:06:39Z
+下载地址  : https://github.com/focus-creative-games/luban/releases/download/v5.1.0/Luban.7z
+获取日期  : 2026-10-27
+压缩包大小: 1,647,739 字节
+SHA256    : BAC9A1B8D69CFEAA7EF1D8C67B34A007324D1CD158E0B14294521B3879BA5213
+落盘位置  : Tools/Luban/（155 个文件，约 5.82 MB，解压自上述压缩包，未做任何改动）
+入口      : Tools/Luban/Luban.dll
+
+二、运行环境注意
+----------------
+Luban 5.1.0 的 runtimeconfig 目标框架是 net8.0，而本机只安装了
+.NET SDK 10.0.300 与运行时 9.0.14 / 10.0.8，没有 8.x 运行时。
+因此调用时必须让运行时前滚，否则会报 "You must install .NET to run this application"：
+
+    set DOTNET_ROLL_FORWARD=Major
+    dotnet Tools\Luban\Luban.dll ...
+
+Config/Luban/gen_gameplay_json.bat 已在脚本内设置该环境变量，不需要手工设置。
+
+三、Unity 运行时包 com.code-philosophy.luban
+--------------------------------------------
+版本      : 1.2.0（仓库标签 v1.2.0）
+上游仓库  : https://github.com/focus-creative-games/luban_unity
+下载地址  : https://github.com/focus-creative-games/luban_unity/archive/refs/tags/v1.2.0.tar.gz
+获取日期  : 2026-10-27
+压缩包大小: 53,848 字节
+SHA256    : 864F3DE94574C9879B4D8D82EA89E0060F61FF3AE9DA35168E67C5D63076A146
+
+【为什么内嵌到 Packages/ 而不是写进 manifest.json 的 git URL】
+本机到 github.com 的直连不稳定（同一时段 git clone 与 curl 交替失败，走本机代理
+127.0.0.1:2329 才能下载），而 Unity Package Manager 不读 git 的 http.proxy 配置，
+一旦解析 git 依赖失败，整个工程会处于包解析失败状态、连编辑器都打不开。
+因此按“固定版本、不漂浮跟踪主分支”这一原始意图，把 v1.2.0 的源码直接内嵌为
+embedded package：Packages/com.code-philosophy.luban/。
+这样包内容与版本仍然被版本控制锁定，且克隆工程后不需要联网即可打开。
+升级方式：整体替换该目录，并同步更新本文件里的版本号与 SHA256。
+
+内嵌包结构与上游一致（含 .meta）：
+  Runtime/  → 程序集 Luban.Runtime（autoReferenced=true，命名空间 Luban / Luban.SimpleJSON）
+  Editor/   → 程序集 Luban.Editor
+  package.json / LICENSE / README*.md
+
+四、官方模板冒烟测试（Task 1 步骤 4~5）
+---------------------------------------
+模板来源: https://github.com/focus-creative-games/luban_examples（sparse checkout MiniTemplate）
+测试位置: 工程外临时目录（未污染本工程）
+测试日期: 2026-10-27
+
+1) 数据导出（等价官方 gen.bat）：
+   dotnet Tools\Luban\Luban.dll -t all -d json --conf MiniTemplate\luban.conf -x outputDataDir=output
+   结果：退出码 0，生成 output/demo_tbitem.json，日志出现 "process data target: json end / bye~"。
+
+2) 代码导出（本项目要用到的组合）：
+   dotnet Tools\Luban\Luban.dll -t client -d json -c cs-simple-json --conf MiniTemplate\luban.conf
+       -x outputDataDir=out_data -x outputCodeDir=out_code
+   结果：退出码 0，生成 out_code/Tables.cs、out_code/demo/Tbitem.cs、out_code/demo/item.cs、
+         out_code/vector2|3|4.cs，以及 out_data/demo_tbitem.json。
+
+3) 生成物编码：JSON 与 C# 均为 UTF-8 无 BOM，行尾 CRLF，中文正常（“道具1/描述1”）。
+   注意：用 PowerShell 的 Get-Content 默认编码读会显示成乱码（GBK 解码 UTF-8），
+   核对时要用 -Encoding UTF8 或支持 UTF-8 的编辑器，否则会误判为编码事故。

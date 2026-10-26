@@ -8,7 +8,9 @@ using UnityEngine;
 /// </summary>
 public class EnemyManager : MonoBehaviour
 {
-    [SerializeField] Vector2 timeRangeBetWeenAttacks = new Vector2(1, 4);
+    // 出手间隔区间/初始倒计时/目标刷新周期都来自 EnemyGlobal 单行表（Gameplay.xlsx）；
+    // 运行时倒计时仍是组件状态，不回写表格。
+    private EnemyGlobal m_configRow;
 
     [SerializeField] PlayerController Player;
 
@@ -20,10 +22,12 @@ public class EnemyManager : MonoBehaviour
     private void Awake()
     {
         i = this;
+        m_configRow = DataRepository.GetEnemyGlobal();
+        notAttackingTimer = m_configRow != null ? m_configRow.InitialAttackDelay : 0f;
     }
 
     List<EnemyController> enemiesInRange = new List<EnemyController>();
-    float notAttackingTimer = 2f;
+    float notAttackingTimer;
     float timer = 0f;
 
     /// <summary>
@@ -92,7 +96,7 @@ public class EnemyManager : MonoBehaviour
                 if (attackingEnemy != null)
                 {
                     attackingEnemy.ChangeState(E_EnemyState.Attack);
-                    notAttackingTimer = Random.Range(timeRangeBetWeenAttacks.x, timeRangeBetWeenAttacks.y);
+                    notAttackingTimer = Random.Range(m_configRow.AttackIntervalMin, m_configRow.AttackIntervalMax);
                 }
             }
         }
@@ -100,7 +104,7 @@ public class EnemyManager : MonoBehaviour
         //非锁定时刷新最近的目标
         if (Player.IsLocking) return;
 
-        if(timer >= 0.1f)
+        if(timer >= (m_configRow != null ? m_configRow.TargetRefreshInterval : 0f))
         {
             timer = 0f;
             var closestEnemy = GetClosesEnemyToPlayerDir();

@@ -44,7 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 248ad7398d936e846917ac717a210695, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timeRangeBetWeenAttacks: {x: 1, y: 4}
   Player: {fileID: 0}
   <EnemyLayer>k__BackingField:
     serializedVersion: 2

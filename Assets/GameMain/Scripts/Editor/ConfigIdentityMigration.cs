@@ -92,6 +92,32 @@ public static class ConfigIdentityMigration
         Debug.Log($"[ConfigIdentityMigration] 已为 {count} 个 AttackData 写入 attackId（= 资产名）");
     }
 
+    /// <summary>
+    /// 重存 EnemyManager.prefab：出手间隔区间已迁到 EnemyGlobal 表，
+    /// 重存后 Prefab 上不再残留 timeRangeBetWeenAttacks 这类孤立字段。
+    /// </summary>
+    [MenuItem("ACDemo/Config/Migration/Resave EnemyManager Prefab", priority = 43)]
+    public static void ResaveEnemyManagerPrefab()
+    {
+        const string path = "Assets/GameMain/Entities/EnemyManager.prefab";
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
+        {
+            Debug.LogError($"[ConfigIdentityMigration] Prefab 不存在：{path}");
+            return;
+        }
+
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            Debug.Log($"[ConfigIdentityMigration] 已重存 {path}");
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+    }
+
     /// <summary>给 Prefab 根对象挂/复用 CharacterConfigIdentity 并写入 ID</summary>
     private static void ApplyPrefabIdentity(string prefabPath, string configId)
     {

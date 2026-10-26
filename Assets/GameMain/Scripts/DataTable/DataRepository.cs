@@ -244,6 +244,14 @@ public static class DataRepository
         return row;
     }
 
+    /// <summary>敌人管理器全局出手排程（one 单行表）。读不到时返回 null，由调用方按 0 处理</summary>
+    public static EnemyGlobal GetEnemyGlobal()
+    {
+        var tables = EnsureTables("EnemyGlobal", "<one>");
+        if (tables == null) return null;
+        return tables.TbEnemyGlobal.Data;
+    }
+
     /// <summary>全局战斗默认值（one 单行表）。读不到时返回 null，由调用方按 0 处理</summary>
     public static CombatGlobal GetCombatGlobal()
     {
@@ -376,6 +384,7 @@ public static class DataRepository
         if (tables.TbAttack == null) throw new Exception("Luban 生成物缺少 TbAttack，请重新导出");
         if (tables.TbCombatGlobal == null) throw new Exception("Luban 生成物缺少 TbCombatGlobal，请重新导出");
         if (tables.TbEnemy == null) throw new Exception("Luban 生成物缺少 TbEnemy，请重新导出");
+        if (tables.TbEnemyGlobal == null) throw new Exception("Luban 生成物缺少 TbEnemyGlobal，请重新导出");
 
         m_tables = tables;
     }

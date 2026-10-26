@@ -433,8 +433,42 @@ public static class ConfigReferenceValidator
         if (combat == null)
         {
             problems.Add(Make("CombatGlobal", "单行表没有数据行"));
-            return;
         }
+        else
+        {
+            CheckCombatGlobal(problems, combat);
+        }
+
+        var enemyGlobal = tables.TbEnemyGlobal.Data;
+        if (enemyGlobal == null)
+        {
+            problems.Add(Make("EnemyGlobal", "单行表没有数据行"));
+        }
+        else
+        {
+            if (enemyGlobal.AttackIntervalMin > enemyGlobal.AttackIntervalMax)
+            {
+                problems.Add(Make("EnemyGlobal",
+                    $"出手间隔区间倒置：{enemyGlobal.AttackIntervalMin} > {enemyGlobal.AttackIntervalMax}"));
+            }
+            if (enemyGlobal.AttackIntervalMin < 0f)
+            {
+                problems.Add(Make("EnemyGlobal", $"attack_interval_min 不能为负：{enemyGlobal.AttackIntervalMin}"));
+            }
+            if (enemyGlobal.InitialAttackDelay < 0f)
+            {
+                problems.Add(Make("EnemyGlobal", $"initial_attack_delay 不能为负：{enemyGlobal.InitialAttackDelay}"));
+            }
+            if (enemyGlobal.TargetRefreshInterval <= 0f)
+            {
+                problems.Add(Make("EnemyGlobal",
+                    $"target_refresh_interval 必须大于 0：{enemyGlobal.TargetRefreshInterval}"));
+            }
+        }
+    }
+
+    private static void CheckCombatGlobal(List<Problem> problems, CombatGlobal combat)
+    {
 
         if (combat.FallbackBaseDamage < 0f)
         {

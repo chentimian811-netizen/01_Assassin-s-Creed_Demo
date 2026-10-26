@@ -1,0 +1,240 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using UnityEditor;
+using UnityEngine;
+
+/// <summary>
+/// 配置引用校验：检查"生成文件是否完整"和"Excel 表与 Unity 资产之间的引用是否对得上"。
+///
+/// 【为什么放在 Editor】
+///   这些检查需要 AssetDatabase 与 Resources.Load，只能跑在编辑器里；
+///   运行时不做这类扫描，避免启动开销与被裁剪的资源引用拦路。
+///
+/// 【输出约定】
+///   每条问题都带"资产路径 / 配置 ID / 表名"，让人不用猜就能定位到具体单元格或资产。
+/// </summary>
+public static class ConfigReferenceValidator
+{
+    /// <summary>Luban 生成代码目录（禁止手写文件）</summary>
+    public const string GeneratedCodeDir = "Assets/GameMain/Scripts/Config/Generated";
+
+    /// <summary>Luban 生成数据目录（禁止手写文件）</summary>
+    public const string GeneratedDataDir = "Assets/GameMain/Resources/DataTables/Luban";
+
+    /// <summary>Resources 内访问生成数据用的相对路径</summary>
+    private const string GeneratedDataResourceRoot = "DataTables/Luban";
+
+    /// <summary>扫描角色配置身份时使用的 Prefab 根目录</summary>
+    private const string EntityPrefabRoot = "Assets/GameMain/Entities";
+
+    /// <summary>玩家配置 ID：第一批垂直迁移固定使用这个值</summary>
+    private const string PlayerConfigId = "player_main";
+
+    /// <summary>一条校验问题</summary>
+    public sealed class Problem
+    {
+        public string Where;
+        public string Message;
+
+        public override string ToString() => $"{Where} → {Message}";
+    }
+
+    [MenuItem("ACDemo/Config/Validate Only", priority = 20)]
+    public static void ValidateOnly()
+    {
+        ValidateAndLog();
+    }
+
+    /// <summary>执行全部校验并输出一份汇总日志；返回是否全部通过</summary>
+    public static bool ValidateAndLog()
+    {
+        var problems = new List<Problem>();
+        Validate(problems);
+
+        if (problems.Count == 0)
+        {
+            Debug.Log($"[ConfigValidator] 全部检查通过（{Time.realtimeSinceStartup:0.0}）");
+            return true;
+        }
+
+        var sb = new StringBuilder($"[ConfigValidator] 发现 {problems.Count} 个配置问题：");
+        foreach (var problem in problems)
+        {
+            sb.AppendLine().Append("  - ").Append(problem);
+        }
+        Debug.LogError(sb.ToString());
+        return false;
+    }
+
+    /// <summary>校验入口（供导出菜单与批处理调用）</summary>
+    public static void Validate(List<Problem> problems)
+    {
+        if (!CheckGeneratedFiles(problems)) return;
+        if (!CheckTablesLoadable(problems)) return;
+
+        CheckCharacterIdentities(problems);
+        CheckTableReferences(problems);
+    }
+
+    /// <summary>
+    /// 生成文件是否齐全：从 Tables.cs 里抽出 loader("xxx") 的名字，
+    /// 逐个确认 Resources/DataTables/Luban/xxx.json 真的存在。
+    /// </summary>
+    private static bool CheckGeneratedFiles(List<Problem> problems)
+    {
+        int before = problems.Count;
+
+        if (!Directory.Exists(GeneratedCodeDir))
+            problems.Add(Make(GeneratedCodeDir, "生成代码目录不存在，请先执行 ACDemo/Config 导出"));
+        if (!Directory.Exists(GeneratedDataDir))
+            problems.Add(Make(GeneratedDataDir, "生成数据目录不存在，请先执行 ACDemo/Config 导出"));
+        if (problems.Count > before) return false;
+
+        string tablesCsPath = Path.Combine(GeneratedCodeDir, "Tables.cs");
+        if (!File.Exists(tablesCsPath))
+        {
+            problems.Add(Make(tablesCsPath, "缺少 Tables.cs，生成过程没有跑完"));
+            return false;
+        }
+
+        string tablesCs = File.ReadAllText(tablesCsPath, Encoding.UTF8);
+        var matches = Regex.Matches(tablesCs, "loader\\(\"([^\"]+)\"\\)");
+        if (matches.Count == 0)
+        {
+            problems.Add(Make(tablesCsPath, "没有解析到任何 loader(\"...\")，生成代码可能被手改过"));
+            return false;
+        }
+
+        foreach (Match match in matches)
+        {
+            string name = match.Groups[1].Value;
+            string jsonPath = Path.Combine(GeneratedDataDir, name + ".json");
+            if (!File.Exists(jsonPath))
+            {
+                problems.Add(Make(jsonPath, $"表 {name} 的 JSON 缺失（Tables.cs 引用了它）"));
+            }
+        }
+
+        return problems.Count == before;
+    }
+
+    /// <summary>Tables 能否真正加载（缺 JSON、JSON 字段与生成类不匹配都会在这里暴露）</summary>
+    private static bool CheckTablesLoadable(List<Problem> problems)
+    {
+        DataRepository.ResetForReload();
+        DataRepository.Initialize();
+
+        if (!DataRepository.IsReady)
+        {
+            problems.Add(Make(GeneratedDataResourceRoot,
+                $"DataRepository 初始化失败：{DataRepository.LastError}"));
+            return false;
+        }
+
+        var tables = DataRepository.ConfigTables;
+        if (tables.TbCharacter == null || tables.TbStamina == null)
+        {
+            problems.Add(Make(GeneratedCodeDir, "Tables 缺少 TbCharacter / TbStamina"));
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 角色配置身份：非空、不重复、且能在 Character 表里找到对应行。
+    /// 只扫描 Prefab 资产；场景实例的数值与 ID 覆盖由人工 Play 前检查。
+    /// </summary>
+    private static void CheckCharacterIdentities(List<Problem> problems)
+    {
+        var characterTable = DataRepository.ConfigTables.TbCharacter;
+        var seen = new Dictionary<string, string>();
+
+        foreach (var path in FindAssets("t:Prefab", EntityPrefabRoot))
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) continue;
+
+            var identity = prefab.GetComponent<CharacterConfigIdentity>();
+            if (identity == null) continue;
+
+            if (!identity.HasConfigId)
+            {
+                problems.Add(Make(path, "CharacterConfigIdentity 的配置 ID 为空"));
+                continue;
+            }
+
+            string configId = identity.ConfigId;
+            if (seen.TryGetValue(configId, out string otherPath))
+            {
+                problems.Add(Make(path, $"配置 ID 重复：{configId}（另一处：{otherPath}）"));
+                continue;
+            }
+            seen[configId] = path;
+
+            if (characterTable.GetOrDefault(configId) == null)
+            {
+                problems.Add(Make(path, $"Character 表缺少配置行：id={configId}"));
+            }
+        }
+
+        if (!seen.ContainsKey(PlayerConfigId))
+        {
+            problems.Add(Make(EntityPrefabRoot, $"没有找到配置 ID 为 {PlayerConfigId} 的角色 Prefab"));
+        }
+    }
+
+    /// <summary>表与表之间的引用：Stamina.id / Character.id 必须互相对得上</summary>
+    private static void CheckTableReferences(List<Problem> problems)
+    {
+        var tables = DataRepository.ConfigTables;
+        var characterTable = tables.TbCharacter;
+
+        foreach (var stamina in tables.TbStamina.DataList)
+        {
+            if (string.IsNullOrEmpty(stamina.Id))
+            {
+                problems.Add(Make("Stamina", "存在 id 为空的耐力行"));
+                continue;
+            }
+
+            if (characterTable.GetOrDefault(stamina.Id) == null)
+            {
+                problems.Add(Make("Stamina", $"id={stamina.Id} 在 Character 表里没有对应行"));
+            }
+        }
+
+        var playerCharacter = characterTable.GetOrDefault(PlayerConfigId);
+        if (playerCharacter == null)
+        {
+            problems.Add(Make("Character", $"缺少玩家配置行：id={PlayerConfigId}"));
+        }
+        else if (playerCharacter.MaxHealth <= 0f)
+        {
+            problems.Add(Make("Character", $"玩家 {PlayerConfigId} 的 max_health 必须大于 0，当前 {playerCharacter.MaxHealth}"));
+        }
+
+        if (tables.TbStamina.GetOrDefault(PlayerConfigId) == null)
+        {
+            problems.Add(Make("Stamina", $"缺少玩家配置行：id={PlayerConfigId}"));
+        }
+    }
+
+    private static List<string> FindAssets(string filter, string root)
+    {
+        var result = new List<string>();
+        foreach (var guid in AssetDatabase.FindAssets(filter, new[] { root }))
+        {
+            result.Add(AssetDatabase.GUIDToAssetPath(guid));
+        }
+        result.Sort(string.CompareOrdinal);
+        return result;
+    }
+
+    private static Problem Make(string where, string message)
+    {
+        return new Problem { Where = where, Message = message };
+    }
+}

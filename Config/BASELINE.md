@@ -6,8 +6,9 @@
 > - 盘点日期：2026-10-27
 > - 分支：`feature/luban-so-config`（基线提交 `2889e11 修改角色和敌人预制体数值`）
 > - 场景：`Assets/GameMain/Scenes/TestScene.unity`
-> - 盘点方式：Unity 2026 序列化对象导出（`Assets/GameMain/Scripts/Editor/ConfigBaselineDump.cs`
->   菜单 `ACDemo/Config/Dump Baseline (Temp)`），输出 `Logs/config-baseline-dump.txt`（gitignore）。
+> - 盘点方式：用一个临时的 Unity Editor 脚本把 Prefab / 场景实例 / 配置资产的
+>   序列化值导出成文本（输出到 `Logs/config-baseline-dump.txt`，该目录被 gitignore）。
+>   该脚本已在 Task 13 删除，本文件保留的就是它的结论。
 >   **没有**用“只读 YAML”推断：YAML 缺字段时 Unity 使用 C# 字段初始值，把缺字段当 0 会填错表。
 > - 代码侧常量：直接读脚本，逐条标注文件与行号。
 

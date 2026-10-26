@@ -17,16 +17,20 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 |---|---|
 | `Assets/GameMain/Scripts/Base/` | GameEntry.Builtin、GameManager、CameraManager、CurrencyManager、CursorManager、ShopManager、ScenePaths |
 | `Assets/GameMain/Scripts/Procedure/` | ProcedureBase / Launch / MainMenu / Loading / Game |
-| `Assets/GameMain/Scripts/Core/` | Configs(Stamina,Parry)、Damage(DamageInfo,DamageRouter)、Events(GameEvents)、Interfaces、Log |
+| `Assets/GameMain/Scripts/Core/` | Configs(CharacterConfigIdentity)、Damage(DamageInfo,DamageRouter)、Events(GameEvents)、Interfaces、Log |
 | `Assets/GameMain/Scripts/Combat/` | MeleeFighter、RangedFighter、Health、HitStopManager、AttackData、CombatController、Projectile(Pool)、WeaponUpgradeSystem |
 | `Assets/GameMain/Scripts/Entity/Player/` | PlayerController + Movement/Combat/LockOn/Animator/WeaponManager/WeaponSlot/WeaponSwitcher + Systems/(PlayerStamina,PlayerDodge,ParrySystem) |
-| `Assets/GameMain/Scripts/Entity/Enemy/` | EnemyController、EnemyManager、VisionSensor、Patrol*、States/(7)、Boss/(PhaseConfig,PhaseController) |
+| `Assets/GameMain/Scripts/Entity/Enemy/` | EnemyController、EnemyManager、VisionSensor、Patrol*、States/(7)、Boss/(PhaseController) |
 | `Assets/GameMain/Scripts/Inventory/` | InventoryManager、PackageLocalData、PackageSort |
-| `Assets/GameMain/Scripts/DataTable/` | DataRepository、TSVParser、DRItem、DRShop |
+| `Assets/GameMain/Scripts/DataTable/` | DataRepository（含 Luban 查询入口）、TSVParser、DRItem、DRShop |
+| `Assets/GameMain/Scripts/Config/Generated/` | **Luban 生成代码**（Tables.cs、各表行类、TbXxx；禁止手写） |
+| `Assets/GameMain/Scripts/Editor/` | ConfigExportMenu、ConfigReferenceValidator、ConfigIdentityMigration（仅 Editor 编译） |
+| `Assets/GameMain/Resources/DataTables/` | `Shop.txt`（TSV，第一阶段未迁移）+ `Luban/`（生成的 JSON，禁止手写） |
+| `Config/` | `Luban/Datas/Gameplay.xlsx`（数值唯一编辑来源）、luban.conf、导出 bat、README、BASELINE |
+| `Tools/Luban/` | Luban 5.1.0 命令行工具（版本与校验和见 VERSION.txt） |
 | `Assets/GameMain/Scripts/UI/` | UIManager(BasePanel 旧体系)、UIPaths、ACUIGroupHelper、*Form、Backpack|HUD|Lottery|MainMenu|Shop |
 | `Assets/GameMain/Scripts/Level/` | Bonfire、FogWall、ShortcutGate、SoulsPickup |
 | `Assets/GameMain/Scripts/Utility/` | State Machine(State\<T\>/StateMachine\<T\>)、GmCmd、SkinnedMeshHighlighter |
-| `Assets/GameMain/Resources/DataTables/` | `Item.txt`、`Shop.txt`（TSV，前两行为注释行与类型行） |
 | `Assets/UI/Prefabs/` | GF UIForm 预制体（MainMenu/ HUD/ Loading/） |
 | `Assets/UI/Resources/Prefabs/Panels/` | 旧体系面板（MainPanel、Package/、Shop/、Lottery/…） |
 | `Assets/GameFramework/` | GF 框架本体 + `GameFramework.prefab`（勿改） |
@@ -50,9 +54,33 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 - `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`ShopForm`、`PackageForm`、`LotteryForm`、`SettingsForm`、`DeathForm`、`VictoryForm`、`PauseForm`、`ToastForm`。
 - 两套体系并存：旧面板继承 `BasePanel` + `UIManager.OpenPanel`；新面板继承 `UIFormLogic` + `GameEntry.UI.OpenUIForm`。新代码一律用后者。
 
+## 配置系统（Luban + SO 混合）
+
+- **数值唯一来源**：`Config/Luban/Datas/Gameplay.xlsx`。改数值只改这张表，然后执行
+  Unity 菜单 `ACDemo/Config/Export And Validate`（等价于跑 `Config/Luban/gen_gameplay_json.bat`）。
+  第一版**不做热更新**，导出后需重新 Play。
+- 生成目录（**禁止手写**，导出会清理并覆盖）：
+  - `Assets/GameMain/Scripts/Config/Generated/`：`Tables.cs`、各表行类、`TbXxx`，**无命名空间**
+  - `Assets/GameMain/Resources/DataTables/Luban/`：`stamina.json`、`item.json` …
+
+  两个目录里的 `.meta` 也进版本控制；Luban 实测不会删除 `.meta`。
+- 运行时统一从 `DataRepository` 取数：`GetCharacter / GetPlayer / GetStamina / GetParry / GetEnemy /
+  GetWeapon / GetWeaponUpgrade / GetAttack / GetBossPhases / GetCombatGlobal / GetEnemyGlobal`。
+  `Initialize()` 幂等、失败时清空全部表并报错（不留部分可用状态），`SubsystemRegistration` 清静态缓存。
+- 角色根对象挂 `CharacterConfigIdentity`（只保存一个字符串配置 ID）：玩家 `player_main`、普通敌人 `enemy_default`。
+  场景/Prefab 只允许覆盖「选哪一行配置」的 ID，**不再覆盖具体数值**。
+- 工具链：Luban 5.1.0 在 `Tools/Luban/`（来源/SHA256/.NET 前滚说明见 `Tools/Luban/VERSION.txt`）；
+  运行时 `Packages/com.code-philosophy.luban`（内嵌包 v1.2.0，不走 UPM git 依赖）。
+- 导出脚本带 `--strict`：不加的话 Luban 的范围校验只打印 ERROR、退出码仍是 0，越界值还会写进 JSON。
+- 日常流程、加表/加武器/加敌人步骤与排错见 `Config/README.md`；迁移前基准见 `Config/BASELINE.md`。
+
 ## 数据 / 持久化
 
-- TSV 表：`Resources/DataTables/Item`、`Resources/DataTables/Shop` → `DataRepository.Initialize()` 解析为 `ItemTable` / `ShopTable` / `ShopByKeeper` / `ItemByAssetId` / `ItemConfigCache`。
+- 数值表：**唯一编辑来源是 `Config/Luban/Datas/Gameplay.xlsx`**（详见下方「配置系统」）。
+  `DataRepository.Initialize()` 加载 Luban `Tables`（`Resources/DataTables/Luban/*.json`），
+  并提供 `ItemTable` / `ItemByAssetId` / `ItemConfigCache` 等兼容视图。
+- 仍走 TSV 的只剩商店：`Resources/DataTables/Shop` → `ShopTable` / `ShopByKeeper`（第一阶段不迁移）。
+  `Resources/DataTables/Item.txt` 已删除。
 - SO 缓存：`Resources.Load<ItemConfig_SO>($"ItemConfigs/{AssetId}")`。
 - 背包：`PackageLocalData` → `PlayerPrefs["PackageLocalData"]`（`JsonUtility` 序列化 `items`；字段 uid/id/num/level/isNew/isEquipped）。
 - 货币：`CurrencyManager` → `PlayerPrefs["PlayerGold"]`，`DEFAULT_GOLD = 100000`。
@@ -99,10 +127,18 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 
 ## 已知边界
 
-- `Health.maxHealth` 默认 25；`DamageRouter.FallbackBaseDamage = 5` 仅在伤害无法解析时兜底。
+- `Health.maxHealth` 来自 `Character` 表（按 `CharacterConfigIdentity` 的配置 ID 解析，玩家 `player_main`=100、普通敌人 `enemy_default`=1000）；
+  `DamageRouter.FallbackBaseDamage` 来自 `CombatGlobal` 表，仅在武器 ID 解析不出物品时兜底。
 - `E_WeaponType` 定义 5 值（Sword/Dagger/Axe/Bow/Staff）。**已实现配置仅 3 个**：`WeaponConfig.asset`(Sword)、`AxeConfig.asset`(Axe)、`BowConfig.asset`(Bow, `isRanged=1`)。Dagger/Staff 无配置；代码中多处 `?: E_WeaponType.Sword` 兜底。仅有 `Axe.overrideController` 一个动画覆盖器。
-- 耐力已接线：`PlayerCombat`（轻攻击）与 `PlayerDodge`（翻滚，`staminaConfig.dodgeCost`）调用 `PlayerStamina.TryConsume`；`StaminaConfig.heavyAttackCost` 暂无调用方。
-- 弹反未实现：`ParrySystem.cs` 存在但 `GetBlockInput` 内被注释（`// P3：parrySystem?.SetBlocking(...)`）。
+- 耐力已接线：`PlayerCombat`（轻攻击）与 `PlayerDodge`（翻滚）都读 `Stamina` 表同一行后调 `PlayerStamina.TryConsume`；
+  `heavy_attack_cost` / `parry_fail_cost` / `sprint_cost_per_second` / `block_cost_per_second` / `jump_cost` 仍无调用方。
+  缺配置时 `PlayerStamina` / `PlayerCombat` / `PlayerDodge` 会报错并拒绝消耗，不回落默认值。
+- 弹反未实现：`ParrySystem.cs` 存在（数值已改读 `Parry` 表）但工程里没有该组件实例，`GetBlockInput` 内仍被注释
+  （`// P3：parrySystem?.SetBlocking(...)`）。`Parry` 表里的一行只是「未启用功能的开发初始值」。
+- **弓的 weaponID 数据缺陷**：`BowConfig.weaponID = 1111` 在 `Item` 表不存在（对应物品是 10004 Hunting Bow，
+  其 `weapon_type` 又被标成 Dagger）。本次迁移按用户决定**不改 ID**，`Weapon` 表保留 1111 一行，
+  `ConfigReferenceValidator` 会把它作为【已知缺陷】单列（不计失败）。修复需独立任务。
+- Boss 无实例：`BossPhase` 表故意为空，只验证了表结构、分组排序与事件链路，**Boss Play 未覆盖**。
 - `PackageTypeFood = 2` 仅定义常量，食物系统未实现。
 - `CombatController.cs` 为空壳 WIP：仅 `Awake` 缓存 `MeleeFighter`，`Update` 为空。
 - GF Resource 处于 `EditorResourceMode`：路径必须是 `Assets/` 开头且含扩展名（见 `ScenePaths`、`UIPaths` 注释）。

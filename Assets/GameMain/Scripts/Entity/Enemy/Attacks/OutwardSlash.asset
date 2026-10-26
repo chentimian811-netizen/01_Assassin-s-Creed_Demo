@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26e51dd7102ec6b49b3e24d67c477be1, type: 3}
   m_Name: OutwardSlash
   m_EditorClassIdentifier: 
+  attackId: OutwardSlash
   <AnimName>k__BackingField: OutwardSlash
   <HitboxToUse>k__BackingField: 4
-  <ImpactStartTime>k__BackingField: 0.32
-  <ImpactEndTime>k__BackingField: 0.55

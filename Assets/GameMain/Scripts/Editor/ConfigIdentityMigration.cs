@@ -55,6 +55,43 @@ public static class ConfigIdentityMigration
         Debug.Log($"[ConfigIdentityMigration] 已重存 {count} 个 WeaponConfig（清掉已迁移的数值字段）");
     }
 
+    /// <summary>
+    /// 为全部 AttackData 写入 attackId（首次填表用资产文件名）。
+    /// 走后门 SerializedObject 而不是暴露运行时 setter：attackId 只允许迁移期改一次。
+    /// </summary>
+    [MenuItem("ACDemo/Config/Migration/Apply Attack Ids", priority = 42)]
+    public static void ApplyAttackIds()
+    {
+        int count = 0;
+        foreach (var guid in AssetDatabase.FindAssets("t:AttackData", new[] { "Assets" }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var asset = AssetDatabase.LoadAssetAtPath<AttackData>(path);
+            if (asset == null) continue;
+
+            string id = System.IO.Path.GetFileNameWithoutExtension(path);
+            var so = new SerializedObject(asset);
+            var prop = so.FindProperty("attackId");
+            if (prop == null)
+            {
+                Debug.LogError($"[ConfigIdentityMigration] AttackData 上找不到 attackId 字段：{path}");
+                continue;
+            }
+
+            if (prop.stringValue != id)
+            {
+                prop.stringValue = id;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            EditorUtility.SetDirty(asset);
+            count++;
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log($"[ConfigIdentityMigration] 已为 {count} 个 AttackData 写入 attackId（= 资产名）");
+    }
+
     /// <summary>给 Prefab 根对象挂/复用 CharacterConfigIdentity 并写入 ID</summary>
     private static void ApplyPrefabIdentity(string prefabPath, string configId)
     {

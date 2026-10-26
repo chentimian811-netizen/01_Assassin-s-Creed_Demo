@@ -92,6 +92,7 @@ public static class ConfigReferenceValidator
         CheckCharacterIdentities(problems);
         CheckTableReferences(problems);
         CheckWeaponReferences(problems);
+        CheckAttackReferences(problems);
     }
 
     /// <summary>
@@ -370,6 +371,54 @@ public static class ConfigReferenceValidator
         else if (tables.TbWeaponUpgrade.Data.MaxLevel <= 0)
         {
             problems.Add(Make("WeaponUpgrade", $"max_level 必须大于 0，当前 {tables.TbWeaponUpgrade.Data.MaxLevel}"));
+        }
+    }
+
+    /// <summary>
+    /// 招式引用：attackId 非空、不重复、在 Attack 表里有行；
+    /// 命中窗口必须 start &lt;= end；Attack 表的行也必须都有对应资产。
+    /// </summary>
+    private static void CheckAttackReferences(List<Problem> problems)
+    {
+        var tables = DataRepository.ConfigTables;
+        var seenAttackIds = new Dictionary<string, string>();
+
+        foreach (var path in FindAssets("t:AttackData", "Assets"))
+        {
+            var attack = AssetDatabase.LoadAssetAtPath<AttackData>(path);
+            if (attack == null) continue;
+
+            if (string.IsNullOrEmpty(attack.AttackId))
+            {
+                problems.Add(Make(path, "attackId 为空（执行 ACDemo/Config/Migration/Apply Attack Ids 可自动补齐）"));
+                continue;
+            }
+
+            if (seenAttackIds.TryGetValue(attack.AttackId, out string otherPath))
+            {
+                problems.Add(Make(path, $"attackId 重复：{attack.AttackId}（另一处：{otherPath}）"));
+                continue;
+            }
+            seenAttackIds[attack.AttackId] = path;
+
+            if (tables.TbAttack.GetOrDefault(attack.AttackId) == null)
+            {
+                problems.Add(Make(path, $"Attack 表缺少配置行：attack_id={attack.AttackId}"));
+            }
+        }
+
+        foreach (var row in tables.TbAttack.DataList)
+        {
+            if (row.ImpactStartTime > row.ImpactEndTime)
+            {
+                problems.Add(Make("Attack",
+                    $"attack_id={row.AttackId} 的命中窗口倒置：start={row.ImpactStartTime} > end={row.ImpactEndTime}"));
+            }
+
+            if (!seenAttackIds.ContainsKey(row.AttackId))
+            {
+                problems.Add(Make("Attack", $"attack_id={row.AttackId} 没有对应的 AttackData 资产"));
+            }
         }
     }
 

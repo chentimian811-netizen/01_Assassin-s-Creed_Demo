@@ -12,12 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26e51dd7102ec6b49b3e24d67c477be1, type: 3}
   m_Name: Sword_Attack3
   m_EditorClassIdentifier: 
+  attackId: Sword_Attack3
   <AnimName>k__BackingField: Attack_Light_3
   <HitboxToUse>k__BackingField: 5
-  <ImpactStartTime>k__BackingField: 0.35
-  <ImpactEndTime>k__BackingField: 0.65
-  damageMultiplier: 1
-  poiseDamage: 10
-  parryable: 1
-  hitStopDuration: 0
-  hitStopTimeScale: -1

@@ -14,6 +14,10 @@ using Luban.SimpleJSON;
 public partial class Tables
 {
     /// <summary>
+    /// 所有招式数值（玩家/敌人共用，主键=AttackData 的稳定 attackId）
+    /// </summary>
+    public TbAttack TbAttack {get; }
+    /// <summary>
     /// 武器数值（攻击距离/弹药/冷却/弹速/散布）
     /// </summary>
     public TbWeapon TbWeapon {get; }
@@ -44,6 +48,7 @@ public partial class Tables
 
     public Tables(System.Func<string, JSONNode> loader)
     {
+        TbAttack = new TbAttack(loader("attack"));
         TbWeapon = new TbWeapon(loader("weapon"));
         TbWeaponUpgrade = new TbWeaponUpgrade(loader("weapon_upgrade"));
         TbItem = new TbItem(loader("item"));
@@ -56,6 +61,7 @@ public partial class Tables
     
     private void ResolveRef()
     {
+        TbAttack.ResolveRef(this);
         TbWeapon.ResolveRef(this);
         TbWeaponUpgrade.ResolveRef(this);
         TbItem.ResolveRef(this);

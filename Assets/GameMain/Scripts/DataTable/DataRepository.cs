@@ -215,6 +215,21 @@ public static class DataRepository
         return tables.TbWeaponUpgrade.Data;
     }
 
+    /// <summary>按稳定 attackId 取招式行；缺失时返回 null 并报出具体 ID</summary>
+    public static Attack GetAttack(string attackId)
+    {
+        var tables = EnsureTables("Attack", attackId);
+        if (tables == null) return null;
+
+        var row = tables.TbAttack.GetOrDefault(attackId);
+        if (row == null)
+        {
+            Debug.LogError($"[DataRepository] Attack 表缺少配置行：attack_id={FormatId(attackId)}。" +
+                           "请检查 Gameplay.xlsx 的 Attack Sheet，或该 AttackData 的 attackId");
+        }
+        return row;
+    }
+
     /// <summary>确保表已加载，未就绪时返回 null 并带上"哪张表、哪个 ID"的错误信息</summary>
     private static Tables EnsureTables(string tableName, string configId)
     {
@@ -336,6 +351,7 @@ public static class DataRepository
         if (tables.TbParry == null) throw new Exception("Luban 生成物缺少 TbParry，请重新导出");
         if (tables.TbWeapon == null) throw new Exception("Luban 生成物缺少 TbWeapon，请重新导出");
         if (tables.TbWeaponUpgrade == null) throw new Exception("Luban 生成物缺少 TbWeaponUpgrade，请重新导出");
+        if (tables.TbAttack == null) throw new Exception("Luban 生成物缺少 TbAttack，请重新导出");
 
         m_tables = tables;
     }

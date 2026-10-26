@@ -1,0 +1,16 @@
+[
+  {
+    "id": "player_main",
+    "max_stamina": 120,
+    "regen_delay_after_use": 0.8,
+    "regen_per_second": 35,
+    "exhausted_lock_duration": 1,
+    "light_attack_cost": 8,
+    "heavy_attack_cost": 20,
+    "dodge_cost": 10,
+    "parry_fail_cost": 15,
+    "sprint_cost_per_second": 8,
+    "block_cost_per_second": 6,
+    "jump_cost": 0
+  }
+]

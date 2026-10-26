@@ -14,20 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponID: 10001
   weaponName: Sword
-  weaponType: 0
   weaponPrefab: {fileID: 1725509709468344114, guid: b21ed3581a87c834eb6947da7a8c7dc2,
     type: 3}
-  baseDamage: 10
-  attackRange: 1.5
   animOverride: {fileID: 0}
   attacks:
   - {fileID: 11400000, guid: e2abf08d88207cc48ad8b09f66758426, type: 2}
   - {fileID: 11400000, guid: 9ffeb712fb5fd3a4aa7de97050feeae7, type: 2}
   - {fileID: 11400000, guid: 5e7a7b88e80657e45afc16636a80acc2, type: 2}
   isRanged: 0
+  isShield: 0
   projectilePrefab: {fileID: 0}
-  maxAmmo: 30
-  fireCooldown: 0.5
-  projectilleSpeed: 25
-  aimSpreadAngle: 1
-  hipFireSpreadAngle: 8

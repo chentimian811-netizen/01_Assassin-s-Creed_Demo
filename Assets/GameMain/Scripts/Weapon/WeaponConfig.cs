@@ -2,19 +2,32 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 武器资源壳：只保留 Unity 资源引用与装备/动作路由标记。
+///
+/// 【数值来源】Weapon 表（Gameplay.xlsx 的 Weapon Sheet），按 weaponID 查行。
+///   攻击距离、弹药、射击冷却、弹速、散布都只在 Excel 里改，SO 上不再留可编辑副本。
+///   资源引用（模型 Prefab、动画覆盖器、招式列表、投射物 Prefab）和
+///   isRanged / isShield 这两个决定装备路由与动作路由的结构标记仍留在 SO 上（计划 §3.2）。
+///
+/// 属性名保持与旧序列化字段一致（含 projectilleSpeed 的历史拼写），
+/// 这样 RangedFighter 等调用方不需要跟着改。
+/// </summary>
 [CreateAssetMenu(menuName ="Weapon/WeaponConfig")]
 public class WeaponConfig : ScriptableObject
 {
+    /// <summary>武器 ID。正常应对应 Item.id；弓的 1111 是既有数据缺陷（见 Config/README.md）</summary>
     public int weaponID;
 
+    /// <summary>武器名（主要用于识别与日志）</summary>
     public string weaponName;
 
     public GameObject weaponPrefab;
-    public float attackRange;
 
     public AnimatorOverrideController animOverride;
 
     public List<AttackData> attacks;
+
     //远程武器配置
     [Header("远程武器配置")]
     [Tooltip("是否为远程武器")]
@@ -26,18 +39,42 @@ public class WeaponConfig : ScriptableObject
     [Tooltip("投射物预制体(箭矢)")]
     public GameObject projectilePrefab;
 
-    [Tooltip("最大弹药量")]
-    public int maxAmmo = 30;
+    // ---- Weapon 表行缓存：只缓存成功结果，缺行时每次都走 DataRepository 的报错路径 ----
+    private Weapon m_configRow;
+    private bool m_rowMissing;
 
-    [Tooltip("射击冷却时间（秒）")]
-    public float fireCooldown = 0.5f;
-    
-    [Tooltip("弹道速度")]
-    public float projectilleSpeed = 25f;
+    /// <summary>当前配置行。首次访问时才查表，避免 SO 加载阶段就依赖 DataRepository</summary>
+    private Weapon ConfigRow
+    {
+        get
+        {
+            if (m_configRow != null) return m_configRow;
+            if (m_rowMissing) return null;
 
-    [Tooltip("瞄准时散布角度")]
-    public float aimSpreadAngle = 1f;
+            m_configRow = DataRepository.GetWeapon(weaponID);
+            if (m_configRow == null)
+            {
+                m_rowMissing = true;
+            }
+            return m_configRow;
+        }
+    }
 
-    [Tooltip("腰射散布角度")]
-    public float hipFireSpreadAngle = 8f;
+    /// <summary>攻击距离（米）。当前工程没有消费方，仅保证数据可读</summary>
+    public float attackRange => ConfigRow != null ? ConfigRow.AttackRange : 0f;
+
+    /// <summary>最大弹药量</summary>
+    public int maxAmmo => ConfigRow != null ? ConfigRow.MaxAmmo : 0;
+
+    /// <summary>射击冷却时间（秒）</summary>
+    public float fireCooldown => ConfigRow != null ? ConfigRow.FireCooldown : 0f;
+
+    /// <summary>弹道速度（沿用历史拼写 projectilleSpeed）</summary>
+    public float projectilleSpeed => ConfigRow != null ? ConfigRow.ProjectileSpeed : 0f;
+
+    /// <summary>瞄准时散布角度</summary>
+    public float aimSpreadAngle => ConfigRow != null ? ConfigRow.AimSpreadAngle : 0f;
+
+    /// <summary>腰射散布角度</summary>
+    public float hipFireSpreadAngle => ConfigRow != null ? ConfigRow.HipFireSpreadAngle : 0f;
 }

@@ -14,17 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponID: 1111
   weaponName: Hunting Bow
-  weaponType: 3
   weaponPrefab: {fileID: 7037937364688556453, guid: 2a0335e280af7cf4a8fe28b49a3ac4e3,
     type: 3}
-  baseDamage: 15
-  attackRange: 5
   animOverride: {fileID: 9100000, guid: d0f15c3bd5771c9408446f6a2e1325dc, type: 2}
+  attacks: []
   isRanged: 1
+  isShield: 0
   projectilePrefab: {fileID: 6675334135728681736, guid: 60feb7ea35f327a4f90fb0b7a18bb34c,
     type: 3}
-  maxAmmo: 30
-  fireCooldown: 0.5
-  projectilleSpeed: 25
-  aimSpreadAngle: 1
-  hipFireSpreadAngle: 8

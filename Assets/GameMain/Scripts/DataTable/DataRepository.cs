@@ -193,6 +193,28 @@ public static class DataRepository
         return row;
     }
 
+    /// <summary>按武器 ID 取 Weapon 行；缺失时返回 null 并报出具体 ID</summary>
+    public static Weapon GetWeapon(int weaponId)
+    {
+        var tables = EnsureTables("Weapon", weaponId.ToString());
+        if (tables == null) return null;
+
+        var row = tables.TbWeapon.GetOrDefault(weaponId);
+        if (row == null)
+        {
+            Debug.LogError($"[DataRepository] Weapon 表缺少配置行：weapon_id={weaponId}。请检查 Gameplay.xlsx 的 Weapon Sheet");
+        }
+        return row;
+    }
+
+    /// <summary>武器升级系数（one 单行表）。读不到时返回 null 并由调用方按 0 处理</summary>
+    public static WeaponUpgrade GetWeaponUpgrade()
+    {
+        var tables = EnsureTables("WeaponUpgrade", "<one>");
+        if (tables == null) return null;
+        return tables.TbWeaponUpgrade.Data;
+    }
+
     /// <summary>确保表已加载，未就绪时返回 null 并带上"哪张表、哪个 ID"的错误信息</summary>
     private static Tables EnsureTables(string tableName, string configId)
     {
@@ -312,6 +334,8 @@ public static class DataRepository
         if (tables.TbPlayer == null) throw new Exception("Luban 生成物缺少 TbPlayer，请重新导出");
         if (tables.TbStamina == null) throw new Exception("Luban 生成物缺少 TbStamina，请重新导出");
         if (tables.TbParry == null) throw new Exception("Luban 生成物缺少 TbParry，请重新导出");
+        if (tables.TbWeapon == null) throw new Exception("Luban 生成物缺少 TbWeapon，请重新导出");
+        if (tables.TbWeaponUpgrade == null) throw new Exception("Luban 生成物缺少 TbWeaponUpgrade，请重新导出");
 
         m_tables = tables;
     }

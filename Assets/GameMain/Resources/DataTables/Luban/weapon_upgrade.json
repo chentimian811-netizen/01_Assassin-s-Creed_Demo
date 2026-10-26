@@ -1,0 +1,8 @@
+[
+  {
+    "max_level": 90,
+    "damage_per_level": 2,
+    "crit_rate_per_level": 0.003,
+    "upgrade_cost_per_level": 30
+  }
+]

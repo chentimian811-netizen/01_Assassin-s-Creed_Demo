@@ -14,6 +14,14 @@ using Luban.SimpleJSON;
 public partial class Tables
 {
     /// <summary>
+    /// 武器数值（攻击距离/弹药/冷却/弹速/散布）
+    /// </summary>
+    public TbWeapon TbWeapon {get; }
+    /// <summary>
+    /// 武器升级上限与系数（单行表）
+    /// </summary>
+    public TbWeaponUpgrade TbWeaponUpgrade {get; }
+    /// <summary>
     /// 物品与武器基础数值（背包/商店/伤害链路共用）
     /// </summary>
     public TbItem TbItem {get; }
@@ -36,6 +44,8 @@ public partial class Tables
 
     public Tables(System.Func<string, JSONNode> loader)
     {
+        TbWeapon = new TbWeapon(loader("weapon"));
+        TbWeaponUpgrade = new TbWeaponUpgrade(loader("weapon_upgrade"));
         TbItem = new TbItem(loader("item"));
         TbCharacter = new TbCharacter(loader("character"));
         TbPlayer = new TbPlayer(loader("player"));
@@ -46,6 +56,8 @@ public partial class Tables
     
     private void ResolveRef()
     {
+        TbWeapon.ResolveRef(this);
+        TbWeaponUpgrade.ResolveRef(this);
         TbItem.ResolveRef(this);
         TbCharacter.ResolveRef(this);
         TbPlayer.ResolveRef(this);

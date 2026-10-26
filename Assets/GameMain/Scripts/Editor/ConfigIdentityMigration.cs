@@ -32,6 +32,29 @@ public static class ConfigIdentityMigration
         Debug.Log("[ConfigIdentityMigration] 角色配置身份写入完成");
     }
 
+    /// <summary>
+    /// 重存全部 WeaponConfig 资产：把已经迁到 Weapon 表的数值字段从 .asset 里清掉，
+    /// 避免 Inspector 上还留着一份"看起来能改"的旧数值。
+    /// 只 SetDirty + SaveAssets，不重建资产，GUID 与招式/模型引用都不会变。
+    /// </summary>
+    [MenuItem("ACDemo/Config/Migration/Resave Weapon Configs", priority = 41)]
+    public static void ResaveWeaponConfigs()
+    {
+        int count = 0;
+        foreach (var guid in AssetDatabase.FindAssets("t:WeaponConfig", new[] { "Assets" }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var config = AssetDatabase.LoadAssetAtPath<WeaponConfig>(path);
+            if (config == null) continue;
+            EditorUtility.SetDirty(config);
+            count++;
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log($"[ConfigIdentityMigration] 已重存 {count} 个 WeaponConfig（清掉已迁移的数值字段）");
+    }
+
     /// <summary>给 Prefab 根对象挂/复用 CharacterConfigIdentity 并写入 ID</summary>
     private static void ApplyPrefabIdentity(string prefabPath, string configId)
     {

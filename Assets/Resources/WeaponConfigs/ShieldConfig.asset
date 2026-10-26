@@ -11,19 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05c76ee6f7ca9104a8a44d83a69f74a1, type: 3}
   m_Name: ShieldConfig
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   weaponID: 10008
   weaponName: Round Shield
   weaponPrefab: {fileID: 2725509709468344114, guid: 7c8f2a91e3b44d6f9a0b1c2d3e4f5a6b,
     type: 3}
-  attackRange: 1.2
   animOverride: {fileID: 0}
   attacks: []
   isRanged: 0
   isShield: 1
   projectilePrefab: {fileID: 0}
-  maxAmmo: 30
-  fireCooldown: 0.5
-  projectilleSpeed: 25
-  aimSpreadAngle: 1
-  hipFireSpreadAngle: 8

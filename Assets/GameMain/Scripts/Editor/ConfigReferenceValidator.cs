@@ -38,7 +38,16 @@ public static class ConfigReferenceValidator
         public string Where;
         public string Message;
 
-        public override string ToString() => $"{Where} → {Message}";
+        /// <summary>
+        /// 已知缺陷：有明确决策记录、本次不修的问题。只提示，不计入失败。
+        /// 目前只用于"弓的 weaponID=1111 与 Item 表不一致"这一条既有数据缺陷（计划 §2.7-1）。
+        /// </summary>
+        public bool IsKnownIssue;
+
+        public override string ToString()
+        {
+            return (IsKnownIssue ? "[已知缺陷] " : "") + $"{Where} → {Message}";
+        }
     }
 
     [MenuItem("ACDemo/Config/Validate Only", priority = 20)]
@@ -53,18 +62,24 @@ public static class ConfigReferenceValidator
         var problems = new List<Problem>();
         Validate(problems);
 
-        if (problems.Count == 0)
+        int errorCount = 0;
+        int knownCount = 0;
+        var sb = new StringBuilder();
+        foreach (var problem in problems)
         {
-            Debug.Log($"[ConfigValidator] 全部检查通过（{Time.realtimeSinceStartup:0.0}）");
+            if (problem.IsKnownIssue) knownCount++;
+            else errorCount++;
+            sb.AppendLine().Append("  - ").Append(problem);
+        }
+
+        if (errorCount == 0)
+        {
+            Debug.Log($"[ConfigValidator] 全部检查通过（{Time.realtimeSinceStartup:0.0}），" +
+                      $"已知缺陷 {knownCount} 条（不计入失败）{sb}");
             return true;
         }
 
-        var sb = new StringBuilder($"[ConfigValidator] 发现 {problems.Count} 个配置问题：");
-        foreach (var problem in problems)
-        {
-            sb.AppendLine().Append("  - ").Append(problem);
-        }
-        Debug.LogError(sb.ToString());
+        Debug.LogError($"[ConfigValidator] 发现 {errorCount} 个配置问题（另有已知缺陷 {knownCount} 条）：{sb}");
         return false;
     }
 
@@ -76,6 +91,7 @@ public static class ConfigReferenceValidator
 
         CheckCharacterIdentities(problems);
         CheckTableReferences(problems);
+        CheckWeaponReferences(problems);
     }
 
     /// <summary>
@@ -288,6 +304,72 @@ public static class ConfigReferenceValidator
             {
                 problems.Add(Make("Shop", $"id={shop.Id} 引用的 ItemAssetId={shop.ItemAssetId} 在 Item 表里不存在"));
             }
+        }
+    }
+
+    /// <summary>
+    /// 武器引用：每个 WeaponConfig 的 weaponID 非空、不重复、在 Weapon 表里有行，
+    /// 且 Weapon.weapon_id 应能对应到 Item.id。
+    /// 弓的 1111 是既有数据缺陷（计划 §2.7-1），用户已决定本次不修，因此按"已知缺陷"提示。
+    /// </summary>
+    private static void CheckWeaponReferences(List<Problem> problems)
+    {
+        var tables = DataRepository.ConfigTables;
+        var itemTable = DataRepository.ItemTable;
+        var seenWeaponIds = new Dictionary<int, string>();
+
+        foreach (var path in FindAssets("t:WeaponConfig", "Assets"))
+        {
+            var config = AssetDatabase.LoadAssetAtPath<WeaponConfig>(path);
+            if (config == null) continue;
+
+            if (config.weaponID <= 0)
+            {
+                problems.Add(Make(path, "weaponID 未填写或非法"));
+                continue;
+            }
+
+            if (seenWeaponIds.TryGetValue(config.weaponID, out string otherPath))
+            {
+                problems.Add(Make(path, $"weaponID 重复：{config.weaponID}（另一处：{otherPath}）"));
+                continue;
+            }
+            seenWeaponIds[config.weaponID] = path;
+
+            if (tables.TbWeapon.GetOrDefault(config.weaponID) == null)
+            {
+                problems.Add(Make(path, $"Weapon 表缺少配置行：weapon_id={config.weaponID}"));
+            }
+
+            if (itemTable != null && !itemTable.ContainsKey(config.weaponID))
+            {
+                // 1111：BowConfig 与 Item 10004 Hunting Bow 不一致，属于计划里已经记录、
+                // 由用户决定"本次不修"的既有缺陷，只提示不计失败。
+                problems.Add(new Problem
+                {
+                    Where = path,
+                    Message = $"weaponID={config.weaponID} 在 Item 表里不存在（弓的既有缺陷，待单独修复）",
+                    IsKnownIssue = config.weaponID == 1111,
+                });
+            }
+        }
+
+        // Weapon 表里出现的每个 weapon_id 都应对应一把真实存在的武器 SO
+        foreach (var row in tables.TbWeapon.DataList)
+        {
+            if (!seenWeaponIds.ContainsKey(row.WeaponId))
+            {
+                problems.Add(Make("Weapon", $"weapon_id={row.WeaponId} 没有对应的 WeaponConfig 资产"));
+            }
+        }
+
+        if (tables.TbWeaponUpgrade.Data == null)
+        {
+            problems.Add(Make("WeaponUpgrade", "单行表没有数据行"));
+        }
+        else if (tables.TbWeaponUpgrade.Data.MaxLevel <= 0)
+        {
+            problems.Add(Make("WeaponUpgrade", $"max_level 必须大于 0，当前 {tables.TbWeaponUpgrade.Data.MaxLevel}"));
         }
     }
 

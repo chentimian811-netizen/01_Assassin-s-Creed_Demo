@@ -302,3 +302,59 @@
 
 迁移过程中每完成一个批次，都要在下面追加一行“批次 / 验证项 / 结果 / 执行人”，
 不允许把 Editor 侧校验写成 Play 通过。
+
+---
+
+## 10. 迁移批次记录（执行侧可验证的部分）
+
+> 说明：执行侧只能用 batchmode 跑「编译 + 导出 + 引用校验」，**Play 行为一律记为未覆盖**，
+> 不能把 Editor 侧校验当成 Play 通过。
+
+| 批次 | 内容 | Editor 侧结果 | Play |
+|---|---|---|---|
+| Task 1 | Luban 5.1.0 工具链 + com.code-philosophy.luban 1.2.0 内嵌包 | 官方 MiniTemplate 数据/代码导出退出码 0；`Luban.Runtime` 可被 Assembly-CSharp 引用；无编译错误 | — |
+| Task 2 | 导出管线（luban.conf / bat / xlsx / 专用输出目录） | 两次导出字节一致；重复主键 exit 1；越界值 exit 1（`--strict`）；错误输出目录被拒绝；Unity 编译通过 | — |
+| Task 3 | DataRepository 幂等 + CharacterConfigIdentity + 导出/校验菜单 | `8 items / 6 shop rows / 1 character / 1 stamina`，校验通过 | 未覆盖 |
+| Task 4 | 耐力迁移（PlayerStamina / PlayerCombat / PlayerDodge） | 表值与 `StaminaConfig_Default` 逐项一致；校验通过 | 未覆盖 |
+| Task 5 | 玩家生命/移动/翻滚/锁定/弹反迁移 | 2 character / 1 player / 1 stamina / 1 parry；Male.prefab 只删数值、加配置身份；校验通过 | 未覆盖 |
+| Task 6 | Item 迁移（保持 DRItem 兼容） | 8 items 与原表一致；Shop→Item 引用校验通过 | 未覆盖 |
+| Task 7 | Weapon + WeaponUpgrade（跳弓的 ID 修复） | 四个 WeaponConfig 数值清除、引用完整；已知缺陷 1 条（弓 1111） | 未覆盖 |
+| Task 8 | 9 个 AttackData 数值迁移 | attackId 全部写入；命中窗口/倍率等与基准一致；校验通过 | 未覆盖 |
+| Task 9 | CombatGlobal（兜底伤害 + 默认卡肉） | 校验通过；`Time.timeScale` 写入点未增加 | 未覆盖 |
+| Task 10 | Enemy 表 + 全部 FSM 状态 | Enemy.prefab 清掉 19 行已迁移数值；校验通过 | 未覆盖 |
+| Task 11 | EnemyGlobal 排程 | EnemyManager.prefab 清掉 timeRangeBetWeenAttacks；校验通过 | 未覆盖 |
+| Task 12 | BossPhase（空表 + 读取链路） | 联合主键/阈值/排序校验通过；**无 Boss 实例，Play 未覆盖** | 未覆盖 |
+| Task 13 | 删除纯数值 SO / Item.txt / 临时工具 | 删除后编译与校验全部通过 | 未覆盖 |
+| Task 14 | 回归与单单元格验收 | 见下 | 未覆盖 |
+
+### 10.1 负向检查（实际执行）
+
+| 检查 | 期望 | 实测 |
+|---|---|---|
+| 重复主键（Stamina 两条 `player_main`） | 导出失败 | `主键值:'"player_main"' 重复` + exit 1 ✓ |
+| 非法范围（`max_stamina = 5000`） | 导出失败 | `不在范围:[0,1000]` + exit 1（需 `--strict`）✓ |
+| 错误输出目录 | 拒绝执行 | `[ERROR] 拒绝执行：输出目录 ... 不是专用生成目录` ✓ |
+| 命中窗口倒置（`Sword_Attack1` 0.65 → 0.30） | 导出通过但引用校验失败 | 导出 OK，校验报「命中窗口倒置：start=0.65 > end=0.3」✓ |
+| Boss 阈值未严格递减（0.5 → 0.6） | 导出通过但引用校验失败 | 导出 OK，校验报「阶段阈值没有严格递减」✓ |
+
+### 10.2 单单元格验收（实际执行）
+
+只把 `Stamina.player_main` 的 `regen_per_second` 从 35 改成 40：
+
+- `git status` 只有 `Config/Luban/Datas/Gameplay.xlsx` 与
+  `Assets/GameMain/Resources/DataTables/Luban/stamina.json` 两处变化；
+- 生成 C#、Prefab、场景、SO **一处都没有被动到**；
+- 改回 35 再导出，工作区回到零改动。
+
+### 10.3 待用户在 Unity Editor 完成的 Play 回归
+
+按计划 §9 逐项打勾，重点是：
+
+1. 启动：Console 无红字；玩家/敌人/HUD 正常；背包与商店能打开、内容不丢。
+2. 玩家：初始生命 100；走跑蹲跳手感不变；Shift 短按翻滚/长按疾跑；Q 锁定 15 米自动解锁；
+   翻滚距离 3.5/时长 0.9/无敌 0.05~0.45；轻攻击扣 8 耐力、翻滚扣 10、0.8 秒后按 35/秒恢复、力竭锁 1 秒。
+3. 武器与招式：剑三段、斧三段命中；盾可装备；远程射击的弹药/冷却/弹速/散布；
+   升级前后背包数值与实际伤害一致；命中只在攻击窗口内发生。
+4. 敌人：巡逻、发现、追击、环绕、攻击、后撤、受击、死亡与销毁；多敌人不串线。
+5. 卡肉与暂停：普通命中卡肉 0.1s / 0.05 缩放、上限 0.3s；暂停中不再卡肉。
+6. **未覆盖项**：弹反（无组件）、Boss（无实例）、弓（ID 缺陷未修）、`Poise` 削韧（无消费方）。

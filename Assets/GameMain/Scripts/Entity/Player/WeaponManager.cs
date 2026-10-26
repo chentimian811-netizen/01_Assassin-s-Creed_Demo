@@ -476,6 +476,28 @@ public class WeaponManager : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// 取左手盾槽上盾牌模型的 BoxCollider，供 MeleeFighter 的盾击窗口开合。
+    ///
+    /// 盾不走 FindMeleeWeaponSlot（那是给剑用的，明确排除了盾），
+    /// 所以要单独开这个出口；装备时 ApplyInitialColliderState 会把盾的碰撞体关掉，
+    /// 只有盾击招式窗口才会重新打开它。
+    /// </summary>
+    public BoxCollider GetShieldHitbox()
+    {
+        if (weaponSlots == null) return null;
+
+        foreach (var slot in weaponSlots)
+        {
+            if (slot == null || slot.currentConfig == null || !slot.currentConfig.isShield) continue;
+            if (slot.currentModel == null) continue;
+
+            BoxCollider box = slot.currentModel.GetComponentInChildren<BoxCollider>(true);
+            if (box != null) return box;
+        }
+        return null;
+    }
+
     void SetLayerRecursive(GameObject obj, int layer)
     {
         obj.layer = layer;

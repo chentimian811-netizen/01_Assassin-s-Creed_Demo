@@ -58,9 +58,23 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     [Tooltip("每次绑定命中盒时输出日志（排查\"敌人砍不掉血\"时打开）")]
     [SerializeField] private bool logHitboxBinding = false;
 
+    [Header("盾击命中盒（左手盾）")]
+    [Tooltip("盾牌上的 BoxCollider，盾击招式（HitboxToUse = Shield）开的就是这个盒。\n" +
+             "留空 = 运行时自动找：先问 WeaponManager 的左手盾槽，再找名字含 Shield 且 Tag=Hitbox 的子物体")]
+    [SerializeField] private BoxCollider shieldHitbox;
+
     public E_AttackState AttackState { get; private set; }
 
     BoxCollider WeaponCollider;
+
+    /// <summary>
+    /// 本次判定窗口的开启时刻。只用于兜底：攻击协程被打断时 AttackState 会永久停在
+    /// Impact，命中盒于是常开 —— 超时后强制收盒复位。
+    /// </summary>
+    float impactWindowStart;
+
+    /// <summary>判定窗口最长存活时间（秒）。正常招式远小于这个值，超了就是出事了</summary>
+    const float MaxImpactDuration = 3f;
     Animator animator;
     RuntimeAnimatorController originalController;
     public bool IsAttackingHit { get; private set; } = false; //是否处于被攻击状态
@@ -174,6 +188,50 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         // 必须等 Animator 至少求值过一次，自动测量才量得到正确的骨骼姿态
         StartCoroutine(BindPreplacedWeaponAtEndOfFrame());
         DisableAllHitxboxes();
+
+        // 盾的碰撞体在 prefab / 手工摆姿势时经常是"开着"的（手工挂在 hand_l 的盾尤其如此），
+        // 这里统一关掉，只在盾击窗口内打开 —— 否则走路刮到敌人也会掉血
+        BoxCollider shield = ResolveShieldCollider();
+        if (shield != null) shield.enabled = false;
+    }
+
+    /// <summary>
+    /// 命中盒自愈。
+    ///
+    /// 【为什么需要】命中盒"关"只有攻击协程末尾那一句 DisableAllHitxboxes()。
+    /// 协程一旦被打断（StopAllCoroutines / 组件被禁用 / 状态被外部切走），
+    /// 开着的盒就永远留在场上 —— 表现正是"敌人没出手，你走过去撞到它的剑却掉血"。
+    /// 判定窗口本来只该存在于 Impact 期间，这里每帧兜一层：
+    ///   1. 状态不在 Impact → 立刻收盒；
+    ///   2. 状态卡在 Impact 超过 MaxImpactDuration → 判定协程已死，强制收盒并复位。
+    /// </summary>
+    void Update()
+    {
+        if (AttackState != E_AttackState.Impact)
+        {
+            bool anyHitboxOn = (WeaponCollider != null && WeaponCollider.enabled)
+                || (shieldHitbox != null && shieldHitbox.enabled)
+                || (leftHandeConllider != null && leftHandeConllider.enabled)
+                || (rightHandeConllider != null && rightHandeConllider.enabled)
+                || (leftFootConllider != null && leftFootConllider.enabled)
+                || (rightFootConllider != null && rightFootConllider.enabled);
+
+            if (anyHitboxOn) DisableAllHitxboxes();
+            return;
+        }
+
+        if (Time.time - impactWindowStart > MaxImpactDuration)
+        {
+            Debug.LogWarning(
+                $"[MeleeFighter] {name} 的判定窗口开了 {Time.time - impactWindowStart:0.0}s 还没关，" +
+                "判定为攻击协程被打断，强制收盒并复位（否则命中盒会常开）", this);
+
+            AttackState = E_AttackState.idle;
+            inAction = false;
+            doCombo = false;
+            combocount = 0;
+            DisableAllHitxboxes();
+        }
     }
 
     IEnumerator BindPreplacedWeaponAtEndOfFrame()
@@ -653,6 +711,12 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         // 会把受害动画顶掉 —— 表现就是"被处决的敌人站起来反击"。
         if (inCounter) return;
 
+        // 死亡后不得再起手。
+        // Attack 协程第一件事就是把招式 CrossFade 到 Override Layer(1)，而死亡动作
+        // 【也是一次性 CrossFade 到同一层】，被盖住后不会自己回来 ——
+        // 表现就是"角色被打死了，按一下攻击键又站起来，然后卡在原地不能动"。
+        if (health != null && health.IsDead) return;
+
         if (!inAction)
         {
             StartCoroutine(Attack(target));
@@ -763,6 +827,18 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         if (!attackerFighter.enabled) return;
         if (attackerFighter.HealthComponent != null && attackerFighter.HealthComponent.IsDead) return;
 
+        // ⚠️ 命中盒开着 ≠ 正在攻击。
+        // 命中盒的关只靠攻击协程尾部那一句 DisableAllHitxboxes()，协程被打断就会留在场上；
+        // 而这条回调以前只认"碰撞体开关"，于是出现"敌人没出招，人撞上去也掉血"。
+        // 现在以【攻击状态】为准，碰撞体只是表现：不在 Impact 窗口内一律不结算。
+        if (attackerFighter.AttackState != E_AttackState.Impact || attackerFighter.CurrentAttack == null)
+        {
+            Debug.LogWarning(
+                $"[MeleeFighter] 忽略一次非攻击窗口的命中：{attackerFighter.name} 的命中盒 {other.name} 碰到 {name}" +
+                $"（攻击方状态={attackerFighter.AttackState}，命中盒可能没被正常关掉）", this);
+            return;
+        }
+
         // 攻击方已锁定别的目标时不误伤
         if (attackerFighter.currentTarget != null && attackerFighter.currentTarget != this) return;
 
@@ -792,6 +868,66 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         if (CompareTag("Player")) CameraManager.Instance?.ShakeScreen();
     }
 
+    [Header("受击表现")]
+    [Tooltip("受击动画状态名。留空 = 自动在候选表里挑一个当前控制器真实存在的状态（推荐留空）")]
+    [SerializeField] private string hitReactionStateName = "";
+
+    /// <summary>战斗层（Override Layer）索引：攻击/受击/死亡都在这层播</summary>
+    const int CombatLayer = 1;
+
+    /// <summary>
+    /// 受击状态候选名。
+    ///
+    /// 【为什么要有这张表】MeleeFighter 被玩家与敌人共用，但两边的 Animator 控制器里
+    /// 受击状态叫法不同：玩家 PlayerMove.controller 叫 Attack_Impact，
+    /// 敌人 EnemyController.controller 叫 Melee_Impact。原实现写死 "Attack_Impact"，
+    /// 于是敌人挨打时 CrossFade 落空 → Console 报
+    /// "Animator.GotoState: State could not be found" →
+    /// 表现为"砍到了敌人但敌人一点反应都没有"，很容易被误判成没伤害。
+    /// 顺带一提：CrossFade 失败后 GetNextAnimatorStateInfo 拿到的是别的状态，
+    /// 后半段 WaitForSeconds 的硬直时长也会跟着乱，所以不能只补个警告了事。
+    /// </summary>
+    static readonly string[] HitReactionStateCandidates =
+    {
+        "Attack_Impact",   // 玩家
+        "Melee_Impact",    // 敌人
+        "Hit_Impact",      // 以后新增角色时的通用名
+        "Impact",
+    };
+
+    /// <summary>
+    /// 挑一个当前控制器上真实存在的受击状态。
+    /// 返回 null = 一个候选都没有，调用方必须自己复位 IsAttackingHit / inAction
+    /// （否则这两位置一旦挂住，OnTriggerEnter 的第一道闸会把这单位的后续伤害全吞掉）。
+    /// </summary>
+    string ResolveHitReactionState(out int layer)
+    {
+        layer = CombatLayer;
+        if (animator == null) return null;
+
+        // Inspector 手填的优先，但必须真实存在，否则退回候选表
+        if (!string.IsNullOrEmpty(hitReactionStateName)
+            && animator.HasState(CombatLayer, Animator.StringToHash(hitReactionStateName)))
+            return hitReactionStateName;
+
+        for (int i = 0; i < HitReactionStateCandidates.Length; i++)
+        {
+            if (animator.HasState(CombatLayer, Animator.StringToHash(HitReactionStateCandidates[i])))
+                return HitReactionStateCandidates[i];
+        }
+
+        // 兜底：状态万一挂在 Base Layer(0) 上，播在 0 层也比整个人不动强
+        for (int i = 0; i < HitReactionStateCandidates.Length; i++)
+        {
+            if (animator.HasState(0, Animator.StringToHash(HitReactionStateCandidates[i])))
+            {
+                layer = 0;
+                return HitReactionStateCandidates[i];
+            }
+        }
+        return null;
+    }
+
     /// <summary>
     /// 受击表现（玩家与敌人共用）。替代被删除的 PlayerHitReaction 直调。
     /// 敌人的 FSM 状态切换由 EnemyController.HandleUnitDamaged 负责。
@@ -816,11 +952,29 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
             if (dispVec != Vector3.zero) transform.rotation = Quaternion.LookRotation(dispVec);
         }
 
-        animator.CrossFade("Attack_Impact", 0.2f, 1);
+        // 状态名按控制器自适应（玩家 Attack_Impact / 敌人 Melee_Impact），不再写死
+        string stateName = ResolveHitReactionState(out int layer);
+        if (stateName == null)
+        {
+            // 找不到状态也不能就这么卡住：IsAttackingHit / inAction 一旦永久为 true，
+            // 这单位之后既不播受击、也不再吃任何伤害（见 OnTriggerEnter 的第一道闸）
+            Debug.LogWarning(
+                $"[MeleeFighter] {name} 的 Animator 里找不到受击状态" +
+                $"（候选：{string.Join("/", HitReactionStateCandidates)}）。" +
+                "本次跳过受击动画，但伤害已正常结算。", this);
+
+            GameEvents.RaiseHitReactionComplete(health.UnitId);
+            inAction = false;
+            IsAttackingHit = false;
+            yield break;
+        }
+
+        animator.CrossFade(stateName, 0.2f, layer);
         yield return null;
 
-        var animState = animator.GetNextAnimatorStateInfo(1);
-        yield return new WaitForSeconds(animState.length * 0.60f);
+        var animState = animator.GetNextAnimatorStateInfo(layer);
+        // 兜底下限：状态没切成功时 length 可能是 0，硬直会瞬间结束（看起来像"没被打"）
+        yield return new WaitForSeconds(Mathf.Max(0.15f, animState.length * 0.60f));
 
         GameEvents.RaiseHitReactionComplete(health.UnitId);
         inAction = false;
@@ -839,7 +993,11 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     private void HandlePlayerDeath()
     {
         if (!CompareTag("Player")) return;
-        StopAllCoroutines();
+
+        // 用 ForceStopCombat 而不是裸 StopAllCoroutines：死亡瞬间很可能正处在攻击/受击
+        // 协程里，只停协程会留下 inAction / AttackState / 命中盒 的残留，
+        // 死后再按攻击键就会被 ToTryAttack 当成"还能打"，把死亡动作顶掉
+        ForceStopCombat();
         animator.CrossFade("Melee_FallBackDeath", 0.2f, 1);
     }
 
@@ -970,8 +1128,56 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         DisableAllHitxboxes();
     }
 
+    /// <summary>
+    /// 取盾牌自身的命中盒（盾击用）。
+    ///
+    /// 【为什么盾要单独一条通道】WeaponManager 装盾时会把盾的碰撞体【关掉】
+    /// （ApplyInitialColliderState：武器开、盾关），所以盾击必须由招式窗口自己开盒；
+    /// 而 E_AttackHitbox 以前没有 Shield 这一项，盾击只能退化填 LeftHande
+    /// → 打开的是左手骨骼上的小球（拳掌判定），不是盾牌 → 盾击永远打不出伤害。
+    ///
+    /// 盾有两种存在方式，这里都兜住：
+    ///   ① WeaponManager 左手槽正式装备的盾（currentConfig.isShield）
+    ///   ② 手工挂在 hand_l 下的盾模型（见 Moveset_System_Design.md §12.1）
+    /// </summary>
+    BoxCollider ResolveShieldCollider()
+    {
+        // 缓存自愈：换盾/卸盾后旧引用会变成 Unity 的"假 null"，这里自动重新找
+        if (shieldHitbox != null) return shieldHitbox;
+
+        WeaponManager wm = GetComponent<WeaponManager>();
+        if (wm != null) shieldHitbox = wm.GetShieldHitbox();
+
+        if (shieldHitbox == null)
+        {
+            var boxes = GetComponentsInChildren<BoxCollider>(true);
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                BoxCollider box = boxes[i];
+                if (box == null || box == WeaponCollider) continue;   // 剑盒不算盾盒
+                if (!box.CompareTag("Hitbox")) continue;
+                if (box.name.IndexOf("Shield", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                shieldHitbox = box;
+                break;
+            }
+        }
+
+        if (logHitboxBinding)
+        {
+            Debug.Log(shieldHitbox != null
+                    ? $"[MeleeFighter] {name} 盾击盒已绑定：{shieldHitbox.name}（尺寸 {shieldHitbox.size}）"
+                    : $"[MeleeFighter] {name} 没找到盾击盒：盾击招式打不出伤害。" +
+                      "修法：给盾模型挂 IsTrigger 的 BoxCollider、Tag=Hitbox、层=Playehitbox，或在 shieldHitbox 上手动指定",
+                this);
+        }
+        return shieldHitbox;
+    }
+
     void EnableHitbox(AttackData attack)
     {
+        // 记下窗口开启时刻，供 Update 的兜底超时使用
+        impactWindowStart = Time.time;
+
         // 每次开窗前重新取一次：装备/切换武器后可能已经换了一个碰撞体
         if (WeaponCollider == null && currentWeapon != null)
             WeaponCollider = currentWeapon.GetComponent<BoxCollider>();
@@ -995,6 +1201,13 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
                 // 剑招开手部判定等于凭空多出一个贴身判定盒 —— 现在只开武器盒
                 if (WeaponCollider != null) WeaponCollider.enabled = true;
                 break;
+            case E_AttackHitbox.Shield:
+                {
+                    // 盾击：开盾牌自己的盒（左手骨骼上的小球不算，那是拳掌判定）
+                    BoxCollider shield = ResolveShieldCollider();
+                    if (shield != null) shield.enabled = true;
+                }
+                break;
             default:
                 break;
         }
@@ -1007,6 +1220,8 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         if (leftFootConllider != null) leftFootConllider.enabled = false;
         if (rightFootConllider != null) rightFootConllider.enabled = false;
         if (WeaponCollider != null) WeaponCollider.enabled = false;
+        // 只关已经解析过的引用：收招路径上不做层级查找，避免每刀都扫一遍子物体
+        if (shieldHitbox != null) shieldHitbox.enabled = false;
     }
 
     public List<AttackData> Attacks => attacks;
@@ -1027,13 +1242,21 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     /// </summary>
     private void OnDrawGizmosSelected()
     {
-        if (WeaponCollider == null) return;
+        DrawHitboxGizmo(WeaponCollider);
+        // 盾击盒：Inspector 指定过、或运行时已解析过才画（Gizmos 里不主动查找，避免每帧扫层级）
+        DrawHitboxGizmo(shieldHitbox);
+    }
 
-        Gizmos.color = WeaponCollider.enabled
+    /// <summary>画一个命中盒：黄色 = 判定窗口已开，灰色 = 当前关闭（正常待机状态）</summary>
+    static void DrawHitboxGizmo(BoxCollider box)
+    {
+        if (box == null) return;
+
+        Gizmos.color = box.enabled
             ? new Color(1f, 0.85f, 0.1f, 0.9f)
             : new Color(0.6f, 0.6f, 0.6f, 0.5f);
 
-        Gizmos.matrix = WeaponCollider.transform.localToWorldMatrix;
-        Gizmos.DrawWireCube(WeaponCollider.center, WeaponCollider.size);
+        Gizmos.matrix = box.transform.localToWorldMatrix;
+        Gizmos.DrawWireCube(box.center, box.size);
     }
 }

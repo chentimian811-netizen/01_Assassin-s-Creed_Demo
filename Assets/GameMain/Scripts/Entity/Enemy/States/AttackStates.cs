@@ -21,8 +21,10 @@ public class AttackStates : State<EnemyController>
     {
         if (isAttacking) return;
 
-        // 防御性检查：Target为空或已死亡时退回CombatMovement
-        if (enemy.Target == null || enemy.Target.Health <= 0)
+        // 防御性检查：Target 为空时退回 CombatMovement。
+        // ⚠️ 不再因为「目标血量 ≤ 0」就退回：玩家倒地后敌人要继续补刀（继续攻击），
+        //    什么时候放弃目标交给 CombatMovementStates 的 keepAttackingDeadTargetSeconds 决定。
+        if (enemy.Target == null)
         {
             enemy.ChangeState(E_EnemyState.CombatMovement);
             return;

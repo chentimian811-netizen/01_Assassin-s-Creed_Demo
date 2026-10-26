@@ -38,4 +38,14 @@ public enum E_AttackHitbox
     LeftFoot,
     RightFoot,
     Weapon,
+
+    /// <summary>
+    /// 盾牌自身的 BoxCollider（盾击招式用）。
+    ///
+    /// ⚠️ 必须放在最后：0~4 已经被现有 .asset 序列化成整数，
+    /// 插在中间会让所有老配置的判定盒集体错位。
+    /// 与 LeftHande 的区别：LeftHande 开的是左手骨骼上的小球（拳掌判定），
+    /// 盾击要开的是盾牌这个盒 —— 两者不在一个物体上。
+    /// </summary>
+    Shield,
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SocialPlatforms;
 using System.Collections.Generic;
@@ -21,6 +21,14 @@ public class CombatMovementStates : State<EnemyController>
     [SerializeField] Vector2 idleTimeRange = new Vector2(2, 5);
     [SerializeField] Vector2 circlingTimeRange = new Vector2(4, 6);
 
+    [Header("目标倒地后")]
+    [Tooltip("目标被自己打死后再继续攻击/追击多少秒（补刀），之后才放弃目标回 Idle。\n" +
+             "设很大（如 9999）就等于一直打到玩家复活")]
+    [SerializeField] float keepAttackingDeadTargetSeconds = 4f;
+
+    /// <summary>目标已倒地后的计时（保证只补刀一小会儿，不会永远围着尸体转）</summary>
+    float deadTargetTimer;
+
     float timer = 0f;
     int circlingDir = 1;
 
@@ -36,6 +44,7 @@ public class CombatMovementStates : State<EnemyController>
         // 重置内部子状态，确保每次进入时从干净状态开始
         state = E_AICombatStates.idle;
         timer = 0f;
+        deadTargetTimer = 0f;
     }
 
     public override void Execute()
@@ -52,9 +61,19 @@ public class CombatMovementStates : State<EnemyController>
 
         if(enemy.Target.Health <= 0)
         {
-            enemy.Target = null;
-            enemy.ChangeState(E_EnemyState.Idle);
-            return;
+            // 目标已倒地：不要立刻丢目标发呆（原来这里直接 Target=null → Idle，
+            // 表现就是"敌人把玩家打死后杵在原地"）。先继续追着补刀一小会儿。
+            deadTargetTimer += Time.deltaTime;
+            if (deadTargetTimer >= keepAttackingDeadTargetSeconds)
+            {
+                enemy.Target = null;
+                enemy.ChangeState(E_EnemyState.Idle);
+                return;
+            }
+        }
+        else
+        {
+            deadTargetTimer = 0f;
         }
         
         if (Vector3.Distance(enemy.Target.transform.position, enemy.transform.position) > distanceToSand + adjustDistanceThreshold)

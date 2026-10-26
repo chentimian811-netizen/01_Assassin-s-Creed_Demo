@@ -16,6 +16,10 @@ public class PlayerCombat : MonoBehaviour
     PlayerStamina stamina;
     StaminaConfig staminaConfig;
 
+    [Header("处决/反击")]
+    [Tooltip("关闭后轻攻击不再触发处决演出，一律走普通挥砍（照常扣耐力）。演出逻辑仍保留在 MeleeFighter.PerformCounterAttack，勾回来即可恢复")]
+    [SerializeField] private bool enableCounterAttack = false;
+
     public void Init(MeleeFighter mf,PlayerLockOn lo,PlayerController pc, PlayerStamina staminaRef = null)
     {
         meleeFighter = mf;
@@ -33,6 +37,12 @@ public class PlayerCombat : MonoBehaviour
     public void HandleLightAttack(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
+
+        // 死亡后不再接受战斗输入。
+        // 原因见 MeleeFighter.ToTryAttack：死亡动作在 Override Layer 上是一次性的，
+        // 被攻击动画顶掉之后角色会"站起来"但移动逻辑仍然是死的（不能动、也不能再被打死）
+        if (meleeFighter != null && meleeFighter.HealthComponent != null
+            && meleeFighter.HealthComponent.IsDead) return;
 
         //如果正在使用远程武器 不触发近战攻击
         if(switcher != null && switcher.IsUsingRanged) return;
@@ -68,7 +78,11 @@ public class PlayerCombat : MonoBehaviour
         }
 
         //检查是否可以反击（目标必须活着，否则会把 Death 姿态切成 Melee_CounterVictim，看着像复活）
-        var enemy = EnemyManager.i != null ? EnemyManager.i.GetAttackingEnemy() : null;
+        // 处决开关：关掉后不查询「正在出手的敌人」，整段反击分支自然失效，
+        // 轻攻击一律走 else 里的普通挥砍（照常扣耐力、照常转向）
+        var enemy = enableCounterAttack && EnemyManager.i != null
+            ? EnemyManager.i.GetAttackingEnemy()
+            : null;
 
         if (enemy != null
             && (enemy.Health == null || !enemy.Health.IsDead)

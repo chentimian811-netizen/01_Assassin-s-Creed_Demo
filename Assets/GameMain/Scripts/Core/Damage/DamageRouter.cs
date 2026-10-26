@@ -17,6 +17,16 @@ public static class DamageRouter
     private const float FallbackBaseDamage = 5f;
 
     /// <summary>
+    /// 是否把每次伤害结算打到 Console（调试用）。false = 完全不产生日志开销。
+    ///
+    /// 【为什么放在这里】DamageRouter 是全工程伤害的唯一出口，在这里打一次就覆盖
+    /// 近战/投射物/处决全部来源；不必在每个攻击者身上各写一份，也不会漏掉某条通道。
+    /// 排查"到底打中没打中"时先看这条日志：有日志 = 命中盒、Trigger、伤害计算全通，
+    /// 那问题就一定在表现层（受击动画/飘字/音效），而不是数值层。
+    /// </summary>
+    public static bool LogDamage = true;
+
+    /// <summary>
     /// 施加伤害（已知受击方时直传）。
     /// 近战 OnTriggerEnter 必须用这个重载：trigger 回调里的 other 是【攻击方】的 hitbox，
     /// 若把 other 当 target 传入 Collider 版，GetComponentInParent 会找到攻击者自己的
@@ -25,6 +35,11 @@ public static class DamageRouter
     public static bool Apply(IDamageable target, GameObject attacker, Vector3 hitPoint, bool parryable = true)
     {
         if (target == null) return false;
+
+        // 尸体不再结算，也不再产生命中反馈（卡肉 / 震屏）：
+        // 敌人对倒地玩家继续补刀时，这些反馈会一直响，看起来像"打中了但没伤害"
+        if (target.IsDead) return false;
+
         if (attacker != null && target.Transform.gameObject == attacker) return false;
 
         float amount = ResolveAmount(attacker, out AttackData attack, out int weaponId);
@@ -33,6 +48,20 @@ public static class DamageRouter
         var info = DamageInfo.Create(amount, attacker, hitPoint, ResolveSourceType(attacker),
             parryable, attack != null ? attack.name : null, attack != null ? attack.PoiseDamage : 0f);
         target.TakeDamage(info);
+
+        // 命中确认日志：攻击方 → 受击方、招式、伤害、结算后血量
+        if (LogDamage && target.Transform != null)
+        {
+            Health victim = target.Transform.GetComponent<Health>();
+            string remain = victim != null
+                ? $"，剩余 {victim.CurrentHealth:0.#}/{victim.MaxHealth:0.#}" + (victim.IsDead ? "（致死）" : "")
+                : "";
+            Debug.Log(
+                $"[Damage] {(attacker != null ? attacker.name : "环境")} 命中 {target.Transform.name}" +
+                $"（{(attack != null ? attack.name : "无招式")}）伤害 {amount:0.#}{remain}",
+                victim != null ? victim.gameObject : null);
+        }
+
         return true;
     }
 
@@ -60,6 +89,18 @@ public static class DamageRouter
 
         var info = DamageInfo.Create(amount, attacker, hitPoint, sourceType, parryable, attackId);
         damageable.TakeDamage(info);
+
+        // 同上：投射物 / 处决 / 环境伤害也统一留一条命中记录
+        if (LogDamage && damageable.Transform != null)
+        {
+            Health victim = damageable.Transform.GetComponent<Health>();
+            Debug.Log(
+                $"[Damage] {(attacker != null ? attacker.name : "环境")} 命中 {damageable.Transform.name}" +
+                $"（{attackId ?? sourceType.ToString()}）伤害 {amount:0.#}" +
+                (victim != null ? $"，剩余 {victim.CurrentHealth:0.#}/{victim.MaxHealth:0.#}" : ""),
+                victim != null ? victim.gameObject : null);
+        }
+
         return true;
     }
 
@@ -89,9 +130,11 @@ public static class DamageRouter
             baseDamage = WeaponUpgradeSystem.CalculateDamage(item.BaseDamage, source.UpgradeLevel);
         }
 
-        // 招式倍率
-        float multiplier = attack != null ? attack.DamageMultiplier : 1f;
-        return baseDamage * Mathf.Max(0f, multiplier);
+        // 招式倍率。⚠️ 没有招式就不结算伤害：
+        // CurrentAttack 只在 Impact 判定窗口内非 null，所以这一条同时堵死了
+        // "命中盒常开、人却没出招"的那种白送伤害（以前 attack 为 null 时倍率按 1 算）。
+        if (attack == null) return 0f;
+        return baseDamage * Mathf.Max(0f, attack.DamageMultiplier);
     }
 
     private static E_DamageSource ResolveSourceType(GameObject attacker)

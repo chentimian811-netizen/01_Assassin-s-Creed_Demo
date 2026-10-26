@@ -14,5 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <AnimName>k__BackingField: Attack_Light_1
   <HitboxToUse>k__BackingField: 4
-  <ImpactStartTime>k__BackingField: 0.4
+  <ImpactStartTime>k__BackingField: 0.3
   <ImpactEndTime>k__BackingField: 0.65
+  damageMultiplier: 1
+  poiseDamage: 10
+  parryable: 1
+  hitStopDuration: 0
+  hitStopTimeScale: -1

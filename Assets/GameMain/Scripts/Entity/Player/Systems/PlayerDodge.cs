@@ -26,7 +26,6 @@ public class PlayerDodge : MonoBehaviour
     // 无敌帧来源 key：必须在 Health 的全工程唯一常量里注册
     public const string InvulnerableReason = InvulnReasons.DodgeIFrame;
 
-    [SerializeField] private StaminaConfig staminaConfig;
     [SerializeField] private float dodgeDuration = 0.9f;
     [SerializeField] private float dodgeCooldown = 0.2f;
 
@@ -88,9 +87,6 @@ public class PlayerDodge : MonoBehaviour
         stamina = staminaRef;
         health = healthRef;
         characterController = cc;
-        // 未在 Inspector 指定时，从 PlayerStamina 取同一份配置，避免漏拖导致翻滚不扣耐力
-        if (staminaConfig == null && stamina != null)
-            staminaConfig = stamina.Config;
 
         LogRollClipLengths();
     }
@@ -112,11 +108,14 @@ public class PlayerDodge : MonoBehaviour
             if (fighter.inCounter) return;
         }
 
-        // 耐力不足直接失败（不做"无耐力也翻滚"的宽松处理，保持魂类手感）
-        if (stamina != null && staminaConfig != null)
+        // 耐力不足直接失败（不做"无耐力也翻滚"的宽松处理，保持魂类手感）。
+        // 消耗值来自 Stamina 表，与 PlayerCombat 的轻攻击消耗同源
+        if (stamina == null || stamina.Row == null)
         {
-            if (!stamina.TryConsume(staminaConfig.dodgeCost)) return;
+            Debug.LogError("[PlayerDodge] 缺少 Stamina 配置行，翻滚被拒绝（不做默认值兜底）", this);
+            return;
         }
+        if (!stamina.TryConsume(stamina.Row.DodgeCost)) return;
 
         // 翻滚打断攻击：清掉攻击协程/战斗层动画/命中盒/连击后再进翻滚。
         // 放在耐力判定之后——耐力不足翻滚失败时，攻击不应被取消

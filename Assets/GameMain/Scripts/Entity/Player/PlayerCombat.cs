@@ -14,7 +14,6 @@ public class PlayerCombat : MonoBehaviour
     WeaponSwitcher switcher;
     WeaponManager weapManager;
     PlayerStamina stamina;
-    StaminaConfig staminaConfig;
 
     [Header("处决/反击")]
     [Tooltip("关闭后轻攻击不再触发处决演出，一律走普通挥砍（照常扣耐力）。演出逻辑仍保留在 MeleeFighter.PerformCounterAttack，勾回来即可恢复")]
@@ -27,11 +26,6 @@ public class PlayerCombat : MonoBehaviour
         switcher = GetComponent<WeaponSwitcher>();
         weapManager = GetComponent<WeaponManager>();
         stamina = staminaRef != null ? staminaRef : GetComponent<PlayerStamina>();
-        // 从耐力组件取配置，避免战斗侧再挂一份 SO 引用
-        if (stamina != null)
-        {
-            staminaConfig = stamina.Config;
-        }
     }
 
     public void HandleLightAttack(InputAction.CallbackContext context)
@@ -95,9 +89,14 @@ public class PlayerCombat : MonoBehaviour
         }
         else
         {
-            // 轻攻击消耗：不足则整段攻击不发出
-            float cost = staminaConfig != null ? staminaConfig.lightAttackCost : 12f;
-            if (stamina != null && !stamina.TryConsume(cost))
+            // 轻攻击消耗：不足则整段攻击不发出。
+            // 消耗值来自 Stamina 表（与翻滚同源）；缺配置时直接拦下，不按默认值放行
+            if (stamina == null || stamina.Row == null)
+            {
+                Debug.LogError("[PlayerCombat] 缺少 Stamina 配置行，轻攻击被拒绝");
+                return;
+            }
+            if (!stamina.TryConsume(stamina.Row.LightAttackCost))
             {
                 Debug.Log("[PlayerCombat] 攻击被拦：耐力不足");
                 return;

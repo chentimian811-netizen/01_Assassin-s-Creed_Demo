@@ -139,8 +139,11 @@ public class PlayerAnimator : MonoBehaviour
             float rad = Mathf.Atan2(movement.x, movement.z);
             animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
         }
-        else if (arm == PlayerController.E_ArmState.Normal)
+        else if (arm == PlayerController.E_ArmState.Normal || arm == PlayerController.E_ArmState.Aim)
         {
+            // Aim 与 Normal 同处理：瞄准姿势的转向/步法复用普通移动那一套。
+            // 如果只判 Normal，右键瞄准期间角色会完全停止转向（turnSpeed 也不再更新），
+            // 那是相机计划 §8.5 引入 ArmState.Aim 后才会暴露的回归。
             // 正常模式：跟随移动方向旋转
             float rad = Mathf.Atan2(movement.x, movement.z);
             animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);

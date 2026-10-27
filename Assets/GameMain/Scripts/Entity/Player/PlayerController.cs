@@ -163,6 +163,11 @@ public class PlayerController : MonoBehaviour
             ClearInput();
         }
 
+        // 失去 gameplay 焦点（Alt 松光标 / 背包 / 商店）时，右键的 canceled 回调会被
+        // GetAimInput 开头的焦点判断挡掉，这里幂等取消，避免 UI 关掉后仍挂着右肩机位。
+        if (!CursorManager.Instance.IsGameplayFocused)
+            CancelAim();
+
         // 商店这类模态界面打开时冻结角色输入（HUD 仍然显示）
         if (UIRouter.IsOpen(UIPaths.ShopForm))
         {
@@ -254,7 +259,8 @@ public class PlayerController : MonoBehaviour
     }
     
     /// <summary>
-    /// 瞄准输入
+    /// 瞄准输入。
+    /// 射击状态与相机机位必须同一事务切换，否则会出现「有准星没有右肩机位」或反过来的假瞄准。
     /// </summary>
     /// <param name="context"></param>
     public void GetAimInput(InputAction.CallbackContext context)
@@ -263,12 +269,40 @@ public class PlayerController : MonoBehaviour
         if(RangedFighter == null) return;
         if (context.performed)
         {
+            // 参考行为：进入瞄准会退出近战锁定
+            playerLockOn.ForceUnlock();
+            ArmState = E_ArmState.Aim;
             RangedFighter.SetAiming(true);
+            if (CameraManager.Instance != null)
+                CameraManager.Instance.SetAiming(true);
         }
         else if (context.canceled)
         {
             RangedFighter.SetAiming(false);
+            ArmState = playerLockOn.IsLocking
+                ? E_ArmState.Lock
+                : E_ArmState.Normal;
+            if (CameraManager.Instance != null)
+                CameraManager.Instance.SetAiming(false);
         }
+    }
+
+    /// <summary>
+    /// 幂等取消瞄准。
+    /// 失去 gameplay 焦点时 GetAimInput 开头的焦点判断会把 canceled 挡掉，
+    /// 不补这一手会在 UI 后面留下 isAiming = true 与右肩机位。
+    /// </summary>
+    private void CancelAim()
+    {
+        if (RangedFighter == null || !RangedFighter.IsAiming)
+            return;
+
+        RangedFighter.SetAiming(false);
+        ArmState = playerLockOn.IsLocking
+            ? E_ArmState.Lock
+            : E_ArmState.Normal;
+        if (CameraManager.Instance != null)
+            CameraManager.Instance.SetAiming(false);
     }
 
     /// <summary>

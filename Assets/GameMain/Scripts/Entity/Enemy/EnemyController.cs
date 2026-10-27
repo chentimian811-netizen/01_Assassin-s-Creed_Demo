@@ -48,6 +48,14 @@ public class EnemyController : MonoBehaviour
     public Health Health { get; private set; }
     public float CombatMovementTimer { get; set; } = 0f;
 
+    [Header("相机锁定观察点")]
+    [Tooltip("锁定相机对准的锚点（Enemy.prefab 根下的 CameraAimPoint）；留空则退回根节点")]
+    [SerializeField] private Transform m_CameraAimPoint;
+
+    /// <summary>锁定相机的观察点。未配置锚点时退回根节点，保证旧 Prefab 不会空引用。</summary>
+    public Transform CameraAimPoint =>
+        m_CameraAimPoint != null ? m_CameraAimPoint : transform;
+
     Vector3 prevPos;
 
     // 与玩家的最小距离（米）

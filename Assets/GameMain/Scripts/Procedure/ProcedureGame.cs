@@ -89,11 +89,11 @@ public class ProcedureGame : ProcedureBase
             player.acceptInput = true;
         }
 
-        // 激活 FreeLook 相机
+        // 激活游戏相机：优先新几何跟随 Rig；未配置新 Rig 时回退旧 FreeLook（见 CameraManager 兼容路由）
         CameraManager camManager = Object.FindObjectOfType<CameraManager>();
-        if (camManager != null && camManager.freeLook != null)
+        if (camManager != null)
         {
-            camManager.freeLook.gameObject.SetActive(true);
+            camManager.SetGameplayCameraActive(true);
             camManager.ResetFreeLookCamera();
         }
 

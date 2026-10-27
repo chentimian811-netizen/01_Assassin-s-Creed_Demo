@@ -32,6 +32,12 @@ public abstract class GameUIForm : UIFormLogic
     protected virtual bool IsModal => true;
 
     /// <summary>
+    /// 是否接管光标：true 时打开会解锁并显示光标。
+    /// Toast 这类不拦输入的表单覆写成 false（只显示，不动光标也不暂停）。
+    /// </summary>
+    protected virtual bool LockCursor => true;
+
+    /// <summary>
     /// 光标锁 / 暂停计数的 key。默认用类型名，保证同类界面共用一把锁；
     /// 需要区分同一类界面的多个实例时再覆写。
     /// </summary>
@@ -157,7 +163,7 @@ public abstract class GameUIForm : UIFormLogic
         if (m_LocksAcquired) return;
         m_LocksAcquired = true;
 
-        UICursorService.Lock(CursorKey);
+        if (LockCursor) UICursorService.Lock(CursorKey);
         if (IsModal) UIPauseService.Push(CursorKey);
     }
 
@@ -167,7 +173,7 @@ public abstract class GameUIForm : UIFormLogic
         m_LocksAcquired = false;
 
         if (IsModal) UIPauseService.Pop(CursorKey);
-        UICursorService.Unlock(CursorKey);
+        if (LockCursor) UICursorService.Unlock(CursorKey);
     }
 
     /// <summary>

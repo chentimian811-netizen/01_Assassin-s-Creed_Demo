@@ -78,8 +78,9 @@ public class MainPanel : BasePanel
     private void OnBtnPackage()
     {
         Debug.Log("点击了背包按钮");
+        // 背包已迁移到 GF UIForm：走 UIRouter，不再走旧 UIManager 面板字典
         gameObject.SetActive(false);
-        UIManager.Instance.OpenPanel(UIconst.PackagePanel);
+        UIRouter.Open(UIPaths.PackageForm, "Popup");
     }
 
     private void OnBtnLottery()

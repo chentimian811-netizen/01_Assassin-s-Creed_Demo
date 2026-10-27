@@ -50,7 +50,8 @@ public class HUDBtn : MonoBehaviour
 
     private void OnOpenPackage()
     {
-        UIManager.Instance.OpenPanel(UIconst.PackagePanel);
+        // 背包已迁移到 GF UIForm：走 UIRouter（本组件将在 GF-1.6 删除）
+        UIRouter.Open(UIPaths.PackageForm, "Popup");
     }
     private void OnOpenLottery()
     {

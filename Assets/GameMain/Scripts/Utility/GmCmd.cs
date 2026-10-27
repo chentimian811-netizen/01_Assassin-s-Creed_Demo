@@ -55,7 +55,16 @@ public class GmCmd
     #endif
     public static void OpenPackagePanel()
     {
-        UIManager.Instance.OpenPanel(UIconst.PackagePanel);
+        #if UNITY_EDITOR
+        // GF 的 UI 组件只在运行时存在，编辑器里直接调 UIRouter 会拿不到 GameEntry.UI
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[GmCmd] 打开背包需要在 Play 状态下执行");
+            return;
+        }
+        #endif
+
+        UIRouter.Open(UIPaths.PackageForm, "Popup");
     }
 
     #if UNITY_EDITOR

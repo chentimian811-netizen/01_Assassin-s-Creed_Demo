@@ -87,7 +87,6 @@ public class PlayerController : MonoBehaviour
     public E_ArmState ArmState = E_ArmState.Normal;
 
     [HideInInspector] public bool acceptInput = true;
-    bool  isMainMenuOpen;
 
     // Shift 双功能：短按翻滚 / 长按疾跑。
     // 阈值来自 Player 表的 run_hold_threshold（Awake 解析一次，运行中不查表）
@@ -164,7 +163,8 @@ public class PlayerController : MonoBehaviour
             ClearInput();
         }
 
-        if (UIManager.Instance.panelDict.ContainsKey(UIconst.ShopPanel))
+        // 商店/背包这类模态界面打开时冻结角色输入（HUD 仍然显示）
+        if (UIManager.Instance.panelDict.ContainsKey(UIconst.ShopPanel) || UIRouter.IsOpen(UIPaths.ShopForm))
         {
             ClearInput();
             return;
@@ -289,31 +289,25 @@ public class PlayerController : MonoBehaviour
     }
 
    /// <summary>
-   /// 背包输入
+   /// 背包输入（反引号）。GF 接管 UI 后直接开关 PackageForm：
+   /// 暂停与光标由 PackageForm 继承的 GameUIForm 统一处理，这里不再手写 AddLock。
    /// </summary>
    /// <param name="context"></param>
     public void GetBackpackInput(InputAction.CallbackContext context)
     {
         if(!context.performed) return;
 
-        if (isMainMenuOpen)
+        // 已经开着 → 关掉（反引号即开关，与旧版行为一致）
+        if (UIRouter.IsOpen(UIPaths.PackageForm))
         {
-            CloseSubPanels();
+            UIRouter.Close(UIPaths.PackageForm);
+            return;
         }
 
-        isMainMenuOpen = !isMainMenuOpen;
-        if(isMainMenuOpen)
-        {
-           
-            CursorManager.Instance.AddLock("Backpack");
-            UIManager.Instance.OpenPanel(UIconst.MainPanel);
-        }
-        else
-        {
-            
-            CursorManager.Instance.RemoveLock("Backpack");
-            UIManager.Instance.ClosePanel(UIconst.MainPanel);
-        }
+        // 打开背包前先关掉其它弹窗，避免两个模态叠在一起
+        CloseSubPanels();
+
+        UIRouter.Open(UIPaths.PackageForm, "Popup");
     }
     
     /// <summary>
@@ -391,15 +385,20 @@ public class PlayerController : MonoBehaviour
     }
      #endregion
      
+    /// <summary>
+    /// 关闭所有子面板。Package 已经迁到 GF（UIRouter），Lottery/Shop 仍在旧 UIManager 上，
+    /// 等 GF-1.2 / GF-1.4 迁完后这两行可以删掉。
+    /// </summary>
     private void CloseSubPanels()
     {
-        string[] subPanels = { UIconst.LotteryPanel, UIconst.PackagePanel, UIconst.ShopPanel };
-        foreach (var panelName in subPanels)
+        UIRouter.Close(UIPaths.PackageForm);
+
+        string[] legacyPanels = { UIconst.LotteryPanel, UIconst.ShopPanel };
+        foreach (var panelName in legacyPanels)
         {
             if (UIManager.Instance.GetPanel(panelName) != null)
                 UIManager.Instance.ClosePanel(panelName);
         }
-
     }
 }
  

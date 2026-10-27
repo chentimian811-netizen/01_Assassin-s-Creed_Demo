@@ -39,7 +39,7 @@ public class PackageDetail : MonoBehaviour
         UICritRateText = transform.Find("Center/CritRateText");
     }
 
-    public void Refresh(PackageLocalItem packageLocalData, PackagePanel uiParent)
+    public void Refresh(PackageLocalItem packageLocalData, PackageForm uiParent)
     {
         this.packageLocalData = packageLocalData;
 

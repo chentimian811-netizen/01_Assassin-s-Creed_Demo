@@ -1,3 +1,15 @@
+//------------------------------------------------------------
+// ACDemo — 背包界面（GF UIFormLogic 版）
+// 放置路径: Assets/GameMain/Scripts/UI/Backpack/PackageForm.cs
+// 对应 Prefab: Assets/UI/Prefabs/Package/PackageForm.prefab
+// 分组: Popup（模态：锁光标 + 暂停，统一由 GameUIForm 处理）
+// 来源: 由旧 PackagePanel(BasePanel + UIManager) 迁移。业务逻辑与预制体结构未改动，
+//       只替换「生命周期 + 关闭方式」：
+//         旧 Start() 里的刷新  → OnOpenForm（GF 池化后 Start 只跑一次）
+//         旧 UIManager.ClosePanel → CloseSelf()
+//         旧 OnDestroy 退订    → OnCloseForm 退订
+//------------------------------------------------------------
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,7 +25,7 @@ public enum PackageMode
     sort
 }
 
-public class PackagePanel : BasePanel
+public class PackageForm : GameUIForm
 {
     private Transform UIMenu;
     private Transform UIMenuWeapon;
@@ -120,24 +132,82 @@ public class PackagePanel : BasePanel
         }
     }
 
-    override protected void Awake()
+    // Awake 在实例化时跑一次：只做「找子节点 + 绑按钮监听」这类一次性工作
+    private void Awake()
     {
-        base.Awake();
         InitUI();
     }
 
-    private void Start()
+    /// <summary>
+    /// 只跑一次：建立页签表。池化复用后不会再调用。
+    /// </summary>
+    protected override void OnInitForm(object userData)
     {
+        base.OnInitForm(userData);
         InitTabs();
+    }
+
+    /// <summary>
+    /// 每次打开都跑：重置临时状态 → 订阅事件 → 刷新列表。
+    /// 旧实现在 Start() 里做这些，池化后第二次打开会因为 Start 不再执行而停在旧数据上。
+    /// </summary>
+    protected override void OnOpenForm(object userData)
+    {
+        // 复用实例时上一次的选中项、删除模式、筛选条件都会留着，先回到初始状态
+        curMode = PackageMode.normal;
+        deleteChooseUid = null;
+        _chooseUid = null;
+        UIDeletePanel.gameObject.SetActive(false);
+        UIBottomMenus.gameObject.SetActive(true);
+
+        SubscribeInventory();
+
         WeaponIndicator.gameObject.SetActive(true);
         FoodIndicator.gameObject.SetActive(false);
-        RefreshUI();
+        SwitchToTab(0);       // 内部会 RefreshScrollView，选中第一格并刷新详情
+        RefreshGoldDisplay();
+    }
 
-        InventoryManager.Instance.OnItemEquipped += OnInventoryChanged;
-        InventoryManager.Instance.OnItemUnequipped += OnInventoryChanged;
+    /// <summary>
+    /// 每次关闭都跑：退订 + 停协程 + 清临时状态。绝不要 Destroy(gameObject) —— 界面由 GF 池化复用。
+    /// </summary>
+    protected override void OnCloseForm()
+    {
+        UnsubscribeInventory();
 
+        StopAllCoroutines();
+
+        curMode = PackageMode.normal;
+        deleteChooseUid = null;
+        _chooseUid = null;
+        CurrentFilterType = -1;
+    }
+
+    /// <summary>订阅背包/货币变化。OnOpen 订阅、OnClose 退订，避免复用实例时重复叠加</summary>
+    private void SubscribeInventory()
+    {
+        if (InventoryManager.Instance != null)
+        {
+            // 先退订再订阅：防止上一次关闭路径异常导致重复绑定
+            InventoryManager.Instance.OnItemEquipped -= OnInventoryChanged;
+            InventoryManager.Instance.OnItemUnequipped -= OnInventoryChanged;
+            InventoryManager.Instance.OnItemEquipped += OnInventoryChanged;
+            InventoryManager.Instance.OnItemUnequipped += OnInventoryChanged;
+        }
+
+        CurrencyManager.Instance.OnGoldChanged -= OnGoldChangedHandler;
         CurrencyManager.Instance.OnGoldChanged += OnGoldChangedHandler;
+    }
 
+    private void UnsubscribeInventory()
+    {
+        if (InventoryManager.Instance != null)
+        {
+            InventoryManager.Instance.OnItemEquipped -= OnInventoryChanged;
+            InventoryManager.Instance.OnItemUnequipped -= OnInventoryChanged;
+        }
+
+        CurrencyManager.Instance.OnGoldChanged -= OnGoldChangedHandler;
     }
 
     private void InitTabs()
@@ -148,10 +218,9 @@ public class PackagePanel : BasePanel
             new TabDef { name = "食物", filterType = GameConst.PackageTypeFood, indicator = FoodIndicator },
         };
 
-        // 默认选中第一个标签（武器）
+        // 默认选中第一个标签（武器）。真正的切换放到 OnOpenForm 里做：
+        // 这一层只建表，不碰数据，避免界面还没打开就发起一次刷新。
         currentTabIndex = 0;
-        SwitchToTab(0);
-
     }
 
     private void SwitchToTab(int index)
@@ -573,16 +642,9 @@ public class PackagePanel : BasePanel
 
     private void OnClickClose()
     {
-        print("点击了关闭");
-        CurrentFilterType = -1;//重置筛选
-        UIManager.Instance.ClosePanel(UIconst.PackagePanel);
-
-        var mainPanel = UIManager.Instance.GetPanel(UIconst.MainPanel);
-        if(mainPanel != null)
-        {
-            mainPanel.gameObject.SetActive(true);
-        }
-        
+        // 旧实现是 UIManager.ClosePanel（内部 Destroy(gameObject)）。
+        // GF 会池化复用界面实例，Destroy 之后第二次打开就是空引用，必须走路由关闭。
+        CloseSelf();
     }
     
     private void OnClickFood()
@@ -622,15 +684,13 @@ public class PackagePanel : BasePanel
     }
 
 
+    /// <summary>
+    /// 实例被真正销毁时的兜底退订。正常关闭界面不会走到这里 ——
+    /// GF 只是把实例 SetActive(false) 收进池子，等下次打开复用。
+    /// 正常退订在 OnCloseForm。
+    /// </summary>
     private void OnDestroy()
     {
-        if (InventoryManager.Instance != null)
-    {
-        InventoryManager.Instance.OnItemEquipped -= OnInventoryChanged;
-        InventoryManager.Instance.OnItemUnequipped -= OnInventoryChanged;
-    }
-
-    CurrencyManager.Instance.OnGoldChanged -= OnGoldChangedHandler;
-
+        UnsubscribeInventory();
     }
 }

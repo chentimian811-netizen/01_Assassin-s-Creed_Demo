@@ -18,7 +18,7 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
     private Text UINumText;
 
     private PackageLocalItem packageLocalData;
-    private PackagePanel uiParent;
+    private PackageForm uiParent;
 
     private CanvasGroup canvasGroup;
 
@@ -48,7 +48,7 @@ public class PackageCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHan
         canvasGroup = GetComponent<CanvasGroup>();
     }
 
-    public void Refresh(PackageLocalItem packageLocalData, PackagePanel uiParent)
+    public void Refresh(PackageLocalItem packageLocalData, PackageForm uiParent)
     {
         this.packageLocalData = packageLocalData;
         this.uiParent = uiParent;

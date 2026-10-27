@@ -59,6 +59,10 @@ public class ProcedureGame : ProcedureBase
         // 阶段3: CloseFormIfOpen(ref m_TabFormId);
         // 阶段3: CloseFormIfOpen(ref m_MenuBarFormId);
 
+        // 关闭所有弹窗。GF 的 UI 是 DontDestroyOnLoad 的，切流程时不会自动清场；
+        // 若留着模态界面（暂停 + 锁光标），下一局一开始就停住。
+        UIRouter.CloseAll();
+
         m_ProcedureOwner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
@@ -126,11 +130,13 @@ public class ProcedureGame : ProcedureBase
 
     /// <summary>
     /// 处理打开面板事件 — 解耦 HUD 按钮与具体面板类型。
+    /// 必须走 UIRouter：GF 的 OpenUIForm 不查重，HUD 按钮 + 反引号各按一次
+    /// 会实例化出两个背包界面。
     /// </summary>
     private static void OnOpenPanel(object sender, GameEventArgs e)
     {
         if (e is not OpenPanelEventArgs args) return;
-        GameEntry.UI.OpenUIForm(args.FormPath, args.GroupName);
+        UIRouter.Open(args.FormPath, args.GroupName);
     }
 
     // ==================== 工具方法 ====================

@@ -49,10 +49,14 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 
 ## UI（GameFramework）
 
+- **迁移路线与阶段划分见**
+  `C:\University\Myself\Github_vault\Timian_vault\毕业设计\开发文档\GF框架迁移与底座搭建计划.md`
+  （GF-0 ~ GF-5；当前进行到 GF-1）。动 UI 前先读它，不要凭记忆重推方案。
 - UIGroup 深度 = Canvas `sortingOrder`：HUD 0 / Page 1 / Popup 2 / Top 3 / Loading 4；`ACUIGroupHelper.DepthFactor = 10000`。在 `ProcedureLaunch` 注册。
-- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体仅 3 个：`MainMenuForm`、`LoadingForm`、`MainHUDForm`。
-- `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`ShopForm`、`PackageForm`、`LotteryForm`、`SettingsForm`、`DeathForm`、`VictoryForm`、`PauseForm`、`ToastForm`。
-- 两套体系并存：旧面板继承 `BasePanel` + `UIManager.OpenPanel`；新面板继承 `UIFormLogic` + `GameEntry.UI.OpenUIForm`。新代码一律用后者。
+- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`。
+- 打开/关闭界面统一走 `UIRouter.Open/Close`；模态面板继承 `GameUIForm`（自动锁光标 + 暂停，走 `UIPauseService`/`UICursorService` 计数），不要自己写 `Time.timeScale`，也不要直接 `GameEntry.UI.OpenUIForm`（GF 不查重）。
+- `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`ShopForm`、`LotteryForm`、`SettingsForm`、`DeathForm`、`VictoryForm`、`PauseForm`、`ToastForm`。
+- 两套体系并存：旧面板继承 `BasePanel` + `UIManager.OpenPanel`（只剩 Lottery/Shop/Pickup/Toast/MainMenu）；新面板继承 `GameUIForm` + `UIRouter`。新代码一律用后者。
 
 ## 配置系统（Luban + SO 混合）
 

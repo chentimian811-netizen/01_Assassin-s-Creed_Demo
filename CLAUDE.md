@@ -53,12 +53,13 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
   `C:\University\Myself\Github_vault\Timian_vault\毕业设计\开发文档\GF框架迁移与底座搭建计划.md`
   （GF-0 ~ GF-5；当前进行到 GF-1）。动 UI 前先读它，不要凭记忆重推方案。
 - UIGroup 深度 = Canvas `sortingOrder`：HUD 0 / Page 1 / Popup 2 / Top 3 / Loading 4；`ACUIGroupHelper.DepthFactor = 10000`。在 `ProcedureLaunch` 注册。
-- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`、`LotteryForm`、`ToastForm`、`ShopForm`。
+- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`、`LotteryForm`、`ToastForm`、`ShopForm`、`PickupForm`。
 - 打开/关闭界面统一走 `UIRouter.Open/Close`；模态面板继承 `GameUIForm`（自动锁光标 + 暂停，走 `UIPauseService`/`UICursorService` 计数），不要自己写 `Time.timeScale`，也不要直接 `GameEntry.UI.OpenUIForm`（GF 不查重）。不拦输入的界面（如 `ToastForm`）覆写 `IsModal=false` + `LockCursor=false`。
 - **GF 的 `OpenUIForm` 是异步的**：返回 serialId 时界面实例还没创建，当帧 `GameEntry.UI.HasUIForm(...)` 恒为 `false`。所以「是否已打开」只能用 `UIRouter.IsOpen`，禁止拿 GF 状态当同步判据（早期版本这么做 → 每次按键都判定"打开失败"→ 重复开背包且关不掉）。
 - `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`SettingsForm`、`DeathForm`、`VictoryForm`、`PauseForm`。
 - 界面参数用 `UI/Core/UIFormArgs.cs` 里的类型（如 `ShopFormArgs { KeeperId }`）装进 `UIRouter.Open` 的 `userData`，界面在 `OnOpenForm` 里自己取；不要再走「先拿到面板实例再调 OpenWithConfig」两步。
-- 两套体系并存：旧面板继承 `BasePanel` + `UIManager.OpenPanel`（只剩 Pickup/MainMenu）；新面板继承 `GameUIForm` + `UIRouter`。新代码一律用后者。
+- 两套体系并存：旧面板继承 `BasePanel` + `UIManager.OpenPanel`（只剩 `MainMenuPanel`，GF-1.6 删除）；新面板继承 `GameUIForm` + `UIRouter`。新代码一律用后者。
+- 拿不到界面实例时（池化 + 异步打开）用「静态下单 + 界面轮询版本号」：见 `ToastService`（覆盖策略）与 `PickupForm.ShowPrompt/HidePrompt`（换内容/淡出），不要写 `UIManager` 那套「先拿实例再调方法」。
 - 提示统一用 `ToastService.Show(...)`；旧入口 `ToastMessage.Show(...)` 是它的静态门面（等价，调用点不必改）。
 
 ## 配置系统（Luban + SO 混合）

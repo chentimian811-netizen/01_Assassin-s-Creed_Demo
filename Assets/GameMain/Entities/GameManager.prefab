@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 4668137838090760150}
   - component: {fileID: 8696922254935457220}
   - component: {fileID: 7540375361310376621}
-  - component: {fileID: 6545509355744305180}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -46,13 +45,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f16deb8228ebef4ca5afb3c3ade85a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  healthBarRoot: {fileID: 0}
-  minimapRoot: {fileID: 0}
-  menuCharacterPrefab: {fileID: 7962487104537891693, guid: 14600a7c66b44ee478166cdf35157220,
-    type: 3}
-  menuCharacterPosition: {x: 0, y: 0, z: 0}
-  menuCharacterRotation: {x: 0, y: 30, z: 0}
-  isMainMenuActive: 1
 --- !u!114 &7540375361310376621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63,17 +55,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6724ce8bd7a30914eba2c73e978da01c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &6545509355744305180
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 886837976851310226}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70da47672d030094490bf798ac3853ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

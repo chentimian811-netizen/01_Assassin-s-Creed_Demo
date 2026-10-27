@@ -5,8 +5,8 @@ using UnityEngine;
 /// UI 光标锁的引用计数服务（GF UIForm 体系专用）。
 ///
 /// 【为什么需要这一层】
-///   旧 <see cref="UIManager"/> 是「每个面板自己 AddLock/RemoveLock」，而且
-///   ClosePanel 里 RemoveLock 被写了两遍（同一 key 进 HashSet 是幂等的，凑巧没暴雷）。
+///   旧面板体系（GF-1.6 已删除）是「每个面板自己 AddLock/RemoveLock」，而且
+///   关闭路径里 RemoveLock 被写了两遍（同一 key 进 HashSet 是幂等的，凑巧没暴雷）。
 ///   换到 GF 之后界面会被池化复用，一旦某个界面在 OnClose 里漏掉一次 Unlock，
 ///   或者在另一个界面的关闭路径上误删了别人的锁，就会出现「关掉面板光标还锁着」
 ///   或者「还开着面板光标就没了」。所以统一走这里：

@@ -107,7 +107,7 @@ public class MainMenuCamera : MonoBehaviour
     
     /// <summary>
     /// 过渡到游戏相机的协程
-    /// 只负责禁用菜单相机，FreeLook 的激活由 GameManager.StartGame() 处理
+    /// 只负责禁用菜单相机，FreeLook 的激活由 ProcedureGame.SetupGameSystems 处理
     /// </summary>
     private System.Collections.IEnumerator TransitionToGameplayCoroutine()
     {

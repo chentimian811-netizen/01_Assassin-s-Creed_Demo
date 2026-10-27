@@ -5,19 +5,9 @@ using static PackageLocalData;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("主菜单设置")]
-    [SerializeField] private GameObject healthBarRoot;
-    [SerializeField] private GameObject minimapRoot;
-    [SerializeField] private GameObject menuCharacterPrefab;
-    [SerializeField] private Vector3 menuCharacterPosition;
-    [SerializeField] private Vector3 menuCharacterRotation = new Vector3(0, 30, 0);
-    private GameObject menuCharacterInstance;
     private static GameManager _instance;
 
     public E_SortMode CurrentSorMode{get;set;}=E_SortMode.Default;
-
-    [Header("游戏状态")]
-    [SerializeField] private bool isMainMenuActive = true;
 
     private void Awake()
     {
@@ -33,65 +23,9 @@ public class GameManager : MonoBehaviour
 
     public static GameManager Instance => _instance;
 
-    void Start()
-    {
-        // 单场景开发期：入口已是 ProcedureGame，不再强制进入主菜单。
-        // 之后自建 MainMenu 场景后，可恢复 InitMainMenu();
-    }
-
     private void OnDestroy()
     {
         if (_instance == this) _instance = null;
-    }
-
-    private void InitMainMenu()
-    {
-        isMainMenuActive = true;
-        PlayerController player = FindObjectOfType<PlayerController>();
-        if (player != null)
-        {
-            player.acceptInput = false;
-            player.gameObject.SetActive(false);
-        }
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        CameraManager camManager = FindObjectOfType<CameraManager>();
-        if (camManager != null && camManager.freeLook != null)
-            camManager.freeLook.gameObject.SetActive(false);
-        if (menuCharacterPrefab != null)
-            menuCharacterInstance = Instantiate(menuCharacterPrefab);
-        MainMenuCamera mainMenuCamera = FindObjectOfType<MainMenuCamera>();
-        if (mainMenuCamera != null && menuCharacterInstance != null)
-            mainMenuCamera.SetLookAtTarget(menuCharacterInstance.transform);
-        if (healthBarRoot != null) healthBarRoot.SetActive(false);
-        if (minimapRoot != null) minimapRoot.SetActive(false);
-        UIManager.Instance.OpenPanel(UIconst.MainMenuPanel);
-    }
-
-    public void StartGame()
-    {
-        isMainMenuActive = false;
-        if (menuCharacterInstance != null)
-        {
-            Destroy(menuCharacterInstance);
-            menuCharacterInstance = null;
-        }
-        PlayerController player = FindObjectOfType<PlayerController>(true);
-        if (player != null)
-        {
-            player.gameObject.SetActive(true);
-            player.acceptInput = true;
-        }
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        CameraManager camManager = FindObjectOfType<CameraManager>();
-        if (camManager != null && camManager.freeLook != null)
-        {
-            camManager.freeLook.gameObject.SetActive(true);
-            camManager.ResetFreeLookCamera();
-        }
-        if (healthBarRoot != null) healthBarRoot.SetActive(true);
-        if (minimapRoot != null) minimapRoot.SetActive(true);
     }
 
     public void DeletePackageItem(List<string> uids)

@@ -86,8 +86,9 @@ public class MainPanel : BasePanel
     private void OnBtnLottery()
     {
         Debug.Log("点击了抽卡按钮");
+        // 抽卡已迁移到 GF UIForm：走 UIRouter，不再走旧 UIManager 面板字典
         gameObject.SetActive(false);
-        UIManager.Instance.OpenPanel(UIconst.LotteryPanel);
+        UIRouter.Open(UIPaths.LotteryForm, "Popup");
     }
 
     private void OnQuitGame()

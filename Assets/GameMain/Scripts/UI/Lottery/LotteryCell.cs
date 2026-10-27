@@ -17,7 +17,7 @@ public class LotteryCell : MonoBehaviour
 
     private PackageLocalItem packageLocalItem;
 
-    private LotteryPanel uiParent;
+    private LotteryForm uiParent;
 
     private void Awake()
     {
@@ -32,7 +32,7 @@ public class LotteryCell : MonoBehaviour
         UINew.gameObject.SetActive(false);
     }
 
-    public void Refresh(PackageLocalItem pckageLocalItem, LotteryPanel uiParent)
+    public void Refresh(PackageLocalItem pckageLocalItem, LotteryForm uiParent)
     {
         //数据初始化
         this.packageLocalItem = pckageLocalItem;

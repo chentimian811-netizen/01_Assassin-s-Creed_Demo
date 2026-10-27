@@ -55,6 +55,7 @@ public class HUDBtn : MonoBehaviour
     }
     private void OnOpenLottery()
     {
-        UIManager.Instance.OpenPanel(UIconst.LotteryPanel);
+        // 抽卡已迁移到 GF UIForm：走 UIRouter（本组件将在 GF-1.6 删除）
+        UIRouter.Open(UIPaths.LotteryForm, "Popup");
     }
 }

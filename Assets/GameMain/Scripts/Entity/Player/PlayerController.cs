@@ -386,18 +386,17 @@ public class PlayerController : MonoBehaviour
      #endregion
      
     /// <summary>
-    /// 关闭所有子面板。Package 已经迁到 GF（UIRouter），Lottery/Shop 仍在旧 UIManager 上，
-    /// 等 GF-1.2 / GF-1.4 迁完后这两行可以删掉。
+    /// 关闭所有子面板。Package/Lottery 已迁到 GF（UIRouter），Shop 仍在旧 UIManager 上，
+    /// 等 GF-1.4 迁完后这段只剩 UIRouter 调用。
     /// </summary>
     private void CloseSubPanels()
     {
         UIRouter.Close(UIPaths.PackageForm);
+        UIRouter.Close(UIPaths.LotteryForm);
 
-        string[] legacyPanels = { UIconst.LotteryPanel, UIconst.ShopPanel };
-        foreach (var panelName in legacyPanels)
+        if (UIManager.Instance.GetPanel(UIconst.ShopPanel) != null)
         {
-            if (UIManager.Instance.GetPanel(panelName) != null)
-                UIManager.Instance.ClosePanel(panelName);
+            UIManager.Instance.ClosePanel(UIconst.ShopPanel);
         }
     }
 }

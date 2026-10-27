@@ -56,16 +56,12 @@ public class EnemyManager : MonoBehaviour
 
             if (Player.IsLocking)
             {
+                // 先在旧锁定语境下算出候选，再清掉旧目标，最后走完整锁定流程。
+                // 只写 Player.TargetEnemy 的话，PlayerLockOn.LockedEnemy 与相机仍会停在旧敌人上。
                 EnemyController next = GetClosesEnemyToPlayerDir();
+                Player.ForceUnlock();
                 if (next != null)
-                {
-                    Player.TargetEnemy = next;
-                    next.MeshHightlighter?.HighlightMesh(true);
-                }
-                else
-                {
-                    Player.ForceUnlock();
-                }
+                    Player.playerLockOn.LockEnemy(next);
             }
             else
             {

@@ -41,6 +41,14 @@ public class PlayerLockOn : MonoBehaviour
     /// </summary>
     public void Tick()
     {
+        // 敌人被销毁后 LockedEnemy 会按 Unity 假 null 规则变成 null，下面的距离检查会整体跳过。
+        // 这里补一条兜底：还在锁定态但目标已失效时走正式解锁，避免相机一直停在旧目标上。
+        if (IsLocking && LockedEnemy == null)
+        {
+            UnlockEnemy();
+            return;
+        }
+
         if(IsLocking && LockedEnemy != null)
         {
             float dist = Vector3.Distance(transform.position,LockedEnemy.transform.position);
@@ -66,19 +74,28 @@ public class PlayerLockOn : MonoBehaviour
             {
                 LockEnemy(enemy);
             }
+            else
+            {
+                // 复刻参考行为：按锁定键但附近没有目标时，只把镜头转回角色背后（Pitch 不变）
+                CameraManager.Instance.ResetFreeLookCamera();
+            }
         }
     }
 
-    //锁定指定敌人
-    void LockEnemy(EnemyController enemy)
+    /// <summary>
+    /// 锁定指定敌人。
+    /// 设为 public 是为了让 EnemyManager 的自动换目标也走同一套正式入口，
+    /// 否则会出现「角色/UI 看新敌人、相机仍看旧敌人」。
+    /// </summary>
+    public void LockEnemy(EnemyController enemy)
     {
         IsLocking = true;
         LockedEnemy = enemy;
         TargetEnemy = enemy;
         playerController.ArmState = PlayerController.E_ArmState.Lock;
 
-        // 禁用自由相机的X轴旋转，由锁定系统控制
-        CameraManager.Instance.LockFreeLookXAxis();
+        // 机位对准敌人胸口观察点（CameraAimPoint），由相机控制器逐帧追踪
+        CameraManager.Instance.SetLockTarget(enemy.CameraAimPoint);
 
         // 高亮敌人网格
         enemy.MeshHightlighter?.HighlightMesh(true);
@@ -95,7 +112,7 @@ public class PlayerLockOn : MonoBehaviour
         }
 
         //恢复自由相机控制
-        CameraManager.Instance.UnlockFreeLookAxes();
+        CameraManager.Instance.ClearLockTarget();
 
         LockedEnemy = null;
         TargetEnemy = null;
@@ -123,8 +140,9 @@ public class PlayerLockOn : MonoBehaviour
         }
 
 
-        //非锁定模式 朝向摄像机LookAt目标
-        Transform lookAt = CameraManager.Instance.freeLook.m_LookAt;
+        //非锁定模式 朝向摄像机跟随锚点
+        //（新机位下 FollowTarget 是玩家身上的 CameraWatchPoint；旧 FreeLook 时退回它的 LookAt）
+        Transform lookAt = CameraManager.Instance.FollowTarget;
         if(TargetEnemy != null && lookAt != null)
         {
             Vector3 VecFromCam = lookAt.position - transform.position;

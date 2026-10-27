@@ -37,8 +37,15 @@ public abstract class GameUIForm : UIFormLogic
     /// </summary>
     protected virtual string CursorKey => GetType().Name;
 
+    /// <summary>
+    /// 打开期间缓存的 formId。关闭时要靠它去清路由记录 ——
+    /// 进入 OnClose 之后 GF 可能已经把 UIForm.SerialId 复位成 0。
+    /// </summary>
+    private int m_FormId;
+
     /// <summary>当前 formId；界面未打开时为 0。关闭自己时用这个</summary>
-    protected int FormId => UIForm != null ? UIForm.SerialId : 0;
+    protected int FormId => m_FormId > 0 ? m_FormId : (UIForm != null ? UIForm.SerialId : 0);
+
 
     /// <summary>
     /// 是否把根节点强制铺满父 Canvas。
@@ -68,6 +75,15 @@ public abstract class GameUIForm : UIFormLogic
     {
         base.OnOpen(userData);
 
+        // 记到路由里。GF 的 OpenUIForm 是异步的（返回到调用方时实例还没创建完），
+        // 所以这里拿到的才是真实 formId / 真实资源路径 / 真实分组；
+        // 也让绕过 UIRouter 直接 OpenUIForm 的界面同样能被 CloseSelf 关掉。
+        m_FormId = UIForm != null ? UIForm.SerialId : 0;
+        UIRouter.EnsureRegistered(
+            m_FormId,
+            UIForm != null ? UIForm.UIFormAssetName : null,
+            UIForm != null && UIForm.UIGroup != null ? UIForm.UIGroup.Name : null);
+
         AcquireLocks();
 
         // 先摆正根节点再刷数据：子节点布局依赖父级 rect 已经是屏幕尺寸
@@ -86,6 +102,10 @@ public abstract class GameUIForm : UIFormLogic
 
     protected sealed override void OnClose(bool isShutdown, object userData)
     {
+        // 先清路由记录：OnCloseForm 里若有「是否还开着」的判断，此时应已得到 false
+        UIRouter.Unregister(m_FormId);
+        m_FormId = 0;
+
         try
         {
             OnCloseForm();

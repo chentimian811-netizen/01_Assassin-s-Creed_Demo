@@ -8,7 +8,6 @@ public class WeaponPickup : MonoBehaviour
     bool equipped = false;
     Collider activeCollider;
     PlayerController interactingPlayer;
-    PickupPopup activePopup;
 
     void Awake()
     {
@@ -60,20 +59,14 @@ public class WeaponPickup : MonoBehaviour
         ClosePickupPopup();
     }
 
+    /// <summary>
+    /// 显示拾取提示。界面是 GF 池化 + 异步打开的，这里只下单（WeaponPickup 拿不到实例）；
+    /// 已经在显示时 PickupForm 会自己换内容并重新淡入，不会再开第二个。
+    /// </summary>
     void ShowPickupPopup()
     {
-        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
-
         var item = GameManager.Instance.GetPackageItemById(weaponId);
-        PickupPopupData data = new PickupPopupData
-        {
-            weaponId = weaponId,
-            weaponName = item?.Name ?? "Unknown"
-        };
-
-        activePopup = UIManager.Instance.OpenPanel(UIconst.PickupPopup) as PickupPopup;
-        if (activePopup != null)
-            activePopup.ShowPopup(data);
+        PickupForm.ShowPrompt(weaponId, item?.Name ?? "Unknown");
     }
 
     public void TryEquip()
@@ -101,25 +94,16 @@ public class WeaponPickup : MonoBehaviour
             interactingPlayer = null;
         }
 
-       
-        if (activePopup != null)
-        {
-            activePopup = null;
-        }
-        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
+        // 关掉拾取提示（GF 侧负责淡出，这里只下单）
+        PickupForm.HidePrompt();
 
         PlayPickupEffect();
     }
 
     void ClosePickupPopup()
     {
-        if (activePopup != null)
-        {
-            activePopup.ClosePopup();
-            activePopup = null;
-        }
-        // 保险：直接通知UIManager关闭面板
-        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
+        // 请求淡出并关闭；界面不在时会自己忽略
+        PickupForm.HidePrompt();
 
         if (interactingPlayer != null)
         {
@@ -138,13 +122,8 @@ public class WeaponPickup : MonoBehaviour
 
     void OnDisable()
     {
-        // 【修复】无论是否已装备，都清理玩家引用和弹窗
-        if (activePopup != null)
-        {
-            activePopup.ClosePopup();
-            activePopup = null;
-        }
-        UIManager.Instance.ClosePanel(UIconst.PickupPopup);
+        // 无论是否已装备，都清理玩家引用和提示（武器被拾走/场景卸载都会走到这里）
+        PickupForm.HidePrompt();
 
         if (interactingPlayer != null)
         {

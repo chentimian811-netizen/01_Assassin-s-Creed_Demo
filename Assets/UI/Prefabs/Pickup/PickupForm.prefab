@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6596987721185617961}
   - component: {fileID: 9036213711388993911}
   m_Layer: 5
-  m_Name: PickupPopup
+  m_Name: PickupForm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -64,8 +64,8 @@ CanvasGroup:
   m_GameObject: {fileID: 2801889054727281924}
   m_Enabled: 1
   m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
 --- !u!1 &3408909978380920048
 GameObject:

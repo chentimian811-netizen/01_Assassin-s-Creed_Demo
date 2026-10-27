@@ -21,6 +21,7 @@ public static class UIPaths
     public const string ShopForm = "Assets/UI/Prefabs/Shop/ShopForm.prefab";
     public const string PackageForm = "Assets/UI/Prefabs/Package/PackageForm.prefab";
     public const string LotteryForm = "Assets/UI/Prefabs/Lottery/LotteryForm.prefab";
+    public const string PickupForm = "Assets/UI/Prefabs/Pickup/PickupForm.prefab";
     public const string SettingsForm = "Assets/UI/Prefabs/Settings/SettingsForm.prefab";
     public const string DeathForm = "Assets/UI/Prefabs/Death/DeathForm.prefab";
     public const string VictoryForm = "Assets/UI/Prefabs/Victory/VictoryForm.prefab";

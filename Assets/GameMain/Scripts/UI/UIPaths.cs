@@ -13,6 +13,7 @@ public static class UIPaths
 
     // ——— HUD 组 ———
     public const string MainHUDForm = "Assets/UI/Prefabs/HUD/MainHUDForm.prefab";
+    public const string EnemyHealthBarsForm = "Assets/UI/Prefabs/HUD/EnemyHealthBarForm.prefab";
     public const string TopRightTabForm = "Assets/UI/Prefabs/HUD/TopRightTabForm.prefab";
     public const string MainMenuBarForm = "Assets/UI/Prefabs/HUD/MainMenuBarForm.prefab";
 

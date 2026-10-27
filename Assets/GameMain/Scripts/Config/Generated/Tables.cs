@@ -61,6 +61,10 @@ public partial class Tables
     /// 弹反/格挡数值（未启用功能的开发初始值）
     /// </summary>
     public TbParry TbParry {get; }
+    /// <summary>
+    /// 法力配置（玩家/敌人共用，主键引用 Character.id）
+    /// </summary>
+    public TbMana TbMana {get; }
 
     public Tables(System.Func<string, JSONNode> loader)
     {
@@ -76,6 +80,7 @@ public partial class Tables
         TbPlayer = new TbPlayer(loader("player"));
         TbStamina = new TbStamina(loader("stamina"));
         TbParry = new TbParry(loader("parry"));
+        TbMana = new TbMana(loader("mana"));
         ResolveRef();
     }
     
@@ -93,6 +98,7 @@ public partial class Tables
         TbPlayer.ResolveRef(this);
         TbStamina.ResolveRef(this);
         TbParry.ResolveRef(this);
+        TbMana.ResolveRef(this);
     }
 }
 

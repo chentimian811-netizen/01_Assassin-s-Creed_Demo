@@ -1,0 +1,8 @@
+[
+  {
+    "id": "player_main",
+    "max_mana": 100,
+    "regen_per_second": 3,
+    "regen_delay_after_use": 1
+  }
+]

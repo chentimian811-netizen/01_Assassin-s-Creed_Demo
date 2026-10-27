@@ -28,8 +28,32 @@ public class MainHUDForm : UIFormLogic
     {
         base.OnOpen(userData);
 
+        ForceFillParentCanvas();
+
         if (packageBtn != null) packageBtn.onClick.AddListener(OnOpenPackage);
         if (lotteryBtn != null) lotteryBtn.onClick.AddListener(OnOpenLottery);
+    }
+
+    /// <summary>
+    /// 把 Form 根节点强制拉伸到父 Canvas。
+    ///
+    /// 为什么预制体已经是 stretch + sizeDelta 0 还要再设一次：
+    /// GF 的 DefaultUIFormHelper 用 SetParent 把实例挂到 UI 组 Canvas 下，
+    /// 但实例在“无父级”状态下的 rect 是 0×0，运行时实测根节点仍停在 0×0，
+    /// 于是所有顶部锚点的子物体都被算到画布下方（血条不可见）。
+    /// 这里显式给一次 offsetMin/offsetMax = 0，保证根节点真的铺满 Canvas。
+    /// </summary>
+    private void ForceFillParentCanvas()
+    {
+        RectTransform rect = transform as RectTransform;
+        if (rect == null) return;
+
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.localScale = Vector3.one;
     }
 
     protected override void OnClose(bool isShutdown, object userData)

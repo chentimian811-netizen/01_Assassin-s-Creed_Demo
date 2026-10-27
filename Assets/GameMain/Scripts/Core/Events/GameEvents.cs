@@ -18,6 +18,13 @@ public static class GameEvents
     public static event Action OnPlayerRevive;
     public static event Action<float, float> OnPlayerHealthChanged;  // cur, max
     public static event Action<float, float> OnPlayerStaminaChanged; // cur, max
+    public static event Action<float, float> OnPlayerManaChanged;    // cur, max
+
+    /// <summary>
+    /// 玩家某个武器槽的装备变化：(slotIndex, weaponId)。
+    /// weaponId &lt;= 0 表示该槽已空；HUD 用它刷新左下角槽位图标。
+    /// </summary>
+    public static event Action<int, int> OnPlayerWeaponSlotChanged;
 
     // ----- 受伤（所有单位） -----
     /// <summary>任意单位受伤的广播（不含"谁被打"），用于受击音效/飘字/镜头</summary>
@@ -67,6 +74,9 @@ public static class GameEvents
     public static void RaisePlayerRevive() => OnPlayerRevive?.Invoke();
     public static void RaisePlayerHealthChanged(float c, float m) => OnPlayerHealthChanged?.Invoke(c, m);
     public static void RaisePlayerStaminaChanged(float c, float m) => OnPlayerStaminaChanged?.Invoke(c, m);
+    public static void RaisePlayerManaChanged(float c, float m) => OnPlayerManaChanged?.Invoke(c, m);
+    public static void RaisePlayerWeaponSlotChanged(int slotIndex, int weaponId)
+        => OnPlayerWeaponSlotChanged?.Invoke(slotIndex, weaponId);
     public static void RaiseDamageTaken(in DamageInfo info) => OnDamageTaken?.Invoke(info);
     public static void RaiseUnitDamaged(string unitId, in DamageInfo info) => OnUnitDamaged?.Invoke(unitId, info);
     public static void RaiseHitReactionComplete(string unitId) => OnHitReactionComplete?.Invoke(unitId);
@@ -98,6 +108,8 @@ public static class GameEvents
         OnPlayerRevive = null;
         OnPlayerHealthChanged = null;
         OnPlayerStaminaChanged = null;
+        OnPlayerManaChanged = null;
+        OnPlayerWeaponSlotChanged = null;
         OnDamageTaken = null;
         OnUnitDamaged = null;
         OnHitReactionComplete = null;

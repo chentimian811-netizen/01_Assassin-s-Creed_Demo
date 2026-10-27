@@ -11,6 +11,7 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 public class ProcedureGame : ProcedureBase
 {
     private int? m_HUDFormId = null;
+    private int? m_EnemyBarsFormId = null;
     // 阶段3 启用：
     // private int? m_TabFormId = null;
     // private int? m_MenuBarFormId = null;
@@ -24,10 +25,19 @@ public class ProcedureGame : ProcedureBase
         // 1. 初始化游戏系统（替代老 GameManager.StartGame()）
         SetupGameSystems();
 
+        // 1.5 UI 组自举：TestScene 的入口覆盖成 ProcedureGame，跳过了 ProcedureLaunch 的
+        //     AddUIGroup；同时 GameFramework.prefab 用的是不会建 Canvas 的默认 Helper。
+        //     不补齐的话 OpenUIForm 没有 Canvas 可挂，HUD 永远不可见。
+        UIGroupBootstrap.EnsureAll();
+
         // 2. 打开常驻 HUD（HUD 组，depth=0）
         m_HUDFormId = GameEntry.UI.OpenUIForm(UIPaths.MainHUDForm, "HUD");
+        // 敌人头顶血条独立成一个 HUD 层：与玩家状态条解耦，方便单独开关
+        m_EnemyBarsFormId = GameEntry.UI.OpenUIForm(UIPaths.EnemyHealthBarsForm, "HUD");
         // 阶段3: m_TabFormId = GameEntry.UI.OpenUIForm(UIPaths.TopRightTabForm, "HUD");
         // 阶段3: m_MenuBarFormId = GameEntry.UI.OpenUIForm(UIPaths.MainMenuBarForm, "HUD");
+
+        Debug.Log($"[ProcedureGame] HUD 已打开：MainHUD={m_HUDFormId}，EnemyBars={m_EnemyBarsFormId}");
 
         // 3. 确保卡肉/暂停唯一所有者存在，并恢复游戏时间
         HitStopManager.EnsureExists();
@@ -44,6 +54,7 @@ public class ProcedureGame : ProcedureBase
         GameEntry.Event.Unsubscribe(OpenPanelEventArgs.EventId, OnOpenPanel);
 
         // 关闭所有 HUD
+        CloseFormIfOpen(ref m_EnemyBarsFormId);
         CloseFormIfOpen(ref m_HUDFormId);
         // 阶段3: CloseFormIfOpen(ref m_TabFormId);
         // 阶段3: CloseFormIfOpen(ref m_MenuBarFormId);

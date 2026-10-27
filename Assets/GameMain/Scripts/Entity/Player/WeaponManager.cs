@@ -172,6 +172,7 @@ public class WeaponManager : MonoBehaviour
                     slot.currentModel = null;
                     slot.currentConfig = null;
                     slot.equippedUid = null;
+                    RaiseWeaponSlotChanged(Array.IndexOf(weaponSlots, slot));
                 }
             }
 
@@ -283,6 +284,9 @@ public class WeaponManager : MonoBehaviour
         SyncFighterWeapon();
         ApplyMeleeFighterWeaponState();
 
+        // HUD 左下角槽位：装备成功后同步图标（目标槽索引在数组里的位置）
+        RaiseWeaponSlotChanged(Array.IndexOf(weaponSlots, targetSlot));
+
         OnWeaponModelChanged?.Invoke(config);
         return true;
     }
@@ -345,6 +349,9 @@ public class WeaponManager : MonoBehaviour
         // 从剩余槽位重新推导，而不是一律清空 —— 卸盾时右手剑的判定不能被抹掉
         SyncFighterWeapon();
         ApplyMeleeFighterWeaponState();
+
+        // 槽已清空：通知 HUD 把对应槽位变回空槽
+        RaiseWeaponSlotChanged(Array.IndexOf(weaponSlots, slot));
 
         OnWeaponModelChanged?.Invoke(oldConfig);
         return uid;
@@ -593,5 +600,18 @@ public class WeaponManager : MonoBehaviour
     public bool HasMeeleWeaponEquipped()
     {
         return FindMeleeWeaponSlot() != null;
+    }
+
+    /// <summary>
+    /// 把某个槽的当前装备广播给 HUD（左下角槽位图标）。
+    /// 槽为空时 weaponId 传 -1，HUD 会显示空槽而不是保留旧图标。
+    /// </summary>
+    void RaiseWeaponSlotChanged(int slotIndex)
+    {
+        if (weaponSlots == null || slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
+
+        WeaponSlot slot = weaponSlots[slotIndex];
+        int weaponId = slot != null && slot.currentConfig != null ? slot.currentConfig.weaponID : -1;
+        GameEvents.RaisePlayerWeaponSlotChanged(slotIndex, weaponId);
     }
 }

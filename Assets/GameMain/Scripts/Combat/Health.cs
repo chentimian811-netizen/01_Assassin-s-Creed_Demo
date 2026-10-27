@@ -95,6 +95,10 @@ public class Health : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
         isDead = false;
         invulnerableReasons.Clear();
+
+        // 回满也要通知 HUD：否则篝火/复活后血条停在上一次的空血位置。
+        // （Awake 阶段调用时还没有订阅者，发出去也没人收，安全）
+        PublishHealthIfChanged();
     }
 
     /// <summary>

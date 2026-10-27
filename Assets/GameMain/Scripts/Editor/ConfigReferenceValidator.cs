@@ -155,9 +155,9 @@ public static class ConfigReferenceValidator
 
         var tables = DataRepository.ConfigTables;
         if (tables.TbCharacter == null || tables.TbPlayer == null ||
-            tables.TbStamina == null || tables.TbParry == null)
+            tables.TbStamina == null || tables.TbParry == null || tables.TbMana == null)
         {
-            problems.Add(Make(GeneratedCodeDir, "Tables 缺少 TbCharacter / TbPlayer / TbStamina / TbParry"));
+            problems.Add(Make(GeneratedCodeDir, "Tables 缺少 TbCharacter / TbPlayer / TbStamina / TbParry / TbMana"));
             return false;
         }
 
@@ -235,6 +235,25 @@ public static class ConfigReferenceValidator
         else if (playerCharacter.MaxHealth <= 0f)
         {
             problems.Add(Make("Character", $"玩家 {PlayerConfigId} 的 max_health 必须大于 0，当前 {playerCharacter.MaxHealth}"));
+        }
+
+        // 法力：id 必须能对上 Character；玩家必须有一行，否则 PlayerMana 会拒绝一切消耗
+        foreach (var mana in tables.TbMana.DataList)
+        {
+            if (string.IsNullOrEmpty(mana.Id))
+            {
+                problems.Add(Make("Mana", "存在 id 为空的法力行"));
+                continue;
+            }
+
+            if (characterTable.GetOrDefault(mana.Id) == null)
+            {
+                problems.Add(Make("Mana", $"id={mana.Id} 在 Character 表里没有对应行"));
+            }
+        }
+        if (tables.TbMana.GetOrDefault(PlayerConfigId) == null)
+        {
+            problems.Add(Make("Mana", $"缺少玩家配置行：id={PlayerConfigId}"));
         }
 
         if (tables.TbStamina.GetOrDefault(PlayerConfigId) == null)

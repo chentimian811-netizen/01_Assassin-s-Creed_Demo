@@ -115,6 +115,7 @@ public static class DataRepository
                       $"Luban 表 {m_tables.TbCharacter.DataList.Count} character / " +
                       $"{m_tables.TbPlayer.DataList.Count} player / " +
                       $"{m_tables.TbStamina.DataList.Count} stamina / " +
+                      $"{m_tables.TbMana.DataList.Count} mana / " +
                       $"{m_tables.TbParry.DataList.Count} parry");
         }
         catch (Exception e)
@@ -168,6 +169,20 @@ public static class DataRepository
         if (row == null)
         {
             Debug.LogError($"[DataRepository] Stamina 表缺少配置行：id={FormatId(configId)}。请检查 Gameplay.xlsx 的 Stamina Sheet");
+        }
+        return row;
+    }
+
+    /// <summary>按配置 ID 取法力行；缺失时返回 null 并报出具体 ID</summary>
+    public static Mana GetMana(string configId)
+    {
+        var tables = EnsureTables("Mana", configId);
+        if (tables == null) return null;
+
+        var row = tables.TbMana.GetOrDefault(configId);
+        if (row == null)
+        {
+            Debug.LogError($"[DataRepository] Mana 表缺少配置行：id={FormatId(configId)}。请检查 Gameplay.xlsx 的 Mana Sheet");
         }
         return row;
     }

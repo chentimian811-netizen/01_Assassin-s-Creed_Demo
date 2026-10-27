@@ -163,8 +163,8 @@ public class PlayerController : MonoBehaviour
             ClearInput();
         }
 
-        // 商店/背包这类模态界面打开时冻结角色输入（HUD 仍然显示）
-        if (UIManager.Instance.panelDict.ContainsKey(UIconst.ShopPanel) || UIRouter.IsOpen(UIPaths.ShopForm))
+        // 商店这类模态界面打开时冻结角色输入（HUD 仍然显示）
+        if (UIRouter.IsOpen(UIPaths.ShopForm))
         {
             ClearInput();
             return;
@@ -386,18 +386,13 @@ public class PlayerController : MonoBehaviour
      #endregion
      
     /// <summary>
-    /// 关闭所有子面板。Package/Lottery 已迁到 GF（UIRouter），Shop 仍在旧 UIManager 上，
-    /// 等 GF-1.4 迁完后这段只剩 UIRouter 调用。
+    /// 关闭所有弹窗。Package / Lottery / Shop 都已迁到 GF，这里只剩 UIRouter。
     /// </summary>
     private void CloseSubPanels()
     {
         UIRouter.Close(UIPaths.PackageForm);
         UIRouter.Close(UIPaths.LotteryForm);
-
-        if (UIManager.Instance.GetPanel(UIconst.ShopPanel) != null)
-        {
-            UIManager.Instance.ClosePanel(UIconst.ShopPanel);
-        }
+        UIRouter.Close(UIPaths.ShopForm);
     }
 }
  

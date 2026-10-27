@@ -48,11 +48,13 @@ public class ShopNPC : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 打开商店界面。keeperId 通过 ShopFormArgs 走 UIRouter 的 userData，
+    /// 不再「先 OpenPanel 再 OpenWithConfig」两步走（GF 池化后没有这种时序保证）。
+    /// </summary>
     public void OpenShop()
     {
-        ShopPanel panel = UIManager.Instance.OpenPanel(UIconst.ShopPanel) as ShopPanel;
-        if (panel != null)
-            panel.OpenWithConfig(UIconst.ShopPanel, shopKeeperId);
+        UIRouter.Open(UIPaths.ShopForm, "Popup", new ShopFormArgs { KeeperId = shopKeeperId });
     }
 
     void OnDrawGizmosSelected()

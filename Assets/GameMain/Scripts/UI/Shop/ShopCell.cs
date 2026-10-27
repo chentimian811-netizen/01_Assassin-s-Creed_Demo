@@ -13,7 +13,7 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
     private Transform UISelect;
     private DRShop shopData;
     private int shopKeeperId;
-    private ShopPanel UIParent;
+    private ShopForm UIParent;
 
     private Transform UIMouseOverAni;
     private Transform UISelectAni;
@@ -41,7 +41,7 @@ public class ShopCell : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         }
     }
 
-    public void Refresh(DRShop data, int keeperId, ShopPanel parent)
+    public void Refresh(DRShop data, int keeperId, ShopForm parent)
     {
         this.shopData = data;
         this.shopKeeperId = keeperId;

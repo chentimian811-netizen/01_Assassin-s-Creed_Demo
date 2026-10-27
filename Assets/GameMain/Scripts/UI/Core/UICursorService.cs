@@ -81,6 +81,16 @@ public static class UICursorService
     }
 
     /// <summary>
+    /// 打印用快照：当前持锁数量与 key 列表。验收「连续开关 5 次无锁泄漏」时看这个。
+    /// </summary>
+    public static string GetDebugInfo()
+    {
+        if (m_LockKeys.Count == 0) return "光标锁: 0（游戏模式，光标应锁定且隐藏）";
+
+        return $"光标锁: {m_LockKeys.Count} [{string.Join(", ", m_LockKeys)}]";
+    }
+
+    /// <summary>
     /// 关闭 Domain Reload 时静态字段会跨 Play 会话存活，进入 Play 前必须清空。
     /// 这里只清本地集合，不碰 CursorManager（SubsystemRegistration 阶段它还没准备好）。
     /// </summary>

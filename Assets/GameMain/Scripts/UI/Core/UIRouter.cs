@@ -184,6 +184,23 @@ public static class UIRouter
     }
 
     /// <summary>
+    /// 打印用快照：当前已打开的界面清单。验收「开关 5 次后记录归零」时看这个。
+    /// </summary>
+    public static string GetDebugInfo()
+    {
+        if (m_ByPath.Count == 0) return "已打开界面: 0";
+
+        System.Text.StringBuilder builder = new System.Text.StringBuilder();
+        builder.Append("已打开界面: ").Append(m_ByPath.Count);
+        foreach (FormRecord record in m_ByPath.Values)
+        {
+            builder.Append("\n  - [").Append(record.FormId).Append("] ")
+                   .Append(record.Group).Append(" / ").Append(record.Path);
+        }
+        return builder.ToString();
+    }
+
+    /// <summary>
     /// 关闭全部界面；传 groupName 只关该组，传空关全部。
     /// 用于流程切换（回主菜单 / 关卡重载）时清场。
     /// </summary>

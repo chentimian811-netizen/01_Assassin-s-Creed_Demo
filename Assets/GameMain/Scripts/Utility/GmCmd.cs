@@ -67,6 +67,27 @@ public class GmCmd
         UIRouter.Open(UIPaths.PackageForm, "Popup");
     }
 
+    /// <summary>
+    /// 打印 UI 层状态快照。GF-2 验收用：
+    ///   - 连续开关 5 次后，「已打开界面」「UI 暂停」「光标锁」都应回到 0；
+    ///   - 同时开背包 + 商店时，计数应为 2；关掉一个应变成 1（不是 0）。
+    /// </summary>
+    #if UNITY_EDITOR
+    [MenuItem("GmCmd/UI 状态快照（暂停/光标/已开界面）")]
+    #endif
+    public static void DumpUIState()
+    {
+        HitStopManager hitStop = HitStopManager.Instance;
+        bool paused = hitStop != null && hitStop.IsPaused;
+        bool hitStopping = hitStop != null && hitStop.IsHitStopping;
+
+        Debug.Log($"[UI 状态] timeScale={Time.timeScale:F2} 暂停={paused} 卡肉={hitStopping} " +
+                  $"IsGameplayFocused={CursorManager.Instance.IsGameplayFocused}");
+        Debug.Log($"[UI 状态] {UIPauseService.GetDebugInfo()}");
+        Debug.Log($"[UI 状态] {UICursorService.GetDebugInfo()}");
+        Debug.Log($"[UI 状态] {UIRouter.GetDebugInfo()}");
+    }
+
     #if UNITY_EDITOR
     [MenuItem("GmCmd/创建双持测试数据（剑10001+盾10008）")]
     #endif

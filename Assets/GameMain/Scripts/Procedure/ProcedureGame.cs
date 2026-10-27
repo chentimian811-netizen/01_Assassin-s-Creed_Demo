@@ -39,7 +39,13 @@ public class ProcedureGame : ProcedureBase
 
         Debug.Log($"[ProcedureGame] HUD 已打开：MainHUD={m_HUDFormId}，EnemyBars={m_EnemyBarsFormId}");
 
-        // 3. 确保卡肉/暂停唯一所有者存在，并恢复游戏时间
+        // 3. UI 层的暂停/光标计数复位。
+        //    这两份计数是静态的：上一次 Play（关闭 Domain Reload 时）或上一次流程残留下来，
+        //    会让这一局开局就停住或光标乱。OnLeave 已经 CloseAll 过界面，这里只是兜底。
+        UIPauseService.Reset();
+        UICursorService.Reset();
+
+        // 3.5 确保卡肉/暂停唯一所有者存在，并恢复游戏时间
         HitStopManager.EnsureExists();
         HitStopManager.Instance?.Resume();
 

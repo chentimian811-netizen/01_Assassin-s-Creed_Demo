@@ -86,6 +86,16 @@ public static class UIPauseService
     }
 
     /// <summary>
+    /// 打印用快照：当前模态数量与 key 列表。验收「全关后 timeScale 回到 1」时看这个。
+    /// </summary>
+    public static string GetDebugInfo()
+    {
+        if (m_PauseKeys.Count == 0) return "UI 暂停: 0（timeScale 应为 1）";
+
+        return $"UI 暂停: {m_PauseKeys.Count} [{string.Join(", ", m_PauseKeys)}]";
+    }
+
+    /// <summary>
     /// 关闭 Domain Reload 时静态字段会跨 Play 会话存活，进入 Play 前必须清空。
     /// </summary>
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

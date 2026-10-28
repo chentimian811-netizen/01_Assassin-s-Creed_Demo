@@ -362,6 +362,12 @@ public class PlayerController : MonoBehaviour
     public void GetLockInput(InputAction.CallbackContext context)
     {
         if(!CursorManager.Instance.IsGameplayFocused) return;
+
+        // 瞄准中忽略锁定键：否则 LockEnemy 会把相机切回普通锁定、并把 ArmState 改成 Lock，
+        // 而 RangedFighter 仍处于瞄准 → 出现「角色还在瞄、相机已经不在右肩」的假状态。
+        // 想改成「按 Q 先取消瞄准、再进入锁定」，把下面这行替换成 CancelAim(); 后继续往下走。
+        if (ArmState == E_ArmState.Aim) return;
+
         playerLockOn.HandleLockInput(context);
     }
 

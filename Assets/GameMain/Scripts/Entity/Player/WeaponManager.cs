@@ -543,8 +543,13 @@ public class WeaponManager : MonoBehaviour
 
     /// <summary>
     /// 切换到指定槽位（供 WeaponSwitcher 调用）。
-    /// 双持可见性：近战/盾模型同时显示；远程仅在激活远程槽时显示。
-    /// MeleeFighter 始终绑非盾近战，避免盾配置污染连招与命中盒。
+    ///
+    /// 【可见性规则（对齐魂系/ER）】
+    ///   - 近战模式：右手武器 + 左手盾同时显示（双持）；
+    ///   - 远程模式：**只有弓在手上**，另一手的内容一律收起 —— 弓是双手武器，
+    ///     "左手举盾、右手拉弓"这种姿态现实中不存在（原来的实现里盾会一直显示，就是这个 bug）。
+    ///   收起只是 `SetActive(false)`，槽位数据与背包不受影响，切回近战会自动重新显示。
+    ///   MeleeFighter 始终绑非盾近战，避免盾配置污染连招与命中盒。
     /// </summary>
     public void SwitchToSlot(int slotIndex)
     {
@@ -565,7 +570,11 @@ public class WeaponManager : MonoBehaviour
 
             WeaponConfig cfg = slot.currentConfig;
             bool slotRanged = cfg != null && cfg.isRanged;
-            bool show = slotRanged ? (activateRanged && i == slotIndex) : true;
+
+            // 远程模式 = 双手持弓：非远程槽（盾/近战）全部收起；
+            // 近战模式 = 远程槽收起，其余双持显示。
+            bool show = activateRanged ? (slotRanged && i == slotIndex) : !slotRanged;
+
             slot.currentModel.SetActive(show);
             if (show)
                 ApplyInitialColliderState(slot.currentModel, cfg);

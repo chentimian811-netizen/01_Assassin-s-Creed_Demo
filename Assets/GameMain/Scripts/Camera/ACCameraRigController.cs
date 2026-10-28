@@ -62,7 +62,7 @@ public sealed class ACCameraRigController : MonoBehaviour
 
     [Header("普通视角与碰撞")]
     [Tooltip("普通机位臂长；无碰撞时实际相机再退一个 nearClip")]
-    [SerializeField] private float m_NormalDistance = 5f;
+    [SerializeField] private float m_NormalDistance = 3.5f;
     [Tooltip("俯仰范围 ±MaxPitch")]
     [SerializeField] private float m_MaxPitch = 75f;
     [SerializeField] private float m_InitialPitch = 0f;

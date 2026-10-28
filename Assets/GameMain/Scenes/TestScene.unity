@@ -919,7 +919,7 @@ MonoBehaviour:
   m_PadAcceleration: 5
   m_MaxPadYawSpeed: 1.5
   m_MaxPadPitchSpeed: 1
-  m_NormalDistance: 5
+  m_NormalDistance: 3.5
   m_MaxPitch: 75
   m_InitialPitch: 0
   m_CollisionMask:
@@ -1684,18 +1684,6 @@ MonoBehaviour:
         m_Calls: []
   m_LegacyBlendHint: 0
   m_ComponentOwner: {fileID: 3216738011105035175}
---- !u!114 &1780358499176245423
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5803389026306009860}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ff26db721962cdf4a8edcdfa9a767d2a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1869735024149272315
 GameObject:
   m_ObjectHideFlags: 3
@@ -2469,7 +2457,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3425192730579595399}
   - component: {fileID: 6787147930230555317}
-  - component: {fileID: 1780358499176245423}
   - component: {fileID: 5577198134294590205}
   - component: {fileID: 982179902543025032}
   - component: {fileID: 6787147930230555318}

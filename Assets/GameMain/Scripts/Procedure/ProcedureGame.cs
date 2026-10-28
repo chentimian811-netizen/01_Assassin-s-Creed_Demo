@@ -18,7 +18,7 @@ public class ProcedureGame : ProcedureBase
 
     private int? m_HUDFormId = null;
     private int? m_EnemyBarsFormId = null;
-    // 阶段3 启用：
+    // 待接（TopRightTabForm / MainMenuBarForm 预制体尚未创建）：
     // private int? m_TabFormId = null;
     // private int? m_MenuBarFormId = null;
     private ProcedureOwner m_ProcedureOwner = null;
@@ -40,8 +40,8 @@ public class ProcedureGame : ProcedureBase
         m_HUDFormId = GameEntry.UI.OpenUIForm(UIPaths.MainHUDForm, "HUD");
         // 敌人头顶血条独立成一个 HUD 层：与玩家状态条解耦，方便单独开关
         m_EnemyBarsFormId = GameEntry.UI.OpenUIForm(UIPaths.EnemyHealthBarsForm, "HUD");
-        // 阶段3: m_TabFormId = GameEntry.UI.OpenUIForm(UIPaths.TopRightTabForm, "HUD");
-        // 阶段3: m_MenuBarFormId = GameEntry.UI.OpenUIForm(UIPaths.MainMenuBarForm, "HUD");
+        // 待接: m_TabFormId = GameEntry.UI.OpenUIForm(UIPaths.TopRightTabForm, "HUD");
+        // 待接: m_MenuBarFormId = GameEntry.UI.OpenUIForm(UIPaths.MainMenuBarForm, "HUD");
 
         Debug.Log($"[ProcedureGame] HUD 已打开：MainHUD={m_HUDFormId}，EnemyBars={m_EnemyBarsFormId}");
 
@@ -68,8 +68,8 @@ public class ProcedureGame : ProcedureBase
         // 关闭所有 HUD
         CloseFormIfOpen(ref m_EnemyBarsFormId);
         CloseFormIfOpen(ref m_HUDFormId);
-        // 阶段3: CloseFormIfOpen(ref m_TabFormId);
-        // 阶段3: CloseFormIfOpen(ref m_MenuBarFormId);
+        // 待接: CloseFormIfOpen(ref m_TabFormId);
+        // 待接: CloseFormIfOpen(ref m_MenuBarFormId);
 
         // 关闭所有弹窗。GF 的 UI 是 DontDestroyOnLoad 的，切流程时不会自动清场；
         // 若留着模态界面（暂停 + 锁光标），下一局一开始就停住。

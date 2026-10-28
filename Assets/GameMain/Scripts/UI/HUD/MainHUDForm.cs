@@ -4,9 +4,10 @@
 // 对应 Prefab: Assets/UI/Prefabs/HUD/MainHUDForm.prefab
 // 分组: HUD（深度 0，不遮挡其他 UI）
 // 来源: 从 MainPanel.cs 迁移，仅保留常驻 HUD 职责
-//       暂停/菜单功能 → PauseForm（阶段3）
-//       Tab 按钮 → TopRightTabForm（阶段3）
-//       菜单按钮 → MainMenuBarForm（阶段3）
+//       暂停/菜单功能 → PauseForm（GF-3 已接通，Esc 开/关）
+//       死亡界面     → DeathForm（GF-3 已接通：本 HUD 订阅 GameEvents.OnPlayerDeath 打开）
+//       Tab 按钮     → TopRightTabForm（预制体尚未创建）
+//       菜单按钮     → MainMenuBarForm（预制体尚未创建）
 //------------------------------------------------------------
 
 using UnityEngine;

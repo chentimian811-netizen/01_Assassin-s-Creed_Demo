@@ -10,8 +10,9 @@ using UnityGameFramework.Runtime;
 ///   1. 本工程的 GameFramework.prefab 用的是 DefaultUIGroupHelper，
 ///      它的 SetDepth 是空实现，不会创建 Canvas / GraphicRaycaster / CanvasScaler；
 ///      ACUIGroupHelper 虽然写了，但预制体上并没有挂它。
-///   2. TestScene 的入口被覆盖成 ProcedureGame，跳过了 ProcedureLaunch 里的
-///      AddUIGroup，导致 "HUD" 等组根本不存在。
+///   2. 界面组要在「打开第一个界面之前」就存在。GF-3 之后入口固定是 ProcedureLaunch，
+///      由它调 EnsureAll；但直接以 ProcedureGame 为入口（调试、或关卡流程重入）时
+///      不会再经过 Launch，所以 ProcedureGame / UIRouter 里都留了一次兜底调用。
 ///   结果就是 OpenUIForm 没有可挂载的 Canvas，界面全部不可见。
 ///
 /// 这里在打开界面前补齐：缺组就 AddUIGroup；组存在但没有 Canvas 就补一张，

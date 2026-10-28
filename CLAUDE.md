@@ -15,7 +15,7 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 
 | 路径 | 用途 |
 |---|---|
-| `Assets/GameMain/Scripts/Base/` | GameEntry.Builtin、GameManager、CameraManager、CurrencyManager、CursorManager、ShopManager、ScenePaths |
+| `Assets/GameMain/Scripts/Base/` | GameEntry.Builtin、GameManager、CameraManager、CurrencyManager、CursorManager、ShopManager、ScenePaths、GameStartupConfig |
 | `Assets/GameMain/Scripts/Procedure/` | ProcedureBase / Launch / MainMenu / Loading / Game |
 | `Assets/GameMain/Scripts/Core/` | Configs(CharacterConfigIdentity)、Damage(DamageInfo,DamageRouter)、Events(GameEvents)、Interfaces、Log |
 | `Assets/GameMain/Scripts/Combat/` | MeleeFighter、RangedFighter、Health、HitStopManager、AttackData、CombatController、Projectile(Pool)、WeaponUpgradeSystem |
@@ -28,10 +28,10 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 | `Assets/GameMain/Resources/DataTables/` | `Shop.txt`（TSV，第一阶段未迁移）+ `Luban/`（生成的 JSON，禁止手写） |
 | `Config/` | `Luban/Datas/Gameplay.xlsx`（数值唯一编辑来源）、luban.conf、导出 bat、README、BASELINE |
 | `Tools/Luban/` | Luban 5.1.0 命令行工具（版本与校验和见 VERSION.txt） |
-| `Assets/GameMain/Scripts/UI/` | Core(UIRouter / GameUIForm / UIPauseService / UICursorService / ToastService / UIFormArgs)、UIPaths、各 `*Form`、Backpack\|HUD\|Lottery\|Pickup\|Shop\|Toast |
+| `Assets/GameMain/Scripts/UI/` | Core(UIRouter / GameUIForm / UIPauseService / UICursorService / ToastService / UIFormArgs)、UIGroupBootstrap、UIPaths、各 `*Form`、Backpack\|HUD\|Lottery\|Pickup\|Shop\|Toast\|Pause\|Death\|Victory |
 | `Assets/GameMain/Scripts/Level/` | Bonfire、FogWall、ShortcutGate、SoulsPickup |
 | `Assets/GameMain/Scripts/Utility/` | State Machine(State\<T\>/StateMachine\<T\>)、GmCmd、SkinnedMeshHighlighter |
-| `Assets/UI/Prefabs/` | GF UIForm 预制体：`MainMenu/`、`HUD/`、`Loading/`、`Package/`、`Lottery/`、`Shop/`、`Pickup/` |
+| `Assets/UI/Prefabs/` | GF UIForm 预制体：`MainMenu/`、`HUD/`、`Loading/`、`Package/`、`Lottery/`、`Shop/`、`Pickup/`、`Pause/`、`Death/`、`Victory/` |
 | `Assets/UI/Resources/Prefabs/Panels/` | 仅剩格子/详情预制体（`PackageUiItem`、`PackageUiItem_Food`、`StartLevel`、`ShopWeapon`、`ShopFood`、`DetailPanel_Weapon`、`DetailPanel_Food`、`LotteryItem`），由各 Form `Resources.Load` 取；GF-5 再改成直接引用并移出 Resources |
 | `Assets/GameFramework/` | GF 框架本体 + `GameFramework.prefab`（勿改） |
 | `Assets/ThirdParty/`、`Assets/Blink/`、`Assets/Starter Assets/`、`Assets/ARPGWarrior/`、`Assets/Fantasy knight/`、`Assets/Warrior maiden/`、`Assets/Sword_and_Shield_Anims/`、`Assets/TextMesh Pro/` | 导入资源包（勿改） |
@@ -39,9 +39,11 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 ## 关键入口
 
 - `GameEntry.Builtin.cs` — `partial GameEntry`，暴露 14 个静态组件属性：Base、Event、Procedure、Scene、UI、Resource、Fsm、Sound、DataTable、Setting、Entity、ObjectPool、Download、WebRequest。
-- `ProcedureLaunch` — 注册 UIGroup 后直接 `ChangeState<ProcedureGame>`（**开发期跳过主菜单与 Loading**）。
-- `ProcedureMainMenu` / `ProcedureLoading` — 已实现但当前入口不经过。Loading 通过静态 `ProcedureLoading.TargetScene` / `NextProcedureType` 传参。
-- `ProcedureGame` — `OpenUIForm(UIPaths.MainHUDForm, "HUD")`，订阅 `MenuCommandEventArgs` / `OpenPanelEventArgs`，激活玩家与 FreeLook 相机。
+- `ProcedureLaunch` — **唯一入口**：`UIGroupBootstrap.EnsureAll()` → 读 `Resources/Config/GameStartupConfig.asset` → 按 `skipMainMenu` 分发（true：开发期直达 `ProcedureGame`；false：`ProcedureMainMenu`）。要换入口别再改场景覆盖。
+- `GameStartupConfig` — 启动开关 SO：`skipMainMenu`（默认 true）、`devScenePath`（默认 TestScene）。缺资产时回落开发期默认值并打一条 Warning。
+- `ProcedureMainMenu` / `ProcedureLoading` — 已实现；`skipMainMenu=false` 时走「主菜单 → 登录 → Loading → 关卡」。Loading 通过静态 `ProcedureLoading.TargetScene` / `NextProcedureType` 传参。
+- `ProcedureGame` — `OpenUIForm(UIPaths.MainHUDForm, "HUD")`，订阅 `MenuCommandEventArgs` / `OpenPanelEventArgs`，激活玩家与相机；`OnLeave` 用 `UIRouter.CloseAll()` 清场。
+- `ProcedureGame.CommandPause / CommandResume / CommandReturnToMainMenu` — 菜单命令字面量。发出方：`PauseForm` / `DeathForm` 按钮、`PlayerController.GetPauseInput`（Esc）。
 - `GameManager.Awake()` — 单例 + DontDestroyOnLoad + `DataRepository.Initialize()`。
 - `UIRouter` — 界面唯一入口 `Open(path, group, userData)` / `Close(path|id)` / `IsOpen(path)` / `CloseAll()`。界面参数见 `UIFormArgs.cs`。
 - `GameEvents` — 玩法静态事件总线。订阅必须 `OnEnable`/`OnOpen` ↔ `OnDisable`/`OnClose` 一一对应，禁止 lambda 订阅，`ResetStatics` 在进入 Play 前清空。
@@ -51,12 +53,14 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 
 - **迁移路线与阶段划分见**
   `C:\University\Myself\Github_vault\Timian_vault\毕业设计\开发文档\GF框架迁移与底座搭建计划.md`
-  （GF-0 ~ GF-5；GF-0/GF-1 已完成，下一步 GF-2 UI 服务硬化）。动 UI 前先读它，不要凭记忆重推方案。
-- UIGroup 深度 = Canvas `sortingOrder`：HUD 0 / Page 1 / Popup 2 / Top 3 / Loading 4；`ACUIGroupHelper.DepthFactor = 10000`。在 `ProcedureLaunch` 注册。
-- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`、`LotteryForm`、`ToastForm`、`ShopForm`、`PickupForm`。
+  （GF-0 ~ GF-5；GF-0/1/2/3 已完成，下一步 GF-4「场景/主菜单/加载」——等新场景）。动 UI 前先读它，不要凭记忆重推方案。
+- UIGroup 深度 = Canvas `sortingOrder`：HUD 0 / Page 1 / Popup 2 / Top 3 / Loading 4；`ACUIGroupHelper.DepthFactor = 10000`。组与 Canvas 由 `UIGroupBootstrap.EnsureAll()` 在 `ProcedureLaunch` 补齐（`GameFramework.prefab` 的 Helper 不建 Canvas，勿改）。
+- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`、`LotteryForm`、`ToastForm`、`ShopForm`、`PickupForm`、`PauseForm`、`DeathForm`、`VictoryForm`。
 - 打开/关闭界面统一走 `UIRouter.Open/Close`；模态面板继承 `GameUIForm`（自动锁光标 + 暂停，走 `UIPauseService`/`UICursorService` 计数），不要自己写 `Time.timeScale`，也不要直接 `GameEntry.UI.OpenUIForm`（GF 不查重）。不拦输入的界面（如 `ToastForm`）覆写 `IsModal=false` + `LockCursor=false`。
 - **GF 的 `OpenUIForm` 是异步的**：返回 serialId 时界面实例还没创建，当帧 `GameEntry.UI.HasUIForm(...)` 恒为 `false`。所以「是否已打开」只能用 `UIRouter.IsOpen`，禁止拿 GF 状态当同步判据（早期版本这么做 → 每次按键都判定"打开失败"→ 重复开背包且关不掉）。
-- `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`SettingsForm`、`DeathForm`、`VictoryForm`、`PauseForm`。
+- `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`SettingsForm`。
+- 暂停：Esc →（GF Event）→ `ProcedureGame` → `UIRouter.Open(UIPaths.PauseForm, "Popup")`；再按 Esc 或「继续」发 `Resume` → `UIRouter.Close`。暂停时 `timeScale=0`，但 `GetPauseInput` **不要**加 `CursorManager.IsGameplayFocused` 闸门（那时鼠标已解锁，加了就永远恢复不了）；其它模态开着时它主动让路。
+- 死亡：`Health.Die` → `GameEvents.RaisePlayerDeath` → **常驻 HUD `MainHUDForm`** 订阅到后 `UIRouter.Open(UIPaths.DeathForm, "Popup")`（DeathForm 自己订阅不到「我还没打开就死了」）。`VictoryForm` 目前是空壳，等 Boss 有实例再接 `OnBossKilled`。
 - 界面参数用 `UI/Core/UIFormArgs.cs` 里的类型（如 `ShopFormArgs { KeeperId }`）装进 `UIRouter.Open` 的 `userData`，界面在 `OnOpenForm` 里自己取；不要再走「先拿到面板实例再调 OpenWithConfig」两步。
 - **只有一套 UI 生命周期**：所有界面继承 `GameUIForm`（或 HUD 的 `UIFormLogic`），由 `UIRouter` 打开/关闭。旧 `BasePanel`/`UIManager` 体系已在 GF-1.6 彻底删除，不要再引入第二套。
 - 拿不到界面实例时（池化 + 异步打开）用「静态下单 + 界面轮询版本号」：见 `ToastService`（覆盖策略）与 `PickupForm.ShowPrompt/HidePrompt`（换内容/淡出），不要写「先拿实例再调方法」那套。
@@ -113,6 +117,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 | OpenBackpack | `` ` ``（反引号） | `GetBackpackInput` |
 | GetPickup_ShopInput | **E** | `GetPickup_ShopInput`（有 NPC 优先开商店，否则拾取） |
 | GetShowCursor | LeftAlt / RightAlt | `GetShowCursorInput` |
+| Pause | **Esc** | `GetPauseInput`（开/关暂停界面；其它模态开着时让路） |
 | Dodge | **空（无绑定）** | `GetDodgeInput`（保留空壳） |
 
 - **Shift 双功能**：短按 → 翻滚 `PlayerDodge.TryDodge()`；长按超阈值 → 疾跑。不再占用独立 Dodge 键。
@@ -157,7 +162,9 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - `PackageTypeFood = 2` 仅定义常量，食物系统未实现。
 - `CombatController.cs` 为空壳 WIP：仅 `Awake` 缓存 `MeleeFighter`，`Update` 为空。
 - 旧 `BasePanel`/`UIManager`/`UIconst`/`HUDBtn` 已删除；场景 `Canvas` 只剩 `MinimapPanel`，`Canvas/BackPack`、`Canvas/Lottery` 两个旧入口按钮已移除。
-- `MainMenuForm.prefab` 之前挂的是旧 `MainMenuPanel` 脚本、从未挂过 `MainMenuForm`（GF-1.6 已换上，字段沿用原引用）；`ProcedureLaunch` 仍直接进 `ProcedureGame`，主菜单链路要到 GF-4 才启用。
+- `MainMenuForm.prefab` 之前挂的是旧 `MainMenuPanel` 脚本、从未挂过 `MainMenuForm`（GF-1.6 已换上，字段沿用原引用）。GF-3 起入口是 `ProcedureLaunch`，`skipMainMenu=false` 可走主菜单；但场景里**没有 `MainMenuCamera` 实例**，主菜单只是盖在关卡场景上的全屏界面，真正的「主菜单场景」要到 GF-4。
+- GF-3 已接线的三个界面里：`PauseForm` 只有「继续 / 返回主菜单」两个按钮（无「设置」，`SettingsForm` 未建）；`DeathForm` 的出口是「返回主菜单」＝开发期重载 `devScenePath`，篝火复活/掉魂属于 Phase 4；`VictoryForm` 是空壳（Boss 无实例，`OnBossKilled` 无人发布），只保证预制体与生命周期就绪。
+- 三个新界面的标题/按钮文本用的是 **Legacy Text（内置字体）**，与 `LotteryForm`/`ToastForm` 一致；中文靠系统字体回退显示。要换成 TMP 或项目字体，等做视觉时统一处理（工程里没有中文字体资产，只有 `LiberationSans`）。
 - GF Resource 处于 `EditorResourceMode`：路径必须是 `Assets/` 开头且含扩展名（见 `ScenePaths`、`UIPaths` 注释）。
 - 敌人**当前没有可用的命中盒**：`Enemy.prefab` 上只有 root 的 `CharacterController` 与 `VisionSensor` 的 trigger 球；招式资产是 `HitboxToUse = Weapon(4)`，而 `MeleeFighter.TryBindPreplacedWeapon()` 找的是名字**完全等于** `Sword` 且带 `BoxCollider` 的子物体（prefab 里叫 `Paladin_J_Nordstrom_Sword`，也没有 BoxCollider）→ `WeaponCollider` 恒为 null，敌人攻击不掉血。
 - 勿修改：`Assets/GameFramework/`、`Assets/ThirdParty/`、`Assets/Blink/`、`Assets/Starter Assets/`、`Assets/ARPGWarrior/`、`Assets/Fantasy knight/`、`Assets/Warrior maiden/`、`Assets/Sword_and_Shield_Anims/`、`Assets/TextMesh Pro/`。

@@ -172,6 +172,54 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 733017856}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &336328997
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 336328999}
+  - component: {fileID: 336328998}
+  m_Layer: 0
+  m_Name: SoulsDropSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &336328998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 336328997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b7e9c1d4f6a4e8b9c0d1e2f3a4b5c6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PickupPrefab: {fileID: 900000000000000003, guid: 7d2c4b1e9a8f4c3dbe5f60718293a4b5,
+    type: 3}
+  m_GroundProbeDistance: 6
+  m_FallbackHeight: 0.6
+--- !u!4 &336328999
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 336328997}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &357105170 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6879652371183806636, guid: bfa37c064e54d2b4ab4c04511b454caf,
@@ -405,7 +453,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Radius: 2.5
   m_Center: {x: 0, y: 1, z: 0}
-  m_PromptIconId: 0
 --- !u!4 &745456716
 Transform:
   m_ObjectHideFlags: 0
@@ -3640,3 +3687,4 @@ SceneRoots:
   - {fileID: 16104597035027247}
   - {fileID: 1039786951}
   - {fileID: 745456716}
+  - {fileID: 336328999}

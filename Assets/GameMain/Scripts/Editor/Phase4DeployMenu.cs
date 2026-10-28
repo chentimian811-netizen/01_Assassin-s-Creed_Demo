@@ -6,7 +6,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Phase 4（死亡循环）场景部署工具：把篝火放进 TestScene。
+/// Phase 4（死亡循环）场景部署工具：把篝火与掉魂系统放进 TestScene。
+/// 第 4 步（掉魂 / 拾魂）新增「掉魂系统」的部署与预制体引用补全（2026-10-28）。
 ///
 /// 【为什么用 Editor 工具，而不是手改 TestScene.unity】
 ///   场景在 Unity 里是打开状态，手写 YAML 会在下一次保存时被覆盖；
@@ -18,7 +19,11 @@ using UnityEngine.SceneManagement;
 ///   回到 Unity 触发重编译后自动跑一次。这样新会话里不需要人工点菜单。
 ///   （Temp/ 在 .gitignore 里，请求文件不会进版本库。）
 ///
-/// 【为什么用「玩家出生点」定位】
+/// 【幂等】
+///   两个物件都按名字查重：已存在就只补「动态引用」（掉魂系统的预制体引用），
+///   不会生成第二份。
+///
+/// 【为什么用「玩家出生点」定位篝火】
 ///   关卡的坐标体系带 (960, 540) 偏移（环境物体整体位移），手算绝对坐标极易放歪。
 ///   出生点一定是合法可站立的地面，篝火放在它旁边最稳；放完再在 Scene 视图里拖。
 /// </summary>
@@ -26,19 +31,22 @@ public static class Phase4DeployMenu
 {
     private const string RequestRelativePath = "Temp/phase4_deploy.request";
     private const string RequiredSceneName = "TestScene";
+
     private const string BonfireName = "Bonfire_01";
+    private const string SoulsDropObjectName = "SoulsDropSystem";
+    private const string SoulsPickupPrefabPath = "Assets/GameMain/Entities/Level/SoulsPickup.prefab";
 
     /// <summary>篝火相对玩家出生点的偏移（右前方 2.2m）</summary>
     private static readonly Vector3 BonfireOffset = new Vector3(2.2f, 0f, 1.2f);
 
-    [MenuItem("ACDemo/Level/Deploy Phase 4 (Bonfire)", priority = 200)]
-    public static void DeployBonfire()
+    [MenuItem("ACDemo/Level/Deploy Phase 4 Props", priority = 200)]
+    public static void DeployPhase4Props()
     {
-        TryDeployBonfire();
+        TryDeployPhase4Props();
     }
 
-    /// <summary>部署并保存场景。返回 false 表示前置条件不满足（没有改动任何东西）</summary>
-    private static bool TryDeployBonfire()
+    /// <summary>部署 Phase 4 的两个场景物件并保存场景。返回 false 表示前置条件不满足</summary>
+    private static bool TryDeployPhase4Props()
     {
         Scene scene = SceneManager.GetActiveScene();
         if (scene.name != RequiredSceneName)
@@ -47,6 +55,21 @@ public static class Phase4DeployMenu
             return false;
         }
 
+        bool bonfireOk = TryDeployBonfire();
+        bool soulsOk = TryDeploySoulsDropSystem();
+        if (!bonfireOk && !soulsOk) return false;
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveOpenScenes();
+
+        Debug.Log("[Phase4Deploy] Phase 4 物件部署完成（篝火 + 掉魂系统），场景已保存");
+        return true;
+    }
+
+    // ==================== 篝火 ====================
+
+    private static bool TryDeployBonfire()
+    {
         // 幂等：已经部署过就不再生成第二份（重复执行只是提示一句）
         GameObject existing = GameObject.Find(BonfireName);
         if (existing != null)
@@ -102,12 +125,58 @@ public static class Phase4DeployMenu
         // 5) 篝火本体（bonfireId / respawnOffset 用脚本里的默认值）
         root.AddComponent<Bonfire>();
 
-        EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveOpenScenes();
-
         Debug.Log($"[Phase4Deploy] 篝火已部署：{BonfireName} @ {position}（玩家出生点 {player.transform.position} 右前方 2.2m）；" +
-                  "场景已保存。可在 Scene 视图里拖动调整位置。");
+                  "可在 Scene 视图里拖动调整位置。");
         return true;
+    }
+
+    // ==================== 掉魂系统 ====================
+
+    private static bool TryDeploySoulsDropSystem()
+    {
+        GameObject existing = GameObject.Find(SoulsDropObjectName);
+        if (existing != null)
+        {
+            SoulsDropSystem existingSystem = existing.GetComponent<SoulsDropSystem>();
+            if (existingSystem != null) EnsurePickupPrefabBound(existingSystem);
+            Debug.Log($"[Phase4Deploy] 场景里已有 {SoulsDropObjectName}，跳过创建");
+            return true;
+        }
+
+        SoulsPickup prefab = AssetDatabase.LoadAssetAtPath<SoulsPickup>(SoulsPickupPrefabPath);
+        if (prefab == null)
+        {
+            Debug.LogError($"[Phase4Deploy] 找不到掉落物预制体 {SoulsPickupPrefabPath}，掉魂系统未部署");
+            return false;
+        }
+
+        GameObject root = new GameObject(SoulsDropObjectName);
+        Undo.RegisterCreatedObjectUndo(root, "Deploy Souls Drop System");
+        SoulsDropSystem system = root.AddComponent<SoulsDropSystem>();
+
+        // 预制体引用是 private + SerializeField，只能在 Editor 里用 SerializedObject 写
+        SerializedObject serializedSystem = new SerializedObject(system);
+        SerializedProperty prefabProperty = serializedSystem.FindProperty("m_PickupPrefab");
+        if (prefabProperty != null) prefabProperty.objectReferenceValue = prefab;
+        serializedSystem.ApplyModifiedPropertiesWithoutUndo();
+
+        Debug.Log($"[Phase4Deploy] 掉魂系统已部署：{SoulsDropObjectName}（掉落物 {SoulsPickupPrefabPath}）");
+        return true;
+    }
+
+    /// <summary>已存在时补引用：预制体被改名/重导入后引用会变 null，掉魂就会静默失败</summary>
+    private static void EnsurePickupPrefabBound(SoulsDropSystem system)
+    {
+        SerializedObject serializedSystem = new SerializedObject(system);
+        SerializedProperty prefabProperty = serializedSystem.FindProperty("m_PickupPrefab");
+        if (prefabProperty == null || prefabProperty.objectReferenceValue != null) return;
+
+        SoulsPickup prefab = AssetDatabase.LoadAssetAtPath<SoulsPickup>(SoulsPickupPrefabPath);
+        if (prefab == null) return;
+
+        prefabProperty.objectReferenceValue = prefab;
+        serializedSystem.ApplyModifiedPropertiesWithoutUndo();
+        Debug.Log("[Phase4Deploy] 已补上掉魂系统的掉落物引用");
     }
 
     /// <summary>
@@ -142,7 +211,7 @@ public static class Phase4DeployMenu
             try
             {
                 // 部署成功才删请求文件：场景没打开 / 不是 TestScene 时保留，下次重编译再试
-                if (TryDeployBonfire()) File.Delete(requestPath);
+                if (TryDeployPhase4Props()) File.Delete(requestPath);
             }
             catch (Exception e)
             {

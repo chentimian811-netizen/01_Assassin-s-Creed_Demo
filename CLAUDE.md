@@ -12,8 +12,8 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
   - Phase 4 死亡循环 **第 1–2 步已完成并 ✅ Play 验收通过（2026-10-28）**（E 键交互层 + 篝火部署进 TestScene +
     `CheckpointManager` + 死亡 → 篝火重生；C1/C2 已验）；
   - 第 3 步**敌人重生**已完成并 **✅ Play 验收通过（2026-10-28）**（`DeadState` 延迟回收 + `EnemyController.ResetToSpawn()` + `EnemyManager.RespawnAll()`）；
-  - **下一步 = 第 4 步掉魂/拾魂**（`OnSoulsDropped` 仍无发布方，加钱出口是 `CurrencyManager.Earn`），
-    之后第 5 步 PlayerPrefs 持久化 → Boss 1。
+  - 第 4 步**掉魂 / 拾魂**已完成并 **✅ Play 验收通过（2026-10-28）**（`SoulsDropSystem` 掉魂 + `SoulsPickup` 拾回 + 旧魂作废全通，C3 已验）；
+  - **下一步 = 第 5 步持久化**（篝火点亮 / 捷径开启 / 重生点走 PlayerPrefs；捷径门还要部署进场景才能验 C4），之后雾门 C5 → Boss 1。
 - 工程线下一阶段是**角色重构 S0–S7**（前置已满足，等 P0 空档）；GF-4 等新场景、GF-5 留 Phase 8。
 - 交接提示：`开发文档/GF框架迁移与底座搭建计划.md` §11、`毕业设计/毕业设计方案.md` 顶部「P0 新会话交接提示」。
 
@@ -43,7 +43,8 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 | `Config/` | `Luban/Datas/Gameplay.xlsx`（数值唯一编辑来源）、luban.conf、导出 bat、README、BASELINE |
 | `Tools/Luban/` | Luban 5.1.0 命令行工具（版本与校验和见 VERSION.txt） |
 | `Assets/GameMain/Scripts/UI/` | Core(UIRouter / GameUIForm / UIPauseService / UICursorService / ToastService / UIFormArgs)、UIGroupBootstrap、UIPaths、各 `*Form`、Backpack\|HUD\|Lottery\|Pickup\|Shop\|Toast\|Pause\|Death\|Victory |
-| `Assets/GameMain/Scripts/Level/` | Bonfire（已部署 `Bonfire_01`）、InteractableSensor（交互范围+提示）、CheckpointManager（重生点）、FogWall、ShortcutGate、SoulsPickup |
+| `Assets/GameMain/Scripts/Level/` | Bonfire（已部署 `Bonfire_01`）、InteractableSensor（交互范围+提示）、CheckpointManager（重生点）、SoulsDropSystem（掉魂调度，已部署）、SoulsPickup、FogWall、ShortcutGate |
+| `Assets/GameMain/Entities/Level/` | `SoulsPickup.prefab`（掉落魂物件：圆柱 + 蓝色点光 + 交互传感器；运行时生成、拾完销毁） |
 | `Assets/GameMain/Scripts/Utility/` | State Machine(State\<T\>/StateMachine\<T\>)、GmCmd、SkinnedMeshHighlighter |
 | `Assets/UI/Prefabs/` | GF UIForm 预制体：`MainMenu/`、`HUD/`、`Loading/`、`Package/`、`Lottery/`、`Shop/`、`Pickup/`、`Pause/`、`Death/`、`Victory/` |
 | `Assets/UI/Resources/Prefabs/Panels/` | 仅剩格子/详情预制体（`PackageUiItem`、`PackageUiItem_Food`、`StartLevel`、`ShopWeapon`、`ShopFood`、`DetailPanel_Weapon`、`DetailPanel_Food`、`LotteryItem`），由各 Form `Resources.Load` 取；GF-5 再改成直接引用并移出 Resources |
@@ -75,9 +76,13 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
   `NavAgent.Warp` → 恢复 VisionSensor / `MeleeFighter.enabled` → `ResetCombatPose` → **最后** `ChangeState(Patrol/Idle)`。
   `EnemyHealthBarsForm` 是开局一次性建表，所以敌人**不能 Destroy 后再重建**，只能回收复用。
   调试：`Health` 组件 Inspector 右键 `Debug/Force Kill`（把「死亡 → 回收 → 重生」链路单独跑一遍，比一刀刀砍到死可控）。
-- `Editor/Phase4DeployMenu` — 菜单 `ACDemo/Level/Deploy Phase 4 (Bonfire)`，也支持 `Temp/phase4_deploy.request` 一次性自动执行
-  （与 `LegacyHUDCleanup` 同一套做法）。**场景改动一律走工具，不要手改 `TestScene.unity`**：场景在 Editor 里是打开状态，
-  手写 YAML 会在下一次保存时被覆盖。
+- 掉魂 / 拾魂（C3）：`Level/SoulsDropSystem`（场景物体）订阅 `GameEvents.OnPlayerDeath` → 把玩家**当前全部金币**留在死亡位置、
+  金币归零、`CurrencyManager.SetGold(0)`；同一时刻只保留一份魂，再死先销毁旧魂（未拾回 = 全损）。
+  掉落物是 `Entities/Level/SoulsPickup.prefab`，运行时 `Instantiate`；`SoulsPickup.Collect()` 负责 `CurrencyManager.Earn` + 事件 + Toast + 销毁自己。
+  **加钱只走 `CurrencyManager`**，不要在别处碰 `PlayerPrefs["PlayerGold"]`。
+- `Editor/Phase4DeployMenu` — 菜单 `ACDemo/Level/Deploy Phase 4 Props`（一次部署「篝火 + 掉魂系统」，幂等），
+  也支持 `Temp/phase4_deploy.request` 一次性自动执行（与 `LegacyHUDCleanup` 同一套做法）。
+  **场景改动一律走工具，不要手改 `TestScene.unity`**：场景在 Editor 里是打开状态，手写 YAML 会在下一次保存时被覆盖。
 
 ## UI（GameFramework）
 
@@ -217,12 +222,12 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - `MainMenuForm.prefab` 之前挂的是旧 `MainMenuPanel` 脚本、从未挂过 `MainMenuForm`（GF-1.6 已换上，字段沿用原引用）。GF-3.5 起它是**默认首屏**（`skipMainMenu=false`），背景是深色遮罩、按钮已本地化；但场景里**没有 `MainMenuCamera` 实例**，菜单只是盖在关卡场景上的全屏界面（角色被禁输入、相机停手），真正的「主菜单场景」要到 GF-4。
 - **场景加载限制（单场景阶段）**：GF 的 `GameEntry.Scene.LoadScene` 走 `EditorResourceComponent` 的 **additive** 加载，且不会卸载当前场景。`TestScene` 同时是引导场景和关卡场景，用它再加载一次会多出一整套 `GameFramework`/玩家/敌人实例。所以「主菜单 → 游戏」「返回主菜单」都只切流程、不重载场景；整关重置由 `PlayerController.ResetForNewRun()`（`Health.ResetToFull` 复活 + 回出生点 + `MeleeFighter.ResetCombatPose()`）与 `EnemyController.ResetAggro()`（**只对交战中的敌人**清 Target/视野缓存/导航，回 Patrol 或 Idle —— 无脑回 Idle 会把 `PatrolState` 顶掉，表现为敌人不再巡逻）顶上；敌人血量与位置、掉落物**不重置**，要等 GF-4 拆出关卡场景。菜单/暂停/死亡里的场景重载一律不要加。
 - **死亡动作在 Override Layer(1) 上**：`MeleeFighter.HandlePlayerDeath` 是 `animator.CrossFade("Melee_FallBackDeath", 0.2f, 1)`，这一层不会自己复位 —— 复活时不做 `ResetCombatPose()`（切回 `Empty`）的话，角色会一直保持倒地姿势，攻击一次才被顶掉。
-- **死亡循环第 1–3 步均已 Play 验收通过（2026-10-28）**：篝火 `Bonfire_01` 由 `Editor/Phase4DeployMenu` 部署在出生点右前方，按 E 回满血/耐力并登记重生点；
+- **死亡循环第 1–4 步均已 Play 验收通过（2026-10-28）**：篝火 `Bonfire_01` 由 `Editor/Phase4DeployMenu` 部署在出生点右前方，按 E 回满血/耐力并登记重生点；
   死亡界面有两个出口：「在篝火重生」（`CommandRespawnAtBonfire` → `CheckpointManager.RespawnPlayer`）与「返回主菜单」。
   **敌人重生**：`DeadState` 到 `Enemy.destroy_delay` 后只 `SetActive(false)` 回收（**不再 Destroy**），
   `EnemyManager.RespawnAll()` → `EnemyController.ResetToSpawn()` 就地复位（血量/位置/仇恨/FSM/战斗姿态）；
   篝火休息与「死亡回篝火」都会触发。**复位顺序有硬约束**，见 `ResetToSpawn` 的注释，别重排。
-  **仍未做**：掉魂/拾魂（`OnSoulsDropped` 仍无发布方）、篝火点亮与捷径的 PlayerPrefs 持久化（退出 Play 即丢）、雾门。
+  **仍未做**：篝火点亮 / 捷径 / 重生点的 PlayerPrefs 持久化（退出 Play 即丢，第 5 步）、雾门 C5。
   重生点也只存在内存里：**「返回主菜单 → 再开始」仍回出生点，不是最近篝火**（等第 5 步做持久化时统一）。
 - **近战 / 远程模式**由 `WeaponSwitcher` 管：数字键 `1`/`2` 切换，`EquipWeapon` 装弓时自动切远程。
   它**不再禁用 `MeleeFighter`** —— 玩家的受击回调（`OnTriggerEnter` / `HandleUnitDamaged`）挂在它身上，

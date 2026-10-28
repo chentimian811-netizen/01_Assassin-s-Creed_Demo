@@ -542,6 +542,38 @@ public class WeaponManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 收起远程武器，恢复"近战 + 盾"的持械状态（按键 1 / 装回近战武器时）。
+    ///
+    /// 与 `SwitchToSlot` 的区别：这个**不看槽位**，只看"谁是不是远程"。
+    /// 原因：右手槽同时允许 Sword 与 Bow，弓可能就顶替了右手剑；
+    /// 这时 `SwitchToSlot(meleeSlotIndex)` 切到的仍然可能是弓，盾不会回来（实测踩过）。
+    /// </summary>
+    public void ShowMeleeLoadout()
+    {
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            WeaponSlot slot = weaponSlots[i];
+            if (slot == null || slot.currentModel == null) continue;
+
+            WeaponConfig cfg = slot.currentConfig;
+            bool slotRanged = cfg != null && cfg.isRanged;
+            bool show = !slotRanged;
+
+            slot.currentModel.SetActive(show);
+            if (show)
+                ApplyInitialColliderState(slot.currentModel, cfg);
+        }
+
+        SyncFighterWeapon();
+        ApplyMeleeFighterWeaponState();
+
+        RangedFighter rangedFighter = GetComponent<RangedFighter>();
+        if (rangedFighter != null) rangedFighter.ClearWeapon();
+
+        OnWeaponModelChanged?.Invoke(FindMeleeWeaponConfig());
+    }
+
+    /// <summary>
     /// 切换到指定槽位（供 WeaponSwitcher 调用）。
     ///
     /// 【可见性规则（对齐魂系/ER）】

@@ -49,7 +49,12 @@ public class WeaponSwitcher : MonoBehaviour
     }
 
     /// <summary>
-    /// 切换到近战武器
+    /// 收起弓、回到近战/盾的持械状态（按键 1）。
+    ///
+    /// ⚠️ 不能写成 `SwitchToSlot(meleeSlotIndex)`：两槽模型里右手槽同时允许 Sword 和 Bow，
+    /// 弓很可能就顶替了右手剑 —— 这时切到 slot0 依然是弓，`activateRanged` 仍为 true，
+    /// 表现就是"按 1 没反应、盾也不回来"（实测踩过）。
+    /// 所以这里要的是"把远程收起来"，而不是"切到某个槽"。
     /// </summary>
     public void SwitchToMelle()
     {
@@ -61,8 +66,13 @@ public class WeaponSwitcher : MonoBehaviour
             rangeFighter.enabled = false;
         }
 
-        //通知WeaponManager切换武器模型
-        weaponManager?.SwitchToSlot(meleeSlotIndex); 
+        // 右手槽若确实装的是近战武器 → 正常切回该槽（会顺带刷碰撞体与模型）；
+        // 若右手槽已被弓顶替（两槽模型的常见情况）→ 只把远程收起来，别切槽。
+        WeaponConfig meleeCfg = weaponManager != null ? weaponManager.GetSlotConfig(meleeSlotIndex) : null;
+        if (meleeCfg != null && !meleeCfg.isRanged)
+            weaponManager.SwitchToSlot(meleeSlotIndex);
+        else
+            weaponManager?.ShowMeleeLoadout();
 
         OnWeaponTypeChanged?.Invoke(false);
 

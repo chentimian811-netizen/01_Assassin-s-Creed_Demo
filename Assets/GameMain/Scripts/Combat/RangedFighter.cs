@@ -32,6 +32,14 @@ public class RangedFighter : MonoBehaviour
     public int MaxAmmo => maxAmmo;
 
     /// <summary>
+    /// 当前副手是否是「可用的远程武器」（弓）。
+    /// 右键分流用：拿弓时右键 = 瞄准，近战武器时右键 = 格挡/弹反（T4）。
+    /// 判据是 currentWeapon.isRanged，而不是"RangedFighter 组件存在" ——
+    /// 组件一直挂在玩家身上，卸下弓之后它仍在，只看组件会把近战也判成远程。
+    /// </summary>
+    public bool HasRangedWeapon => currentWeapon != null && currentWeapon.isRanged;
+
+    /// <summary>
     /// 是否可以射击（弹药>0 且 冷却完毕）
     /// </summary>
     public bool CanFire

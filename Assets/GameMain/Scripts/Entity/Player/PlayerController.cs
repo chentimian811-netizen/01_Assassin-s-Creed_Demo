@@ -33,6 +33,13 @@ public class PlayerController : MonoBehaviour
     /// <summary>是否正在锁定敌人</summary>
     public bool IsLocking => playerLockOn.IsLocking;
 
+    /// <summary>
+    /// 当前是否装备远程武器（弓）。
+    /// T4 右键分流：拿弓 → 右键 = 瞄准；近战武器 → 右键 = 格挡/弹反。
+    /// 两者在 PlayerActions 里都绑右键，不分流时按一下会同时瞄准 + 举盾。
+    /// </summary>
+    private bool IsRangedWeaponEquipped => RangedFighter != null && RangedFighter.HasRangedWeapon;
+
     /// <summary>当前锁定的敌人</summary>
     public EnemyController LockedEnemy => playerLockOn.LockedEnemy;
 
@@ -225,6 +232,10 @@ public class PlayerController : MonoBehaviour
             parrySystem?.SetBlocking(false);
         }
 
+        // T4：换/收起弓之后不能再保持格挡（右键这时归瞄准，举盾会互相顶）
+        if (parrySystem != null && parrySystem.IsBlocking && IsRangedWeaponEquipped)
+            parrySystem.SetBlocking(false);
+
         // 商店这类模态界面打开时冻结角色输入（HUD 仍然显示）
         if (UIRouter.IsOpen(UIPaths.ShopForm))
         {
@@ -324,6 +335,11 @@ public class PlayerController : MonoBehaviour
     {   
         if(!CursorManager.Instance.IsGameplayFocused) return;
         if(RangedFighter == null) return;
+
+        // T4 右键分流：只有拿弓时右键才是瞄准；近战武器下这个键归格挡（见 GetBlockInput）。
+        // 否则一手举盾一手拉弓，格挡/弹反永远测不准。
+        if (context.performed && !IsRangedWeaponEquipped) return;
+
         if (context.performed)
         {
             // 参考行为：进入瞄准会退出近战锁定
@@ -456,6 +472,10 @@ public class PlayerController : MonoBehaviour
     public void GetBlockInput(InputAction.CallbackContext context)
     {
         if (parrySystem == null) return;
+
+        // T4 右键分流：拿弓时右键是瞄准，不举盾（弹反只属于近战 + 盾）。
+        // canceled 分支不拦：万一换武器时还按着，松开必须无条件收格挡。
+        if (context.performed && IsRangedWeaponEquipped) return;
 
         if (context.performed)
         {

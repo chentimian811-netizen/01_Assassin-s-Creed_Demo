@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -13,17 +14,39 @@ using UnityEngine;
 ///   【缺配置时的行为】报错并整体不生效，绝不静默退回默认值 —— 与 PlayerStamina 一致，
 ///   避免"改了表却没生效"看起来像正常运行。
 ///
-/// 【与 T3 的分界】格挡持续扣耐力（Stamina.block_cost_per_second）属 T3，本文件暂不消耗；
-///   这里只留 stamina 引用，T3 直接接上即可。
+/// 【与 T3 的分界】格挡持续扣耐力在 Update 的 DrainBlockStamina 里做（T3 已接）；
+///   弹反失败惩罚（parry_fail_cost）仍未接。
 /// </summary>
 public class ParrySystem : MonoBehaviour, IDamageInterceptor
 {
     [Header("组件引用")]
-    [Tooltip("耐力组件。格挡持续耗耐（T3）要用；留空则 Awake 自动 GetComponent")]
+    [Tooltip("耐力组件。格挡持续耗耐用；留空则 Awake 自动 GetComponent")]
     [SerializeField] private PlayerStamina stamina;
 
     [Tooltip("自身血量组件，弹反成功后的短暂无敌挂在这里；留空则 Awake 自动 GetComponent")]
     [SerializeField] private Health health;
+
+    [Tooltip("动画机。举盾姿态要靠它来播；留空则 Awake 自动 GetComponent")]
+    [SerializeField] private Animator animator;
+
+    [Tooltip("自身的近战组件。用来判断\"此刻是不是在挥刀/挨打\"，避免举盾把攻击动画顶掉")]
+    [SerializeField] private MeleeFighter meleeFighter;
+
+    /// <summary>举盾姿态协程句柄（收盾时要停掉，避免切循环把收盾动作顶回来）</summary>
+    private Coroutine m_blockPoseRoutine;
+
+    [Header("举盾动画")]
+    [Tooltip("举盾起手状态名（PlayerMove.controller 的 Override Layer 里已存在）")]
+    [SerializeField] private string blockStartState = "Block_Start";
+
+    [Tooltip("举盾循环状态名。留空 = 不切循环，停在起手姿态")]
+    [SerializeField] private string blockLoopState = "Block_Loop";
+
+    [Tooltip("起手动画播多久后切循环（秒）")]
+    [SerializeField] private float blockStartToLoopDelay = 0.25f;
+
+    /// <summary>战斗层（Override Layer）索引：攻击/受击/死亡/举盾都在这一层</summary>
+    private const int CombatLayer = 1;
 
     /// <summary>本次格挡的按下时刻（真实时间）。弹反窗口从这一刻起算</summary>
     private float blockStartTime = float.MinValue;
@@ -51,10 +74,22 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
     /// <summary>弹反/格挡是否生效（缺 Parry 配置时整体失效）</summary>
     public bool IsAvailable => m_configRow != null;
 
+    // ---------- T5：弹反成功后的处决窗口 ----------
+    /// <summary>刚被弹反的敌人（处决目标）。窗口过期 / 被消费后清空</summary>
+    private EnemyController m_riposteTarget;
+
+    /// <summary>处决窗口截止时刻（真实时间）</summary>
+    private float riposteDeadlineRealtime = float.MinValue;
+
+    /// <summary>此刻是否有可处决目标（将来做处决提示 UI 时直接读它）</summary>
+    public bool HasRiposteTarget => GetRiposteTarget() != null;
+
     private void Awake()
     {
         if (stamina == null) stamina = GetComponent<PlayerStamina>();
         if (health == null) health = GetComponent<Health>();
+        if (animator == null) animator = GetComponent<Animator>();
+        if (meleeFighter == null) meleeFighter = GetComponent<MeleeFighter>();
 
         m_configRow = CharacterConfigIdentity.GetParryRow(this);
 
@@ -64,7 +99,8 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
         {
             Debug.Log(m_configRow != null
                 ? $"[Parry] 配置就绪：id={m_configRow.Id}，窗口 {m_configRow.ParryWindow}s / " +
-                  $"硬直 {m_configRow.EnemyStaggerDuration}s / 减伤 {m_configRow.BlockDamageReduction:0.##}"
+                  $"硬直 {m_configRow.EnemyStaggerDuration}s / 减伤 {m_configRow.BlockDamageReduction:0.##} / " +
+                  $"处决窗口 {m_configRow.RiposteWindow}s"
                 : "[Parry] 【严重】读不到 Parry 配置行，格挡与弹反都不会生效", this);
         }
     }
@@ -114,12 +150,71 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
     /// <summary>
     /// 按下 / 松开格挡键。输入层（PlayerController.GetBlockInput）直接转发。
     /// 只在 false→true 的那一帧重记窗口起点，按住期间 IsInParryWindow 自然过期。
+    /// 同时驱动举盾姿态（Override Layer，攻击/受击/死亡也在这一层）。
     /// </summary>
     public void SetBlocking(bool value)
     {
         if (IsBlocking == value) return;
         IsBlocking = value;
         if (value) blockStartTime = Time.unscaledTime;
+
+        // 起手/循环姿态用协程切换；收盾要立刻把覆盖层切回 Empty
+        if (m_blockPoseRoutine != null)
+        {
+            StopCoroutine(m_blockPoseRoutine);
+            m_blockPoseRoutine = null;
+        }
+
+        if (value)
+        {
+            m_blockPoseRoutine = StartCoroutine(PlayBlockPose());
+        }
+        else if (!IsAnimatingCombatAction())
+        {
+            // 正在挥刀/挨打时不抢覆盖层：那一层此刻由 MeleeFighter 在管
+            PlayEmptyPose(0.15f);
+        }
+    }
+
+    /// <summary>
+    /// 举盾姿态：先播起手，delay 后若还在格挡就切循环。
+    ///
+    /// ⚠️ 覆盖层（layer 1）不会自己复位 —— 收盾/破防/死亡时都必须显式切回 Empty，
+    /// 否则角色会一直端着盾走路（与死亡动作那条坑同源）。
+    /// 状态名在 PlayerMove.controller 里已存在；缺失时 `CrossFade` 会被 HasState 挡掉，不会刷警告。
+    /// </summary>
+    private IEnumerator PlayBlockPose()
+    {
+        if (!IsAnimatingCombatAction()) CrossFadeCombat(blockStartState, 0.12f);
+
+        yield return new WaitForSeconds(Mathf.Max(0f, blockStartToLoopDelay));
+
+        if (IsBlocking && !IsAnimatingCombatAction()) CrossFadeCombat(blockLoopState, 0.12f);
+        m_blockPoseRoutine = null;
+    }
+
+    /// <summary>把战斗层切回空状态（收盾 / 破防 / 被打断）</summary>
+    private void PlayEmptyPose(float fade)
+    {
+        CrossFadeCombat("Empty", fade);
+    }
+
+    /// <summary>按状态名 CrossFade（状态不存在时跳过，避免刷警告）</summary>
+    private void CrossFadeCombat(string stateName, float fade)
+    {
+        if (animator == null || string.IsNullOrEmpty(stateName)) return;
+        if (!animator.HasState(CombatLayer, Animator.StringToHash(stateName))) return;
+        animator.CrossFade(stateName, fade, CombatLayer);
+    }
+
+    /// <summary>
+    /// 是否正在播"别的"战斗动作（挥刀 / 受击 / 处决）。
+    /// 这些动作和举盾抢同一层，谁先起手谁说话 —— 举盾不能把它们顶掉。
+    /// </summary>
+    private bool IsAnimatingCombatAction()
+    {
+        return meleeFighter != null &&
+               (meleeFighter.inAction || meleeFighter.IsAttackingHit || meleeFighter.inCounter);
     }
 
     // ==================== IDamageInterceptor ====================
@@ -193,6 +288,10 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
 
         target.OnParried(gameObject, m_configRow.EnemyStaggerDuration);
 
+        // T5：记下处决目标。窗口时长来自 Parry.riposte_window（2s），
+        // 处决演出本身由 PlayerCombat 在"轻攻击"里触发（见 ResolveExecutionTarget）。
+        SetRiposteTarget(target);
+
         // 弹反后短暂无敌，避免被同一招的后续判定二次命中
         health?.SetInvulnerable(InvulnReasons.ParrySuccess, true);
         parryInvulnUntilRealtime = Time.unscaledTime + m_configRow.ParryInvulnDuration;
@@ -202,9 +301,57 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
         if (LogParry)
         {
             Debug.Log($"[Parry] 弹反成功：敌方 {target} 硬直 {m_configRow.EnemyStaggerDuration:0.##}s，" +
-                      $"自身无敌 {m_configRow.ParryInvulnDuration:0.##}s", this);
+                      $"自身无敌 {m_configRow.ParryInvulnDuration:0.##}s，" +
+                      $"处决窗口 {m_configRow.RiposteWindow:0.##}s", this);
         }
         return true;
+    }
+
+    // ==================== T5：弹反后的处决窗口 ====================
+
+    /// <summary>
+    /// 记录处决目标。`IParryTarget` 由 MeleeFighter 实现，敌人本体在同一 GameObject 上。
+    /// </summary>
+    private void SetRiposteTarget(IParryTarget target)
+    {
+        m_riposteTarget = null;
+        riposteDeadlineRealtime = float.MinValue;
+
+        if (target is MonoBehaviour behaviour)
+            m_riposteTarget = behaviour.GetComponent<EnemyController>();
+
+        if (m_riposteTarget == null) return;
+
+        // riposte_window = 0 视为不限制（表注释就是这么写的），>0 才设截止时刻
+        float window = m_configRow.RiposteWindow;
+        riposteDeadlineRealtime = window > 0f ? Time.unscaledTime + window : float.MaxValue;
+    }
+
+    /// <summary>
+    /// 取当前的处决目标（只读，不消费）。过期 / 已死 / 已站起来的都会自动清空。
+    /// 由 `PlayerCombat` 在轻攻击时调用；将来做处决提示 UI 也可读 `HasRiposteTarget`。
+    /// </summary>
+    public EnemyController GetRiposteTarget()
+    {
+        if (m_riposteTarget == null) return null;
+
+        if (Time.unscaledTime > riposteDeadlineRealtime
+            || m_riposteTarget.Health == null
+            || m_riposteTarget.Health.IsDead
+            || !m_riposteTarget.IsStaggered)   // 硬直已经结束（敌人站起来了）就不再算处决目标
+        {
+            ClearRiposteTarget();
+            return null;
+        }
+
+        return m_riposteTarget;
+    }
+
+    /// <summary>处决已发起 / 窗口作废时清掉目标</summary>
+    public void ClearRiposteTarget()
+    {
+        m_riposteTarget = null;
+        riposteDeadlineRealtime = float.MinValue;
     }
 
     /// <summary>

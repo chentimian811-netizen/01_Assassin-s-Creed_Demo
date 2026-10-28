@@ -335,6 +335,12 @@ public class EnemyController : MonoBehaviour
          return stateMachine.CurrentState == stateDict[state];
     }
 
+    /// <summary>
+    /// 是否正在受击/弹反硬直中（状态机还没建好时安全返回 false）。
+    /// 处决窗口用它判断"敌人是不是还跪着"—— 站起来了就不该再被处决。
+    /// </summary>
+    public bool IsStaggered => stateMachine != null && IsInState(E_EnemyState.GettingHit);
+
     private void Update()
     {
         // 死亡后不再推进 FSM / 刷动画参数，避免与死亡姿态抢控制。

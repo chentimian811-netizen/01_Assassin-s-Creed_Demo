@@ -1119,6 +1119,11 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         inCounter = true;
         opponet.Fighter.inCounter = true;
 
+        // 受害者可能正处在弹反硬直的姿态协程里（ParryStagger）：先停掉。
+        // 不停的话那个协程 1.5s 后会 CrossFade("Empty")，正好顶在 Melee_CounterVictim 上，
+        // 表现为"处决演到一半，受害者站起来"。
+        opponet.Fighter.StopAllCoroutines();
+
         // 锁死受害者的 FSM 与导航：处决是双人配对动画，受害者不该在这期间自己走位/出手，
         // 否则演出中它会顶着受害动画追玩家（"处决完先朝我跑一下"）
         opponet.SetPerformanceLock(true);

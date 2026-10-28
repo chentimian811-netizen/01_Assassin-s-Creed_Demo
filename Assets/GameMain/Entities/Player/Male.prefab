@@ -416,7 +416,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c1dc636a482dee41bd7b8c5407d850d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableCounterAttack: 0
+  enableCounterAttack: 1
 --- !u!114 &5980062562779889427
 MonoBehaviour:
   m_ObjectHideFlags: 0

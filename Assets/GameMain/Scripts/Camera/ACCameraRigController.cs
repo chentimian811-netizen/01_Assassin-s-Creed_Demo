@@ -89,6 +89,8 @@ public sealed class ACCameraRigController : MonoBehaviour
     [SerializeField] private float m_ShootMaxBackDistance = 1.4f;
     [Tooltip("右侧空间不足时向上抬升的最大距离")]
     [SerializeField] private float m_ShootLiftDistance = 1.1f;
+    [Tooltip("瞄准机位被墙挡住时保留的最小后退距离（米），避免相机贴脸")]
+    [SerializeField] private float m_ShootMinClearance = 0.2f;
     [SerializeField] private float m_ModeBlendTime = 0.2f;
     [SerializeField] private int m_ActivePriority = 20;
     [SerializeField] private int m_InactivePriority = 10;
@@ -316,7 +318,10 @@ public sealed class ACCameraRigController : MonoBehaviour
         }
 
         m_NormalFrame = new CameraFrame(
-            watchPoint - watchDir * (distance + nearClip), rotation);
+            ResolveOverlap(
+                watchPoint - watchDir * (distance + nearClip),
+                watchPoint, rotation, halfExtents),
+            rotation);
 
         // 自动环绕必须使用无碰撞、未追加 NearClip 的理想机位。
         m_NoCollisionPosition = watchPoint - watchDir * m_NormalDistance;
@@ -329,8 +334,18 @@ public sealed class ACCameraRigController : MonoBehaviour
         float pitchFactor = 1f - Mathf.Abs(m_Pitch) / m_MaxPitch;
         float backDistance = Mathf.Lerp(
             m_ShootMinBackDistance, m_ShootMaxBackDistance, pitchFactor);
-        Vector3 backPosition = watchPoint + yawRotation * Vector3.back * backDistance;
+        // ① 后退方向也要挡墙：之前只做了右侧 BoxCast，玩家背靠墙时相机会直接穿进墙里
+        Vector3 backDirection = yawRotation * Vector3.back;
+        if (Physics.BoxCast(
+            watchPoint, halfExtents, backDirection, out RaycastHit backHit,
+            rotation, backDistance, m_CollisionMask, QueryTriggerInteraction.Ignore))
+        {
+            backDistance = Mathf.Max(m_ShootMinClearance, backHit.distance);
+        }
 
+        Vector3 backPosition = watchPoint + backDirection * backDistance;
+
+        // ② 右侧 BoxCast：右侧空间不足一半时按参考做法抬高
         Vector3 rightDirection = yawRotation * Vector3.right;
         float rightDistance = m_ShootSideDistance;
         if (Physics.BoxCast(
@@ -351,7 +366,36 @@ public sealed class ACCameraRigController : MonoBehaviour
 
         Vector3 position = backPosition + rightDirection * rightDistance
             - rotation * Vector3.forward * nearClip;
-        m_ShootFrame = new CameraFrame(position, rotation);
+
+        // ③ 墙角兜底：两次 BoxCast 都覆盖不到的重叠情形，按比例朝观察点收
+        m_ShootFrame = new CameraFrame(
+            ResolveOverlap(position, watchPoint, rotation, halfExtents), rotation);
+    }
+
+    /// <summary>
+    /// 角落兜底：机位如果已经和碰撞体重叠（两次 BoxCast 都没覆盖到的情况），
+    /// 按 25% 步长朝观察点收，最多 6 步；收到仍然重叠就返回最后结果。
+    /// </summary>
+    private Vector3 ResolveOverlap(
+        Vector3 position, Vector3 watchPoint, Quaternion rotation, Vector3 halfExtents)
+    {
+        Vector3 safeExtents = halfExtents * 0.9f;
+        if (!Physics.CheckBox(
+            position, safeExtents, rotation, m_CollisionMask, QueryTriggerInteraction.Ignore))
+        {
+            return position;
+        }
+
+        for (int step = 0; step < 6; step++)
+        {
+            position = Vector3.Lerp(position, watchPoint, 0.25f);
+            if (!Physics.CheckBox(
+                position, safeExtents, rotation, m_CollisionMask, QueryTriggerInteraction.Ignore))
+            {
+                return position;
+            }
+        }
+        return position;
     }
 
     /// <summary>按近裁剪面而不是按相机中心点估算防穿墙盒。</summary>

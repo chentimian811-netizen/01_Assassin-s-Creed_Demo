@@ -936,6 +936,7 @@ MonoBehaviour:
   m_ShootMinBackDistance: 1
   m_ShootMaxBackDistance: 1.4
   m_ShootLiftDistance: 1.1
+  m_ShootMinClearance: 0.2
   m_ModeBlendTime: 0.2
   m_ActivePriority: 20
   m_InactivePriority: 10

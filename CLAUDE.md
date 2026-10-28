@@ -3,6 +3,15 @@
 Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格）。
 近战/远程战斗 + 敌人 FSM + 武器/背包/商店/抽卡 + GF UI 重构中。
 
+## 当前阶段（2026-10-28）
+
+- **工程线已收口**：GF-0 ~ GF-3 + GF-3.5（主菜单 / 暂停 / 死亡）完成并 Play 验收通过；
+  分支 `feature/gf-procedure`，HEAD `a2a8e9e`，工作区干净。
+- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：**T1 + T2 弹反闭环** →
+  Phase 4 死亡循环部署 → Boss 1。P0 未完成时不要动工程线。
+- 工程线下一阶段是**角色重构 S0–S7**（前置已满足，等 P0 空档）；GF-4 等新场景、GF-5 留 Phase 8。
+- 交接提示：`开发文档/GF框架迁移与底座搭建计划.md` §11、`毕业设计/毕业设计方案.md` 顶部「P0 新会话交接提示」。
+
 ## 环境
 
 - 编辑器：Unity 2022.3.62f2c1。**无 CLI 构建、无测试用例、无 `.github/workflows`、无 Makefile**。
@@ -54,7 +63,7 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 
 - **迁移路线与阶段划分见**
   `C:\University\Myself\Github_vault\Timian_vault\毕业设计\开发文档\GF框架迁移与底座搭建计划.md`
-  （GF-0 ~ GF-5；GF-0/1/2/3 已完成，主菜单与暂停已能跑（GF-3.5 过渡），下一步 GF-4「场景/主菜单/加载」——等新场景）。动 UI 前先读它，不要凭记忆重推方案。
+  （GF-0 ~ GF-5；GF-0/1/2/3 + GF-3.5 已完成并 Play 验收，工程线已收口；下一步见顶部「当前阶段」）。动 UI 前先读它，不要凭记忆重推方案。
 - UIGroup 深度 = Canvas `sortingOrder`：HUD 0 / Page 1 / Popup 2 / Top 3 / Loading 4；`ACUIGroupHelper.DepthFactor = 10000`。组与 Canvas 由 `UIGroupBootstrap.EnsureAll()` 在 `ProcedureLaunch` 补齐（`GameFramework.prefab` 的 Helper 不建 Canvas，勿改）。
 - UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`、`LotteryForm`、`ToastForm`、`ShopForm`、`PickupForm`、`PauseForm`、`DeathForm`、`VictoryForm`。
 - 打开/关闭界面统一走 `UIRouter.Open/Close`；模态面板继承 `GameUIForm`（自动锁光标 + 暂停，走 `UIPauseService`/`UICursorService` 计数），不要自己写 `Time.timeScale`，也不要直接 `GameEntry.UI.OpenUIForm`（GF 不查重）。不拦输入的界面（如 `ToastForm`）覆写 `IsModal=false` + `LockCursor=false`。

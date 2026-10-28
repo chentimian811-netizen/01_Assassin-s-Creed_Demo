@@ -17,6 +17,9 @@ public class ProcedureGame : ProcedureBase
     public const string CommandResume = "Resume";
     public const string CommandReturnToMainMenu = "ReturnToMainMenu";
 
+    /// <summary>死亡界面「在篝火重生」：复活玩家并关掉死亡界面（P0 第 2 步）</summary>
+    public const string CommandRespawnAtBonfire = "RespawnAtBonfire";
+
     private int? m_HUDFormId = null;
     private int? m_EnemyBarsFormId = null;
     // 待接（TopRightTabForm / MainMenuBarForm 预制体尚未创建）：
@@ -170,6 +173,18 @@ public class ProcedureGame : ProcedureBase
             case CommandResume:
                 // 关闭时 GameUIForm 反向 Pop：只有最后一个模态界面关掉才真正 Resume
                 UIRouter.Close(UIPaths.PauseForm);
+                break;
+
+            case CommandRespawnAtBonfire:
+                // 复活归 CheckpointManager（落点 / 回满 / 清敌人仇恨一次做完），
+                // 本流程只负责「复活成功后再关界面」。
+                // 顺序不能反：关界面会解除暂停（UIPauseService 计数归零 → HitStopManager.Resume），
+                // 先关的话中间会有一帧「游戏已恢复、玩家还是尸体状态」在跑。
+                // 复活失败（场景里找不到玩家）就保持死亡界面开着，别把玩家丢在原地。
+                if (CheckpointManager.Instance.RespawnPlayer())
+                {
+                    UIRouter.Close(UIPaths.DeathForm);
+                }
                 break;
         }
     }

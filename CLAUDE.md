@@ -6,9 +6,13 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 ## 当前阶段（2026-10-28）
 
 - **工程线已收口**：GF-0 ~ GF-3 + GF-3.5（主菜单 / 暂停 / 死亡）完成并 Play 验收通过；
-  分支 `feature/gf-procedure`，GF 收口 commit `629368c`（以 `git log -1` 为准），工作区干净。
-- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：Phase 1 收尾（T1–T5 + 举盾动画 + 刀盾⇄弓切换）**已全部完成并 Play 验收通过（2026-10-28）** →
-  **下一步 = Phase 4 死亡循环部署**（篝火 / 掉魂 / 雾门 / 敌人重生）→ Boss 1。P0 未完成时不要动工程线。
+  分支 `feature/gf-procedure`，GF 收口 commit `629368c`（以 `git log -1` 为准）。
+- **P0 主线**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：
+  - Phase 1 收尾（T1–T5 + 举盾动画 + 刀盾⇄弓切换）**已全部完成并 Play 验收通过（2026-10-28）**；
+  - Phase 4 死亡循环 **第 1–2 步已完成并 ✅ Play 验收通过（2026-10-28）**（E 键交互层 + 篝火部署进 TestScene +
+    `CheckpointManager` + 死亡 → 篝火重生；C1/C2 已验，C3–C5 未做）；
+  - **下一步 = 第 3 步敌人重生**（`EnemyManager` 没有复位 API，`EnemyController.Dead` 是终态、组件会被禁用，
+    必须自己记初始位置/血量再复位），之后第 4 步掉魂/拾魂、第 5 步 PlayerPrefs 持久化 → Boss 1。
 - 工程线下一阶段是**角色重构 S0–S7**（前置已满足，等 P0 空档）；GF-4 等新场景、GF-5 留 Phase 8。
 - 交接提示：`开发文档/GF框架迁移与底座搭建计划.md` §11、`毕业设计/毕业设计方案.md` 顶部「P0 新会话交接提示」。
 
@@ -33,12 +37,12 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 | `Assets/GameMain/Scripts/Inventory/` | InventoryManager、PackageLocalData、PackageSort |
 | `Assets/GameMain/Scripts/DataTable/` | DataRepository（含 Luban 查询入口）、TSVParser、DRItem、DRShop |
 | `Assets/GameMain/Scripts/Config/Generated/` | **Luban 生成代码**（Tables.cs、各表行类、TbXxx；禁止手写） |
-| `Assets/GameMain/Scripts/Editor/` | ConfigExportMenu、ConfigReferenceValidator、ConfigIdentityMigration（仅 Editor 编译） |
+| `Assets/GameMain/Scripts/Editor/` | ConfigExportMenu、ConfigReferenceValidator、ConfigIdentityMigration、Phase4DeployMenu（仅 Editor 编译） |
 | `Assets/GameMain/Resources/DataTables/` | `Shop.txt`（TSV，第一阶段未迁移）+ `Luban/`（生成的 JSON，禁止手写） |
 | `Config/` | `Luban/Datas/Gameplay.xlsx`（数值唯一编辑来源）、luban.conf、导出 bat、README、BASELINE |
 | `Tools/Luban/` | Luban 5.1.0 命令行工具（版本与校验和见 VERSION.txt） |
 | `Assets/GameMain/Scripts/UI/` | Core(UIRouter / GameUIForm / UIPauseService / UICursorService / ToastService / UIFormArgs)、UIGroupBootstrap、UIPaths、各 `*Form`、Backpack\|HUD\|Lottery\|Pickup\|Shop\|Toast\|Pause\|Death\|Victory |
-| `Assets/GameMain/Scripts/Level/` | Bonfire、FogWall、ShortcutGate、SoulsPickup |
+| `Assets/GameMain/Scripts/Level/` | Bonfire（已部署 `Bonfire_01`）、InteractableSensor（交互范围+提示）、CheckpointManager（重生点）、FogWall、ShortcutGate、SoulsPickup |
 | `Assets/GameMain/Scripts/Utility/` | State Machine(State\<T\>/StateMachine\<T\>)、GmCmd、SkinnedMeshHighlighter |
 | `Assets/UI/Prefabs/` | GF UIForm 预制体：`MainMenu/`、`HUD/`、`Loading/`、`Package/`、`Lottery/`、`Shop/`、`Pickup/`、`Pause/`、`Death/`、`Victory/` |
 | `Assets/UI/Resources/Prefabs/Panels/` | 仅剩格子/详情预制体（`PackageUiItem`、`PackageUiItem_Food`、`StartLevel`、`ShopWeapon`、`ShopFood`、`DetailPanel_Weapon`、`DetailPanel_Food`、`LotteryItem`），由各 Form `Resources.Load` 取；GF-5 再改成直接引用并移出 Resources |
@@ -58,6 +62,16 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 - `UIRouter` — 界面唯一入口 `Open(path, group, userData)` / `Close(path|id)` / `IsOpen(path)` / `CloseAll()`。界面参数见 `UIFormArgs.cs`。
 - `GameEvents` — 玩法静态事件总线。订阅必须 `OnEnable`/`OnOpen` ↔ `OnDisable`/`OnClose` 一一对应，禁止 lambda 订阅，`ResetStatics` 在进入 Play 前清空。
 - `HitStopManager` — `Time.timeScale` 的**唯一所有者**；暂停优先，卡肉不覆盖暂停。禁止在别处写 `timeScale`。
+- `CheckpointManager`（懒加载 C# 单例）— 重生点唯一登记处：`SetCheckpoint(bonfireId, pos, rot)` / `RespawnPlayer()`。
+  复活**必须**走 `PlayerController.ResetForNewRun(pos, rot)` 重载（落点做成参数，不复制第二套复活逻辑），
+  另补两件它不负责的事：耐力 `RestoreFull` 与全体敌人 `ResetAggro()`。
+  死亡界面的「在篝火重生」= `ProcedureGame.CommandRespawnAtBonfire`（先复活成功、再关死亡界面，顺序不能反）。
+- 关卡交互：`IInteractable`（`InteractPrompt / CanInteract / Interact()`）+ `InteractableSensor`（距离轮询登记 + 提示）。
+  新增关卡物件 = 实现接口 + 挂 Sensor；**不要**自己写 `OnTriggerEnter`，也**不要**再往 PlayerController 加 `SetNearestXxx` 字段。
+  E 键优先级在 `PlayerController.GetPickup_ShopInput` 一处维护。
+- `Editor/Phase4DeployMenu` — 菜单 `ACDemo/Level/Deploy Phase 4 (Bonfire)`，也支持 `Temp/phase4_deploy.request` 一次性自动执行
+  （与 `LegacyHUDCleanup` 同一套做法）。**场景改动一律走工具，不要手改 `TestScene.unity`**：场景在 Editor 里是打开状态，
+  手写 YAML 会在下一次保存时被覆盖。
 
 ## UI（GameFramework）
 
@@ -65,7 +79,15 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
   `C:\University\Myself\Github_vault\Timian_vault\毕业设计\开发文档\GF框架迁移与底座搭建计划.md`
   （GF-0 ~ GF-5；GF-0/1/2/3 + GF-3.5 已完成并 Play 验收，工程线已收口；下一步见顶部「当前阶段」）。动 UI 前先读它，不要凭记忆重推方案。
 - UIGroup 深度 = Canvas `sortingOrder`：HUD 0 / Page 1 / Popup 2 / Top 3 / Loading 4；`ACUIGroupHelper.DepthFactor = 10000`。组与 Canvas 由 `UIGroupBootstrap.EnsureAll()` 在 `ProcedureLaunch` 补齐（`GameFramework.prefab` 的 Helper 不建 Canvas，勿改）。
-- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`、`LotteryForm`、`ToastForm`、`ShopForm`、`PickupForm`、`PauseForm`、`DeathForm`、`VictoryForm`。
+- UIForm 路径常量集中在 `UIPaths`。**已存在**的 GF 预制体：`MainMenuForm`、`LoadingForm`、`MainHUDForm`、`EnemyHealthBarForm`、`PackageForm`、`LotteryForm`、`ToastForm`、`ShopForm`、`PickupForm`、`PauseForm`、`DeathForm`、`VictoryForm`、`InteractionPromptForm`。
+- **世界交互提示走 `InteractionPromptForm`（Top 组、非模态、不锁光标）**：底部居中深色底条，由 `InteractableSensor` 调 `Show/Hide`。
+  **不要拿 `PickupForm` 当通用提示**：它没有背景图、文字框净宽 120px、贴屏幕右侧，长句会折行溢出 → 实测「看不见」（2026-10-28 踩过）。
+- ⚠️ **界面实例在「打开那一帧」的父级 rect 是 0×0，别用锚点定位**（2026-10-28 实测，布局稳定后父级才变成 1920×1080）：
+  `InteractionPromptForm` 第一次写 `anchorMin/Max=(0.5,0)+anchoredPosition(0,170)`，运行时 x 变成 0、760 宽的条子一半在屏幕外；
+  `PickupForm`（锚点贴右边 `-678`）整条跑到屏幕外，所以它的提示「一直看不见」。
+  **规则**：需要固定在屏幕某处的界面，不要信打开当帧的父级 rect —— 用 `FindUsableCanvasRect()` 那种「向上找一张尺寸正常的 Canvas，
+  用 `rect.position = canvas.TransformPoint(...)` 直接钉世界坐标」的写法（见 `InteractionPromptForm.ApplyLayout`）；
+  全屏界面（`FillParentCanvas=true`）+ 居中面板不受此影响（死亡/暂停界面就是这样，一直正常）。
 - 打开/关闭界面统一走 `UIRouter.Open/Close`；模态面板继承 `GameUIForm`（自动锁光标 + 暂停，走 `UIPauseService`/`UICursorService` 计数），不要自己写 `Time.timeScale`，也不要直接 `GameEntry.UI.OpenUIForm`（GF 不查重）。不拦输入的界面（如 `ToastForm`）覆写 `IsModal=false` + `LockCursor=false`。
 - **GF 的 `OpenUIForm` 是异步的**：返回 serialId 时界面实例还没创建，当帧 `GameEntry.UI.HasUIForm(...)` 恒为 `false`。所以「是否已打开」只能用 `UIRouter.IsOpen`，禁止拿 GF 状态当同步判据（早期版本这么做 → 每次按键都判定"打开失败"→ 重复开背包且关不掉）。
 - `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`SettingsForm`。
@@ -128,7 +150,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 | Block | 鼠标右键 / V | `GetBlockInput`（T1 已接：按下开始格挡并起算弹反窗口，松开结束） |
 | LockEnemy | Q | `GetLockInput` |
 | OpenBackpack | `` ` ``（反引号） | `GetBackpackInput` |
-| GetPickup_ShopInput | **E** | `GetPickup_ShopInput`（有 NPC 优先开商店，否则拾取） |
+| GetPickup_ShopInput | **E** | `GetPickup_ShopInput`（优先级：关卡交互物 → 商店 NPC → 地面武器；模态界面开着时整体让路） |
 | GetShowCursor | LeftAlt / RightAlt | `GetShowCursorInput` |
 | Pause | **Esc** | `GetPauseInput`（开/关暂停界面；其它模态开着时让路） |
 | Dodge | **空（无绑定）** | `GetDodgeInput`（保留空壳） |
@@ -153,7 +175,10 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 ## 编码约定
 
 - 无命名空间；新代码同样不加 namespace。
-- 中文注释：字段说明 / 方法职责 / 关键逻辑节点。**C# 文件必须存为 UTF-8 无 BOM + CRLF** —— 现存 `ProcedureLoading.cs`、`ACUIGroupHelper.cs`、`MainMenuForm.cs`（部分）、`MenuCommandEventArgs.cs`、`ScenePaths.cs` 等仍有 mojibake，改动时勿扩散（`ProcedureMainMenu.cs` 已在 GF-3.5 重写为正常中文）。
+- 中文注释：字段说明 / 方法职责 / 关键逻辑节点。**C# 文件必须存为 UTF-8 无 BOM + CRLF**。
+  ⚠️ 长期流传的「`ProcedureLoading.cs` / `ACUIGroupHelper.cs` / `MainMenuForm.cs` / `MenuCommandEventArgs.cs` / `ScenePaths.cs` 等仍有 mojibake」**是假的**
+  （2026-10-28 逐份核对：文件本身是正常中文，mojibake 来自 PowerShell 5.1 用 GBK 读 UTF-8 的输出）。
+  别按这条去重写文件：要看内容用 `read` 工具，或 `[System.IO.File]::ReadAllText($p, [Text.Encoding]::UTF8)`。
 - 私有字段前缀 `m_`；序列化字段用 `[SerializeField] private` + `[Header]`/`[Tooltip]`。
 - 单例两类并存：MonoBehaviour 单例（GameManager、HitStopManager、EnemyManager）与懒加载 C# 单例（CurrencyManager、PackageLocalData）。不要引入第三种。
 - SO 通过 Unity 菜单创建，现有前缀：`Combat System/`、`Weapon/`、`Package/`。
@@ -186,6 +211,11 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - `MainMenuForm.prefab` 之前挂的是旧 `MainMenuPanel` 脚本、从未挂过 `MainMenuForm`（GF-1.6 已换上，字段沿用原引用）。GF-3.5 起它是**默认首屏**（`skipMainMenu=false`），背景是深色遮罩、按钮已本地化；但场景里**没有 `MainMenuCamera` 实例**，菜单只是盖在关卡场景上的全屏界面（角色被禁输入、相机停手），真正的「主菜单场景」要到 GF-4。
 - **场景加载限制（单场景阶段）**：GF 的 `GameEntry.Scene.LoadScene` 走 `EditorResourceComponent` 的 **additive** 加载，且不会卸载当前场景。`TestScene` 同时是引导场景和关卡场景，用它再加载一次会多出一整套 `GameFramework`/玩家/敌人实例。所以「主菜单 → 游戏」「返回主菜单」都只切流程、不重载场景；整关重置由 `PlayerController.ResetForNewRun()`（`Health.ResetToFull` 复活 + 回出生点 + `MeleeFighter.ResetCombatPose()`）与 `EnemyController.ResetAggro()`（**只对交战中的敌人**清 Target/视野缓存/导航，回 Patrol 或 Idle —— 无脑回 Idle 会把 `PatrolState` 顶掉，表现为敌人不再巡逻）顶上；敌人血量与位置、掉落物**不重置**，要等 GF-4 拆出关卡场景。菜单/暂停/死亡里的场景重载一律不要加。
 - **死亡动作在 Override Layer(1) 上**：`MeleeFighter.HandlePlayerDeath` 是 `animator.CrossFade("Melee_FallBackDeath", 0.2f, 1)`，这一层不会自己复位 —— 复活时不做 `ResetCombatPose()`（切回 `Empty`）的话，角色会一直保持倒地姿势，攻击一次才被顶掉。
+- **死亡循环只做到第 1–2 步（2026-10-28，Play 验收通过）**：篝火 `Bonfire_01` 由 `Editor/Phase4DeployMenu` 部署在出生点右前方，按 E 回满血/耐力并登记重生点；
+  死亡界面有两个出口：「在篝火重生」（`CommandRespawnAtBonfire` → `CheckpointManager.RespawnPlayer`）与「返回主菜单」。
+  **仍未做**：敌人重生（血量/位置不复位，复活只做 `ResetAggro` 清仇恨）、掉魂/拾魂（`OnSoulsDropped` 仍无发布方）、
+  篝火点亮与捷径的 PlayerPrefs 持久化（退出 Play 即丢）、雾门。
+  重生点也只存在内存里：**「返回主菜单 → 再开始」仍回出生点，不是最近篝火**（等第 5 步做持久化时统一）。
 - **近战 / 远程模式**由 `WeaponSwitcher` 管：数字键 `1`/`2` 切换，`EquipWeapon` 装弓时自动切远程。
   它**不再禁用 `MeleeFighter`** —— 玩家的受击回调（`OnTriggerEnter` / `HandleUnitDamaged`）挂在它身上，
   一禁用就是「拿弓时敌人打不掉我血、也不播受击」；远程模式不出近战攻击由 `PlayerCombat` 的 `IsUsingRanged` 闸门负责。

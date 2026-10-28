@@ -15,33 +15,43 @@ using UnityGameFramework.Runtime;
 ///
 /// 【为什么由 HUD 打开，而不是死亡界面自己订阅】
 ///   界面在打开之前实例还不存在，不可能订阅到「我已经死了」这件事。
-///   所以监听点在常驻的 HUD 上；本界面只负责「死相 + 出口」。
+///   所以监听点在常驻的 HUD 上；本界面只负责「死亡画面 + 出口」。
 ///
-/// 【当前阶段的范围】
-///   只做「死亡 → 暂停 + 出界面 → 返回主菜单（开发期＝重载场景）」这条最小闭环。
-///   真正的死亡惩罚（掉落魂、篝火复活、读档）属于 Phase 4 死亡循环，届时把
-///   ReturnToMainMenu 换成「在篝火复活」即可，界面本身不用改。
+/// 【出口（P0 第 2 步改动）】
+///   原先只有「返回主菜单」（等于放弃这一局）。现在补上主出口
+///   「在篝火重生」→ 发 CommandRespawnAtBonfire → ProcedureGame 调
+///   CheckpointManager.RespawnPlayer() 复活，再关掉本界面（关掉即解除暂停）。
+///   复活落点、回满、清敌人仇恨都在 CheckpointManager 里，界面不碰玩法状态。
 /// </summary>
 public class DeathForm : GameUIForm
 {
     [Header("按钮")]
-    [Tooltip("返回主菜单（开发期等价于重开关卡）")]
+    [Tooltip("在篝火重生（主出口）。没点亮过篝火时回出生点")]
+    [SerializeField] private Button m_RespawnBtn;
+
+    [Tooltip("返回主菜单（放弃这一局，单场景阶段只切流程、不重载场景）")]
     [SerializeField] private Button m_ReturnBtn;
 
     /// <summary>只跑一次：绑监听（池化实例不能重复 AddListener）</summary>
     protected override void OnInitForm(object userData)
     {
+        if (m_RespawnBtn != null) m_RespawnBtn.onClick.AddListener(OnClickRespawn);
         if (m_ReturnBtn != null) m_ReturnBtn.onClick.AddListener(OnClickReturn);
     }
 
     /// <summary>
-    /// 每次打开：当前没有动态数据要刷新。
+    /// 每次打开都跑：当前没有动态数据要刷新。
     /// 将来要显示「距上次篝火存活时长 / 掉落魂数量」时，在这里从数据源拉一次。
     /// </summary>
     protected override void OnOpenForm(object userData) { }
 
-    /// <summary>监听绑在 OnInitForm 上，随实例销毁一起释放。</summary>
+    /// <summary>监听绑在 OnInitForm 上，随实例销毁一起释放</summary>
     protected override void OnCloseForm() { }
+
+    private void OnClickRespawn()
+    {
+        GameEntry.Event.Fire(this, MenuCommandEventArgs.Create(ProcedureGame.CommandRespawnAtBonfire));
+    }
 
     private void OnClickReturn()
     {

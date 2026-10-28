@@ -30,6 +30,9 @@ public static class UIPaths
     // ——— Top 组 ———
     public const string ToastForm = "Assets/UI/Prefabs/HUD/ToastForm.prefab";
 
+    /// <summary>世界交互提示条（「按 E 点燃篝火」）。非模态，走 Top 组以免被 HUD 盖住</summary>
+    public const string InteractionPromptForm = "Assets/UI/Prefabs/HUD/InteractionPromptForm.prefab";
+
     // ——— Loading 组 ———
     public const string LoadingForm = "Assets/UI/Prefabs/Loading/LoadingForm.prefab";
 }

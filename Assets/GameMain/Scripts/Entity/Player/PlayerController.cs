@@ -77,6 +77,25 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     public void ResetForNewRun()
     {
+        ResetForNewRun(m_SpawnPosition, m_SpawnRotation, m_SpawnCaptured);
+    }
+
+    /// <summary>
+    /// 在指定落点复活（篝火重生用）。除落点外，其余复位逻辑与「新开一局」完全一致。
+    ///
+    /// 【为什么做成重载，而不是另写一套复活】
+    ///   复活要做四件事：Health 复活、落点、清输入/锁定、战斗层切回 Empty。
+    ///   漏掉任何一件都会留下可观测的坏状态（最典型的是漏掉 ResetCombatPose →
+    ///   复活后一直保持倒地姿势，要打一拳才被顶掉）。所以把落点做成参数，
+    ///   不复制第二份实现。
+    /// </summary>
+    public void ResetForNewRun(Vector3 position, Quaternion rotation)
+    {
+        ResetForNewRun(position, rotation, true);
+    }
+
+    private void ResetForNewRun(Vector3 position, Quaternion rotation, bool movePlayer)
+    {
         // Start 还没跑（刚加载完场景）时组件引用都是空的，这时也不需要复位
         if (playerMovement == null || PlayerTransform == null) return;
 
@@ -84,12 +103,12 @@ public class PlayerController : MonoBehaviour
         Health health = GetComponent<Health>();
         if (health != null) health.ResetToFull();
 
-        // 2. 回出生点：CharacterController 开着时直接改 transform 会被它顶回去
-        if (m_SpawnCaptured)
+        // 2. 落点：CharacterController 开着时直接改 transform 会被它顶回去
+        if (movePlayer)
         {
             bool controllerWasEnabled = CharacterController != null && CharacterController.enabled;
             if (controllerWasEnabled) CharacterController.enabled = false;
-            PlayerTransform.SetPositionAndRotation(m_SpawnPosition, m_SpawnRotation);
+            PlayerTransform.SetPositionAndRotation(position, rotation);
             if (controllerWasEnabled) CharacterController.enabled = true;
         }
 
@@ -166,6 +185,69 @@ public class PlayerController : MonoBehaviour
     public void SetNearestShopNPC(ShopNPC npc)
     {
         nearestShopNPC = npc;
+    }
+
+    // ==================== 可交互物（篝火 / 掉魂 / 雾门 / 捷径门） ====================
+    // 由 InteractableSensor 按距离登记进出。这里存的是「在范围内的候选集」，
+    // 最终点谁由 GetNearestInteractable 按距离决定 —— 可能同时站在篝火与武器旁。
+    private readonly List<IInteractable> m_InteractablesInRange = new List<IInteractable>();
+
+    /// <summary>登记一个进入范围的交互物（天然去重）</summary>
+    public void RegisterInteractable(IInteractable target)
+    {
+        if (target == null || m_InteractablesInRange.Contains(target)) return;
+        m_InteractablesInRange.Add(target);
+    }
+
+    /// <summary>注销一个离开范围（或被销毁）的交互物</summary>
+    public void UnregisterInteractable(IInteractable target)
+    {
+        if (target == null) return;
+        m_InteractablesInRange.Remove(target);
+    }
+
+    /// <summary>
+    /// 取范围内最近的可交互物，没有则返回 null。
+    ///
+    /// 【为什么要剔除销毁对象】IInteractable 是普通接口，掉了的 MonoBehaviour
+    /// 变成 Unity 的「假 null」，接口引用上的 == null 判不出来（会抛 MissingReference）。
+    /// 掉魂被拾走、雾门被 SetActive(false) 都会留下这种条目。
+    /// </summary>
+    public IInteractable GetNearestInteractable()
+    {
+        IInteractable nearest = null;
+        float nearestSqrDistance = float.MaxValue;
+        Vector3 selfPosition = transform.position;
+
+        for (int i = m_InteractablesInRange.Count - 1; i >= 0; i--)
+        {
+            IInteractable candidate = m_InteractablesInRange[i];
+
+            if (!IsInteractableAlive(candidate))
+            {
+                m_InteractablesInRange.RemoveAt(i);
+                continue;
+            }
+
+            if (!candidate.CanInteract) continue;
+
+            Transform anchor = candidate.InteractAnchor;
+            if (anchor == null) continue;
+
+            float sqrDistance = (anchor.position - selfPosition).sqrMagnitude;
+            if (sqrDistance >= nearestSqrDistance) continue;
+
+            nearestSqrDistance = sqrDistance;
+            nearest = candidate;
+        }
+
+        return nearest;
+    }
+
+    /// <summary>接口引用不能用 Unity 的 null 判定，要转成 UnityEngine.Object 再比</summary>
+    private static bool IsInteractableAlive(IInteractable target)
+    {
+        return target != null && (target as UnityEngine.Object) != null;
     }
     public void Awake()
     {
@@ -262,12 +344,27 @@ public class PlayerController : MonoBehaviour
 
     #region 输入相关
     /// <summary>
-    /// 拾取/商店交互输入
+    /// 拾取 / 商店 / 世界交互输入（E）。优先级：关卡交互物 > 商店 NPC > 地面武器。
+    ///
+    /// 【为什么交互物排第一】篝火是「死亡 → 重生」闭环唯一的入口，站过去点不开会
+    /// 直接卡住验收流程；商店与武器拾取在关卡里各有固定点位，重叠概率更低。
+    /// 三个来源都只认「最近的一个」，改优先级只改这一个方法。
     /// </summary>
     /// <param name="context"></param>
     public void GetPickup_ShopInput(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
+
+        // 模态界面开着（背包 / 商店 / 暂停 / 死亡）时鼠标已解锁，不再响应世界交互。
+        // 这条闸门原先 E 键没有，属于历史遗留：开着背包按 E 会隔空装备地上的武器。
+        if (CursorManager.Instance != null && !CursorManager.Instance.IsGameplayFocused) return;
+
+        IInteractable interactable = GetNearestInteractable();
+        if (interactable != null)
+        {
+            interactable.Interact();
+            return;
+        }
 
         if(nearestShopNPC != null)
         {

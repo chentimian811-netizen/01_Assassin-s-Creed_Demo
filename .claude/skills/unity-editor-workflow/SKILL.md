@@ -21,7 +21,7 @@ description: 在 Unity 2022.3.62f2c1 Editor 中运行与验证本项目改动。
 ## 步骤
 
 1. 打开工程 → 打开 `TestScene.unity` → 确认 Console 无编译错误（有红字先清零，否则 Play 无意义）。
-2. Play。入口链路（GF-3.5 后）：`ProcedureLaunch` → `UIGroupBootstrap.EnsureAll()` 补 5 个 UI 组 + Canvas → 读 `GameStartupConfig.skipMainMenu`（**默认 false**）→ `ProcedureMainMenu`（菜单模式：玩家/相机停手 + `MainMenuForm`）→ 点「开始游戏」→ `ProcedureLoading` 重载 TestScene → `ProcedureGame` → 打开 `MainHUDForm` / `EnemyHealthBarsForm` → 激活玩家、相机、锁定光标。把开关勾成 true 则跳过主菜单直达游戏。
+2. Play。入口链路（GF-3.5 后）：`ProcedureLaunch` → `UIGroupBootstrap.EnsureAll()` 补 5 个 UI 组 + Canvas → 读 `GameStartupConfig.skipMainMenu`（**默认 false**）→ `ProcedureMainMenu`（菜单模式：玩家/相机停手 + `MainMenuForm`）→ 点「开始游戏」→ **直接** `ProcedureGame`（单场景阶段不经过 Loading：GF 的 LoadScene 是 additive，重载当前场景会多出整套实例）→ 打开 `MainHUDForm` / `EnemyHealthBarsForm` → 激活玩家、相机、锁定光标。把开关勾成 true 则跳过主菜单直达游戏。
 3. 造数据（Editor 菜单 `GmCmd/`，仅 `UNITY_EDITOR` 编译）：
    - `GmCmd/读取表格` — 打印 `ItemTable` 全量
    - `GmCmd/创建背包测试数据` — 写入 3 条假背包数据并保存到 PlayerPrefs

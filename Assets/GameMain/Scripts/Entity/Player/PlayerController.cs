@@ -43,13 +43,47 @@ public class PlayerController : MonoBehaviour
     }
           
     /// <summary>强制解锁</summary>
-    public void ForceUnlock() => playerLockOn.ForceUnlock();
-
-    /// <summary>获取目标方向</summary>
+    public void ForceUnlock() => playerLockOn.ForceUnlock();    /// <summary>获取目标方向</summary>
     public Vector3 GetTargetingDir() => playerLockOn.GetTargetingDir();
 
     /// <summary>重置垂直速度（翻滚时调用）</summary>
     public void ResetVerticalVelocity() => playerMovement.ResetVerticalVelocity();
+
+    /// <summary>
+    /// 复位到「新开一局」的状态：满血、回出生点、清锁定与输入残留。
+    ///
+    /// 【为什么需要】
+    ///   单场景阶段「返回主菜单 → 再开始」不重载场景 —— GF 的 LoadScene 是 additive 加载，
+    ///   对当前场景再加载一次会多出一整套框架/玩家/敌人实例。所以复位只能在代码里做。
+    ///
+    /// 【不负责】
+    ///   敌人血量/位置、掉落物、篝火状态。真正的整关重置等 GF-4 拆出关卡场景后由重载完成。
+    /// </summary>
+    public void ResetForNewRun()
+    {
+        // Start 还没跑（刚加载完场景）时组件引用都是空的，这时也不需要复位
+        if (playerMovement == null || PlayerTransform == null) return;
+
+        // 1. 复活：isDead 只有 Health 能清，绕过它会出现「满血但打不了」的僵尸态
+        Health health = GetComponent<Health>();
+        if (health != null) health.ResetToFull();
+
+        // 2. 回出生点：CharacterController 开着时直接改 transform 会被它顶回去
+        if (m_SpawnCaptured)
+        {
+            bool controllerWasEnabled = CharacterController != null && CharacterController.enabled;
+            if (controllerWasEnabled) CharacterController.enabled = false;
+            PlayerTransform.SetPositionAndRotation(m_SpawnPosition, m_SpawnRotation);
+            if (controllerWasEnabled) CharacterController.enabled = true;
+        }
+
+        // 3. 清锁定 / 瞄准 / 输入残留，避免带着死亡瞬间的状态进新一局
+        ForceUnlock();
+        CameraManager.Instance?.ClearLockTarget();
+        CancelAim();
+        ClearInput();
+        playerMovement.ResetVerticalVelocity();
+    }
 
     /// <summary>
     /// 玩家姿态枚举
@@ -88,6 +122,11 @@ public class PlayerController : MonoBehaviour
 
     [HideInInspector] public bool acceptInput = true;
 
+    /// <summary>出生点（Start 时记录），供「返回主菜单 → 再开始」复位用</summary>
+    private Vector3 m_SpawnPosition;
+    private Quaternion m_SpawnRotation;
+    private bool m_SpawnCaptured;
+
     // Shift 双功能：短按翻滚 / 长按疾跑。
     // 阈值来自 Player 表的 run_hold_threshold（Awake 解析一次，运行中不查表）
     private Player m_configRow;
@@ -122,6 +161,11 @@ public class PlayerController : MonoBehaviour
         PlayerTransform = transform;
         Animator = GetComponent<Animator>();
         CharacterController = GetComponent<CharacterController>();
+
+        // 记录出生点：单场景阶段「返回主菜单 → 再开始」不重载场景，只能把玩家拉回这里
+        m_SpawnPosition = transform.position;
+        m_SpawnRotation = transform.rotation;
+        m_SpawnCaptured = true;
 
         
         playerMovement = GetComponent<PlayerMovement>();

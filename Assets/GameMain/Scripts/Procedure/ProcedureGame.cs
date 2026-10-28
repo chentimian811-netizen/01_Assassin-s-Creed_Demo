@@ -95,10 +95,13 @@ public class ProcedureGame : ProcedureBase
             player.gameObject.SetActive(true);
             player.acceptInput = true;
 
-            // ProcedureMainMenu 在菜单期间会关掉 PlayerInput；重载场景后通常是新实例，
-            // 这里再开一次保证「菜单 → 游戏」和「直接进游戏」走同一状态（幂等）。
+            // ProcedureMainMenu 在菜单期间会关掉 PlayerInput；单场景阶段不重载场景，
+            // 这里必须显式恢复（幂等）。
             PlayerInput playerInput = player.GetComponent<PlayerInput>();
             if (playerInput != null) playerInput.enabled = true;
+
+            // 死亡 → 回主菜单 → 再开始：复活 + 回出生点（见 PlayerController.ResetForNewRun）
+            player.ResetForNewRun();
         }
 
         // 激活游戏相机：优先新几何跟随 Rig；未配置新 Rig 时回退旧 FreeLook（见 CameraManager 兼容路由）
@@ -106,6 +109,8 @@ public class ProcedureGame : ProcedureBase
         if (camManager != null)
         {
             camManager.SetGameplayCameraActive(true);
+            // 菜单模式会关掉视角输入，进游戏时重新打开，否则鼠标转不了视角
+            camManager.SetLookEnabled(true);
             camManager.ResetFreeLookCamera();
         }
 
@@ -130,12 +135,11 @@ public class ProcedureGame : ProcedureBase
                 // 留着它们会让主菜单一打开就停住（OnLeave 里的 CloseAll 也会兜底）。
                 UIRouter.CloseAll();
 
-                // 重载开发场景后回主菜单流程，而不是直接重开一局：
-                // 这样「暂停 → 返回主菜单」「死亡 → 返回主菜单」都回到 MainMenuForm。
-                // GF-4 拆出真实主菜单场景后，这里改成 TargetScene = ScenePaths.MainMenu 即可。
-                ProcedureLoading.TargetScene = GameStartupConfig.Instance.DevScenePath;
-                ProcedureLoading.NextProcedureType = typeof(ProcedureMainMenu).Name;
-                ChangeState<ProcedureLoading>(m_ProcedureOwner);
+                // 单场景阶段不重载场景：GF 的 LoadScene 是 additive 加载，对当前场景再加载
+                // 一次会多出一整套框架/玩家/敌人实例。直接回菜单流程，玩家状态由
+                // ProcedureGame.SetupGameSystems → ResetForNewRun 在下次开始时复位。
+                // GF-4 拆出真实主菜单/关卡场景后，这里改回 ProcedureLoading。
+                ChangeState<ProcedureMainMenu>(m_ProcedureOwner);
                 break;
 
             case CommandPause:

@@ -92,16 +92,17 @@ public class ProcedureMainMenu : ProcedureBase
     }
 
     /// <summary>
-    /// 登录成功：进入 Loading（重载开发场景），随后 ProcedureGame 接管。
-    /// 重复点击由 m_IsTransitioning 挡住。
+    /// 登录成功：直接进入游戏流程（不经过 Loading）。
+    ///
+    /// 【为什么没有 Loading】单场景阶段 GF 的 LoadScene 是 additive 加载，对当前场景
+    /// 再加载一次会多出一整套框架/玩家/敌人实例。等 GF-4 拆出独立主菜单与关卡场景后，
+    /// 这里再接 ProcedureLoading 才是正确的顺序。
     /// </summary>
     private void OnLoginSuccess(object sender, GameEventArgs e)
     {
         if (m_IsTransitioning) return;
         m_IsTransitioning = true;
 
-        ProcedureLoading.TargetScene = GameStartupConfig.Instance.DevScenePath;
-        ProcedureLoading.NextProcedureType = typeof(ProcedureGame).Name;
-        ChangeState<ProcedureLoading>(m_ProcedureOwner);
+        ChangeState<ProcedureGame>(m_ProcedureOwner);
     }
 }

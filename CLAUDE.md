@@ -41,9 +41,9 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 - `GameEntry.Builtin.cs` — `partial GameEntry`，暴露 14 个静态组件属性：Base、Event、Procedure、Scene、UI、Resource、Fsm、Sound、DataTable、Setting、Entity、ObjectPool、Download、WebRequest。
 - `ProcedureLaunch` — **唯一入口**：`UIGroupBootstrap.EnsureAll()` → 读 `Resources/Config/GameStartupConfig.asset` → 按 `skipMainMenu` 分发（默认 false：`ProcedureMainMenu`；开发期想直达游戏就勾成 true）。要换入口别再改场景覆盖。
 - `GameStartupConfig` — 启动开关 SO：`skipMainMenu`（当前默认 **false**）、`devScenePath`（默认 TestScene）。缺资产时回落「直达游戏」并打一条 Warning。
-- `ProcedureMainMenu` — 菜单模式：进菜单先关玩家 `PlayerInput` + `acceptInput`、关相机视角输入（`CameraManager.SetLookEnabled(false)`），再开 `MainMenuForm`（Page 组）。点「开始游戏」发 `LoginSuccessEventArgs` → `ProcedureLoading` 重载 `devScenePath` → `ProcedureGame` 重新激活玩家/相机/光标。
-- `ProcedureLoading` — 按静态 `TargetScene` / `NextProcedureType` 加载场景后进入目标流程；「开始游戏」与「返回主菜单」都走它。
-- `ProcedureGame` — `OpenUIForm(UIPaths.MainHUDForm, "HUD")`，订阅 `MenuCommandEventArgs` / `OpenPanelEventArgs`；`CommandReturnToMainMenu` 重载场景后回 `ProcedureMainMenu`；`OnLeave` 用 `UIRouter.CloseAll()` 清场。
+- `ProcedureMainMenu` — 菜单模式：进菜单先关玩家 `PlayerInput` + `acceptInput`、关相机视角输入（`CameraManager.SetLookEnabled(false)`），再开 `MainMenuForm`（Page 组）。点「开始游戏」发 `LoginSuccessEventArgs` → **直接 `ChangeState<ProcedureGame>`**（单场景阶段不经过 Loading，原因见「已知边界」的场景加载限制）。
+- `ProcedureLoading` — 按静态 `TargetScene` / `NextProcedureType` 加载场景后进入目标流程。**单场景阶段不要用它重载当前场景**（additive 会多出一整套实例）；留给 GF-4。
+- `ProcedureGame` — `OpenUIForm(UIPaths.MainHUDForm, "HUD")`，订阅 `MenuCommandEventArgs` / `OpenPanelEventArgs`；`CommandReturnToMainMenu` 直接 `ChangeState<ProcedureMainMenu>`（不重载场景），`SetupGameSystems` 里会 `ResetForNewRun()` 复活并复位玩家；`OnLeave` 用 `UIRouter.CloseAll()` 清场。
 - `ProcedureGame.CommandPause / CommandResume / CommandReturnToMainMenu` — 菜单命令字面量。发出方：`PauseForm` / `DeathForm` 按钮、`PlayerController.GetPauseInput`（Esc）。
 - `GameManager.Awake()` — 单例 + DontDestroyOnLoad + `DataRepository.Initialize()`。
 - `UIRouter` — 界面唯一入口 `Open(path, group, userData)` / `Close(path|id)` / `IsOpen(path)` / `CloseAll()`。界面参数见 `UIFormArgs.cs`。
@@ -60,7 +60,7 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 - 打开/关闭界面统一走 `UIRouter.Open/Close`；模态面板继承 `GameUIForm`（自动锁光标 + 暂停，走 `UIPauseService`/`UICursorService` 计数），不要自己写 `Time.timeScale`，也不要直接 `GameEntry.UI.OpenUIForm`（GF 不查重）。不拦输入的界面（如 `ToastForm`）覆写 `IsModal=false` + `LockCursor=false`。
 - **GF 的 `OpenUIForm` 是异步的**：返回 serialId 时界面实例还没创建，当帧 `GameEntry.UI.HasUIForm(...)` 恒为 `false`。所以「是否已打开」只能用 `UIRouter.IsOpen`，禁止拿 GF 状态当同步判据（早期版本这么做 → 每次按键都判定"打开失败"→ 重复开背包且关不掉）。
 - `UIPaths` 已声明但**预制体尚未创建**：`TopRightTabForm`、`MainMenuBarForm`、`SettingsForm`。
-- 暂停：Esc →（GF Event）→ `ProcedureGame` → `UIRouter.Open(UIPaths.PauseForm, "Popup")`；再按 Esc 或「继续」发 `Resume` → `UIRouter.Close`。暂停时 `timeScale=0`，但 `GetPauseInput` **不要**加 `CursorManager.IsGameplayFocused` 闸门（那时鼠标已解锁，加了就永远恢复不了）；其它模态开着时它主动让路。按钮：继续 / 返回主菜单（走 `CommandReturnToMainMenu`，重载场景后回主菜单）/ 退出游戏；没有「设置」，`SettingsForm` 未建。
+- 暂停：Esc →（GF Event）→ `ProcedureGame` → `UIRouter.Open(UIPaths.PauseForm, "Popup")`；再按 Esc 或「继续」发 `Resume` → `UIRouter.Close`。暂停时 `timeScale=0`，但 `GetPauseInput` **不要**加 `CursorManager.IsGameplayFocused` 闸门（那时鼠标已解锁，加了就永远恢复不了）；其它模态开着时它主动让路。按钮：继续 / 返回主菜单（`CommandReturnToMainMenu`，只切流程、不重载场景）/ 退出游戏；没有「设置」，`SettingsForm` 未建。
 - 主菜单：`MainMenuForm`（Page 组）是默认首屏。`OnOpen` 里必须先 `ForceFillParentCanvas()`（GF 池化后根节点是 0×0，不铺满的话标题/按钮全叠在一点），`OnClose` 要 `StopAllCoroutines()`（池化复用后淡入会残留）；「设置」按钮暂时只弹 Toast。
 - 死亡：`Health.Die` → `GameEvents.RaisePlayerDeath` → **常驻 HUD `MainHUDForm`** 订阅到后 `UIRouter.Open(UIPaths.DeathForm, "Popup")`（DeathForm 自己订阅不到「我还没打开就死了」）。`VictoryForm` 目前是空壳，等 Boss 有实例再接 `OnBossKilled`。
 - 界面参数用 `UI/Core/UIFormArgs.cs` 里的类型（如 `ShopFormArgs { KeeperId }`）装进 `UIRouter.Open` 的 `userData`，界面在 `OnOpenForm` 里自己取；不要再走「先拿到面板实例再调 OpenWithConfig」两步。
@@ -165,6 +165,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - `CombatController.cs` 为空壳 WIP：仅 `Awake` 缓存 `MeleeFighter`，`Update` 为空。
 - 旧 `BasePanel`/`UIManager`/`UIconst`/`HUDBtn` 已删除；场景 `Canvas` 只剩 `MinimapPanel`，`Canvas/BackPack`、`Canvas/Lottery` 两个旧入口按钮已移除。
 - `MainMenuForm.prefab` 之前挂的是旧 `MainMenuPanel` 脚本、从未挂过 `MainMenuForm`（GF-1.6 已换上，字段沿用原引用）。GF-3.5 起它是**默认首屏**（`skipMainMenu=false`），背景是深色遮罩、按钮已本地化；但场景里**没有 `MainMenuCamera` 实例**，菜单只是盖在关卡场景上的全屏界面（角色被禁输入、相机停手），真正的「主菜单场景」要到 GF-4。
+- **场景加载限制（单场景阶段）**：GF 的 `GameEntry.Scene.LoadScene` 走 `EditorResourceComponent` 的 **additive** 加载，且不会卸载当前场景。`TestScene` 同时是引导场景和关卡场景，用它再加载一次会多出一整套 `GameFramework`/玩家/敌人实例。所以「主菜单 → 游戏」「返回主菜单」都只切流程、不重载场景；整关重置由 `PlayerController.ResetForNewRun()`（复活 + 回出生点）顶上，敌人/掉落物的重置要等 GF-4 拆出关卡场景。菜单/暂停/死亡里的场景重载一律不要加。
 - **只有一个玩家预制体**：`Assets/GameMain/Entities/Player/Male.prefab`（场景实例化 + `HUDPrefabBuilder`/`CameraRigBuilder`/`ConfigIdentityMigration` 都指向它）。旧的 `Player.prefab` 已删除，不要按记忆去改它。
 - 三个新界面的标题/按钮文本用的是 **Legacy Text（内置字体）**，与 `LotteryForm`/`ToastForm` 一致；中文靠系统字体回退显示。要换成 TMP 或项目字体，等做视觉时统一处理（工程里没有中文字体资产，只有 `LiberationSans`）。
 - GF Resource 处于 `EditorResourceMode`：路径必须是 `Assets/` 开头且含扩展名（见 `ScenePaths`、`UIPaths` 注释）。

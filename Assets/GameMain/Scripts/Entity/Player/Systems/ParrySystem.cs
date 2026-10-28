@@ -80,6 +80,35 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
 
         // 死亡 / 复活演出期间不保留格挡：否则复活后没按右键也一直白拿一份减伤
         if (IsBlocking && health != null && health.IsDead) SetBlocking(false);
+
+        // 格挡持续耗耐（T3）
+        if (IsBlocking) DrainBlockStamina();
+    }
+
+    /// <summary>
+    /// 格挡持续耗耐（T3）。数值来自 `Stamina.block_cost_per_second`（6/秒），
+    /// 与轻攻击/翻滚同源；缺配置时 `TryConsume` 自己会告警，这里不再兜底默认值。
+    ///
+    /// 【为什么扣不动要直接收盾】
+    ///   不收的话就是"耐力空了盾还举着" = 永久 50% 减伤，
+    ///   把「耐力管理」这个核心体验直接抹平（也就是这次 T3 要堵的洞）。
+    ///   暂停时 Time.deltaTime 为 0，自然不扣；卡肉会按比例减慢，属可接受。
+    /// </summary>
+    private void DrainBlockStamina()
+    {
+        if (stamina == null) return;
+
+        Stamina row = stamina.Row;
+        if (row == null) return;
+
+        float cost = row.BlockCostPerSecond * Time.deltaTime;
+        if (cost <= 0f) return;
+
+        if (stamina.TryConsume(cost)) return;
+
+        // 耐力见底 / 已力竭 / 输入锁定：破防收盾
+        SetBlocking(false);
+        if (LogParry) Debug.Log("[Parry] 耐力不足，格挡被破", this);
     }
 
     /// <summary>

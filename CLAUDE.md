@@ -7,8 +7,8 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 
 - **工程线已收口**：GF-0 ~ GF-3 + GF-3.5（主菜单 / 暂停 / 死亡）完成并 Play 验收通过；
   分支 `feature/gf-procedure`，GF 收口 commit `629368c`（以 `git log -1` 为准），工作区干净。
-- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：**T1 + T2 弹反闭环已完成并 Play 验收通过（2026-10-28）** →
-  **下一步 = Phase 4 死亡循环部署**（T3 格挡耗耐 / T4 右键分流 / T5 处决都很小，可并行）→ Boss 1。P0 未完成时不要动工程线。
+- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：Phase 1 收尾（T1–T5 + 举盾动画 + 刀盾⇄弓切换）**已全部完成并 Play 验收通过（2026-10-28）** →
+  **下一步 = Phase 4 死亡循环部署**（篝火 / 掉魂 / 雾门 / 敌人重生）→ Boss 1。P0 未完成时不要动工程线。
 - 工程线下一阶段是**角色重构 S0–S7**（前置已满足，等 P0 空档）；GF-4 等新场景、GF-5 留 Phase 8。
 - 交接提示：`开发文档/GF框架迁移与底座搭建计划.md` §11、`毕业设计/毕业设计方案.md` 顶部「P0 新会话交接提示」。
 
@@ -173,7 +173,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
   （"看到起手才架刀"，读 `IParryTarget.WindupStartRealtime`）。命中发生在 Impact，见 `MeleeFighter.IsInParryWindow` 注释。
   **提前一直按住 = 只有减伤，不算弹反** —— 只按 0.15s 窗口判定会让"看到抬刀才架刀"永远弹反不成立（实测踩过）；
   敌方硬直时长 = `Parry.enemy_stagger_duration`(1.5s)，由 `ParrySystem` 传给 `MeleeFighter.OnParried` → `EnemyController.Stagger` → `GettingHitState`。
-  **T3/T4/T5 已接（2026-10-28，Play 待验收）**：格挡按 6/s 耗耐、扣不动即**破防收盾**；右键按模式分流（拿弓=瞄准、近战=格挡）；
+  **T3/T4/T5 已接并 Play 验收通过（2026-10-28）**：格挡按 6/s 耗耐、扣不动即**破防收盾**；右键按模式分流（拿弓=瞄准、近战=格挡）；
   弹反后 2s（`Parry.riposte_window`）内贴身按左键 → 处决演出；举盾有动作（`Block_Start` → `Block_Loop`，收盾淡回 `Empty`）。
   仍未做：`parry_fail_cost`、破防专属表现（`ARPG_Warrior_Guard_Break` 未接）、处决提示 UI。
 - **弓的 weaponID 缺陷已修复（2026-10-28）**：`BowConfig.weaponID` = `Weapon` 表行 = **10004**，

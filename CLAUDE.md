@@ -132,6 +132,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 | GetShowCursor | LeftAlt / RightAlt | `GetShowCursorInput` |
 | Pause | **Esc** | `GetPauseInput`（开/关暂停界面；其它模态开着时让路） |
 | Dodge | **空（无绑定）** | `GetDodgeInput`（保留空壳） |
+| 切近战 / 远程 | **数字键 1 / 2**（legacy `Input.GetKeyDown`，`activeInputHandler=Both`） | `WeaponSwitcher.Update` → `SwitchToMelle` / `SwitchToRanged`（**不走 PlayerActions**） |
 
 - **Shift 双功能**：短按 → 翻滚 `PlayerDodge.TryDodge()`；长按超阈值 → 疾跑。不再占用独立 Dodge 键。
 - 键位事件绑在玩家预制体 `Assets/GameMain/Entities/Player/Male.prefab`（**场景实例化的就是它**）的 `PlayerInput` 上，按方法名绑定 PlayerController / PlayerMovement 的回调。同目录旧的 `Player.prefab` 已在 2026-10-28 删除（相机重构把场景换成 Male 后就没人引用了），改输入绑定只改 Male.prefab。
@@ -172,7 +173,9 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
   （"看到起手才架刀"，读 `IParryTarget.WindupStartRealtime`）。命中发生在 Impact，见 `MeleeFighter.IsInParryWindow` 注释。
   **提前一直按住 = 只有减伤，不算弹反** —— 只按 0.15s 窗口判定会让"看到抬刀才架刀"永远弹反不成立（实测踩过）；
   敌方硬直时长 = `Parry.enemy_stagger_duration`(1.5s)，由 `ParrySystem` 传给 `MeleeFighter.OnParried` → `EnemyController.Stagger` → `GettingHitState`。
-  **仍未做**：格挡持续耐力（`block_cost_per_second`，T3）、右键 `Aim`/`Block` 分流（T4，现在按右键会同时瞄准+格挡）、处决接通（T5）。
+  **T3/T4/T5 已接（2026-10-28，Play 待验收）**：格挡按 6/s 耗耐、扣不动即**破防收盾**；右键按模式分流（拿弓=瞄准、近战=格挡）；
+  弹反后 2s（`Parry.riposte_window`）内贴身按左键 → 处决演出；举盾有动作（`Block_Start` → `Block_Loop`，收盾淡回 `Empty`）。
+  仍未做：`parry_fail_cost`、破防专属表现（`ARPG_Warrior_Guard_Break` 未接）、处决提示 UI。
 - **弓的 weaponID 缺陷已修复（2026-10-28）**：`BowConfig.weaponID` = `Weapon` 表行 = **10004**，
   `Item 10004 Hunting Bow` 的 `weapon_type` 改回 **3(Bow)**，校验器里按 1111 判定的已知缺陷分支已删除。
   遗留：`BowConfig.animOverride` 指向基础控制器（类型不匹配，运行时为 null），弓没有专属动作覆盖。
@@ -183,6 +186,9 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - `MainMenuForm.prefab` 之前挂的是旧 `MainMenuPanel` 脚本、从未挂过 `MainMenuForm`（GF-1.6 已换上，字段沿用原引用）。GF-3.5 起它是**默认首屏**（`skipMainMenu=false`），背景是深色遮罩、按钮已本地化；但场景里**没有 `MainMenuCamera` 实例**，菜单只是盖在关卡场景上的全屏界面（角色被禁输入、相机停手），真正的「主菜单场景」要到 GF-4。
 - **场景加载限制（单场景阶段）**：GF 的 `GameEntry.Scene.LoadScene` 走 `EditorResourceComponent` 的 **additive** 加载，且不会卸载当前场景。`TestScene` 同时是引导场景和关卡场景，用它再加载一次会多出一整套 `GameFramework`/玩家/敌人实例。所以「主菜单 → 游戏」「返回主菜单」都只切流程、不重载场景；整关重置由 `PlayerController.ResetForNewRun()`（`Health.ResetToFull` 复活 + 回出生点 + `MeleeFighter.ResetCombatPose()`）与 `EnemyController.ResetAggro()`（**只对交战中的敌人**清 Target/视野缓存/导航，回 Patrol 或 Idle —— 无脑回 Idle 会把 `PatrolState` 顶掉，表现为敌人不再巡逻）顶上；敌人血量与位置、掉落物**不重置**，要等 GF-4 拆出关卡场景。菜单/暂停/死亡里的场景重载一律不要加。
 - **死亡动作在 Override Layer(1) 上**：`MeleeFighter.HandlePlayerDeath` 是 `animator.CrossFade("Melee_FallBackDeath", 0.2f, 1)`，这一层不会自己复位 —— 复活时不做 `ResetCombatPose()`（切回 `Empty`）的话，角色会一直保持倒地姿势，攻击一次才被顶掉。
+- **近战 / 远程模式**由 `WeaponSwitcher` 管：数字键 `1`/`2` 切换，`EquipWeapon` 装弓时自动切远程。
+  它**不再禁用 `MeleeFighter`** —— 玩家的受击回调（`OnTriggerEnter` / `HandleUnitDamaged`）挂在它身上，
+  一禁用就是「拿弓时敌人打不掉我血、也不播受击」；远程模式不出近战攻击由 `PlayerCombat` 的 `IsUsingRanged` 闸门负责。
 - **只有一个玩家预制体**：`Assets/GameMain/Entities/Player/Male.prefab`（场景实例化 + `HUDPrefabBuilder`/`CameraRigBuilder`/`ConfigIdentityMigration` 都指向它）。旧的 `Player.prefab` 已删除，不要按记忆去改它。
 - 三个新界面的标题/按钮文本用的是 **Legacy Text（内置字体）**，与 `LotteryForm`/`ToastForm` 一致；中文靠系统字体回退显示。要换成 TMP 或项目字体，等做视觉时统一处理（工程里没有中文字体资产，只有 `LiberationSans`）。
 - GF Resource 处于 `EditorResourceMode`：路径必须是 `Assets/` 开头且含扩展名（见 `ScenePaths`、`UIPaths` 注释）。

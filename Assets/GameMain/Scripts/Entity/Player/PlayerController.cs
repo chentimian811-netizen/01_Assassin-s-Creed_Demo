@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public PlayerDodge playerDodge;       // 翻滚组件（P2）
     [HideInInspector] public PlayerStamina playerStamina;   // 耐力组件（P1）
     [HideInInspector] public ParrySystem parrySystem;       // 格挡/弹反组件（T1）
+    [HideInInspector] public WeaponSwitcher weaponSwitcher; // 近战/远程模式切换（1/2 键）
 
     public Transform PlayerTransform { get; private set; }
     public Animator Animator { get; private set; }
@@ -34,11 +35,18 @@ public class PlayerController : MonoBehaviour
     public bool IsLocking => playerLockOn.IsLocking;
 
     /// <summary>
-    /// 当前是否装备远程武器（弓）。
+    /// 当前是否在用远程武器（弓）。
     /// T4 右键分流：拿弓 → 右键 = 瞄准；近战武器 → 右键 = 格挡/弹反。
     /// 两者在 PlayerActions 里都绑右键，不分流时按一下会同时瞄准 + 举盾。
+    ///
+    /// 【为什么两个信号都要看】
+    ///   WeaponSwitcher.IsUsingRanged：按 1/2 切出来的模式，是"正在用弓"的权威状态；
+    ///   RangedFighter.HasRangedWeapon：当前激活槽是不是弓，只在 WeaponManager.SwitchToSlot 里维护，
+    ///   单独用它会在"刚装备弓但还没按 2"时漏判（实测踩过：装弓后右键照样举盾）。
     /// </summary>
-    private bool IsRangedWeaponEquipped => RangedFighter != null && RangedFighter.HasRangedWeapon;
+    private bool IsRangedWeaponEquipped =>
+        (weaponSwitcher != null && weaponSwitcher.IsUsingRanged) ||
+        (RangedFighter != null && RangedFighter.HasRangedWeapon);
 
     /// <summary>当前锁定的敌人</summary>
     public EnemyController LockedEnemy => playerLockOn.LockedEnemy;
@@ -188,12 +196,15 @@ public class PlayerController : MonoBehaviour
         playerDodge = GetComponent<PlayerDodge>();
         playerStamina = GetComponent<PlayerStamina>();
         parrySystem = GetComponent<ParrySystem>();
+        weaponSwitcher = GetComponent<WeaponSwitcher>();
         if (playerStamina == null)
             Debug.LogWarning("[PlayerController] 玩家未挂 PlayerStamina，攻击将不扣耐力", this);
         if (playerDodge == null)
             Debug.LogWarning("[PlayerController] 玩家未挂 PlayerDodge，翻滚不可用", this);
         if (parrySystem == null)
             Debug.LogWarning("[PlayerController] 玩家未挂 ParrySystem，右键格挡/弹反不可用", this);
+        if (weaponSwitcher == null)
+            Debug.LogWarning("[PlayerController] 玩家未挂 WeaponSwitcher，1/2 切近战·远程不可用，右键会一律当格挡", this);
 
         playerMovement.Init(CharacterController , Animator ,MeleeFighter , this);
         playerCombat.Init(MeleeFighter, playerLockOn, this, playerStamina);

@@ -288,6 +288,18 @@ public class WeaponManager : MonoBehaviour
         RaiseWeaponSlotChanged(Array.IndexOf(weaponSlots, targetSlot));
 
         OnWeaponModelChanged?.Invoke(config);
+
+        // 装备后自动切模式：装弓就掏弓（右键立刻变瞄准），把最后一把弓换掉就收弓回近战。
+        // 【为什么要自动切】EquipWeapon 只同步外观，不通知 WeaponSwitcher，
+        //   于是出现"手里已经是弓了，右键还在举盾"（实测踩过）。
+        //   只在 isRanged / 弓被换掉 这两种明确的边界切，装盾之类不碰玩家当前模式。
+        var switcher = GetComponent<WeaponSwitcher>();
+        if (switcher != null)
+        {
+            if (config.isRanged) switcher.SwitchToRanged();
+            else if (FindRangedWeaponConfig() == null) switcher.SwitchToMelle();
+        }
+
         return true;
     }
 

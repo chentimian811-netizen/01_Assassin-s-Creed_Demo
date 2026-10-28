@@ -16,8 +16,12 @@ public class WeaponSwitcher : MonoBehaviour
     [SerializeField] private int rangeSlotIndex = 1;
 
     private WeaponManager weaponManager;
-    private MeleeFighter meleeFighter;
     private RangedFighter rangeFighter;
+
+    // 近战/远程模式只切"能不能出招"，**不再禁用 MeleeFighter**：
+    // 玩家的受击回调（MeleeFighter.OnTriggerEnter / HandleUnitDamaged）就挂在它身上，
+    // 一禁用就变成"拿弓时敌人打不掉我血、也不播受击"（实测隐患）。
+    // 远程模式下不出近战攻击由 PlayerCombat 的 IsUsingRanged 闸门负责。
 
     //当前状态
     private bool isUsingRanged = false;
@@ -29,7 +33,6 @@ public class WeaponSwitcher : MonoBehaviour
     private void Awake()
     {
         weaponManager = GetComponent<WeaponManager>();
-        meleeFighter = GetComponent<MeleeFighter>();
         rangeFighter = GetComponent<RangedFighter>();
     }
 
@@ -53,11 +56,6 @@ public class WeaponSwitcher : MonoBehaviour
         if(!isUsingRanged) return;
         isUsingRanged = false;
 
-        if(meleeFighter != null)
-        {
-            meleeFighter.enabled = true;
-        }
-
         if(rangeFighter != null)
         {
             rangeFighter.enabled = false;
@@ -68,7 +66,7 @@ public class WeaponSwitcher : MonoBehaviour
 
         OnWeaponTypeChanged?.Invoke(false);
 
-        Debug.Log("切换到远程武器 [按键2]");
+        Debug.Log("切换到近战武器 [按键1]");
     }
 
     /// <summary>
@@ -85,11 +83,6 @@ public class WeaponSwitcher : MonoBehaviour
         }
 
         isUsingRanged = true;
-
-        if(meleeFighter != null)
-        {
-            meleeFighter.enabled = false;
-        }
 
         if(rangeFighter != null)
         {
@@ -119,14 +112,22 @@ public class WeaponSwitcher : MonoBehaviour
         return rangeSlotIndex;
     }
     /// <summary>
-    /// 检查远程槽位是否装备了远程武器
+    /// 检查是否装备了远程武器。
+    ///
+    /// ⚠️ 不能写死查 `rangeSlotIndex`：步骤 3 之后 slot1 = LeftHand（盾），
+    /// 写死查 1 会让「明明装备了弓」被判成没有远程武器，`SwitchToRanged()` 直接拒绝
+    /// → 远程模式永远进不去 → 右键只能举盾（实测踩过）。
+    /// 口径必须与 `FindRangedSlotIndex()` 一致：扫全部槽位找 `isRanged`。
     /// </summary>
     private bool HasRangeWeaponEquipped()
     {
         if(weaponManager == null) return false;
 
-        WeaponConfig config = weaponManager.GetSlotConfig(rangeSlotIndex);
-
-        return config != null && config.isRanged;
+        for (int i = 0; i < weaponManager.SlotCount; i++)
+        {
+            WeaponConfig config = weaponManager.GetSlotConfig(i);
+            if (config != null && config.isRanged) return true;
+        }
+        return false;
     }
 }

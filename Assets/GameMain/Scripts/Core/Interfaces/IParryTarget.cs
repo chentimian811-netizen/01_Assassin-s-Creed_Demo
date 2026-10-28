@@ -6,11 +6,19 @@ using UnityEngine;
 /// </summary>
 public interface IParryTarget
 {
-    /// <summary>当前是否处于可被弹反的攻击窗口（前摇内）</summary>
+    /// <summary>
+    /// 当前这一招是否处于可被弹反的时段。
+    /// 口径是"前摇 + 生效窗口"，且该招式 Attack.parryable = true ——
+    /// 命中回调只发生在生效窗口，只认前摇会让弹反永远判定失败（详见 MeleeFighter 里注释）。
+    /// </summary>
     bool IsInParryWindow { get; }
 
-    /// <summary>弹反成功：打断当前攻击、进入硬直</summary>
-    void OnParried(GameObject parrier);
+    /// <summary>
+    /// 弹反成功：打断当前招式并进入硬直。
+    /// </summary>
+    /// <param name="parrier">发起弹反的单位（玩家根对象）</param>
+    /// <param name="staggerDuration">硬直时长（秒），由弹反方按 Parry.enemy_stagger_duration 给出</param>
+    void OnParried(GameObject parrier, float staggerDuration);
 }
 
 /// <summary>

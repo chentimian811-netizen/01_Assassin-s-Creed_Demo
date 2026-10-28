@@ -48,6 +48,10 @@ public static class DamageRouter
 
         var info = DamageInfo.Create(amount, attacker, hitPoint, ResolveSourceType(attacker),
             parryable, attack != null ? attack.name : null, attack != null ? attack.PoiseDamage : 0f);
+
+        // 拦截层（格挡 / 弹反）：被完全吃掉时不进受击流程，也就不播卡肉与震屏
+        if (!RunInterceptors(target, ref info)) return false;
+
         target.TakeDamage(info);
 
         // 命中确认日志：攻击方 → 受击方、招式、伤害、结算后血量
@@ -89,6 +93,10 @@ public static class DamageRouter
         if (attacker != null && damageable.Transform.gameObject == attacker) return false;
 
         var info = DamageInfo.Create(amount, attacker, hitPoint, sourceType, parryable, attackId);
+
+        // 同 Apply：投射物 / 环境伤害也要能被格挡拦截，否则"举盾却被箭射满伤"
+        if (!RunInterceptors(damageable, ref info)) return false;
+
         damageable.TakeDamage(info);
 
         // 同上：投射物 / 处决 / 环境伤害也统一留一条命中记录
@@ -103,6 +111,33 @@ public static class DamageRouter
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// 询问受击方的伤害拦截层（格挡 / 弹反）。返回 false = 本次伤害被完全吞掉。
+    ///
+    /// 【为什么插在这一步】
+    ///   位置必须是"伤害已算完、TakeDamage 还没调"。放进 Health.TakeDamage 会出两个问题：
+    ///   ① TakeDamage 的第一道闸是无敌判定，格挡写在那里会让"伤害 0"也走进受击流程，
+    ///      受击动画、命中事件、卡肉全都会照常播；
+    ///   ② 致死伤害与普通伤害共用同一道闸，多一层语义以后排查成本翻倍。
+    ///   在路由层拦下 = 这次命中没发生过，攻击方拿到的返回值也是"没打中"。
+    ///
+    /// 【性能】GetComponent 走 Unity 的组件缓存，不产生 GC；每次命中一次，
+    ///   与 Apply 里原有的 GetComponent&lt;Health&gt; 同一量级。
+    /// </summary>
+    private static bool RunInterceptors(IDamageable target, ref DamageInfo info)
+    {
+        if (target == null || target.Transform == null) return true;
+
+        var interceptor = target.Transform.GetComponent<IDamageInterceptor>();
+        if (interceptor == null) return true;
+
+        // 组件被禁用 = 拦截层关闭（将来"破盾"之类只要禁用组件即可）
+        if (interceptor is Behaviour behaviour && !behaviour.enabled) return true;
+
+        if (!interceptor.TryIntercept(ref info)) return true;   // 放行
+        return info.Amount > 0f;                               // false = 完全免伤
     }
 
     /// <summary>

@@ -7,7 +7,7 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 
 - **工程线已收口**：GF-0 ~ GF-3 + GF-3.5（主菜单 / 暂停 / 死亡）完成并 Play 验收通过；
   分支 `feature/gf-procedure`，GF 收口 commit `629368c`（以 `git log -1` 为准），工作区干净。
-- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：**T1 + T2 弹反闭环** →
+- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：**T1 + T2 弹反闭环**（已落地，待 Play 验收）→
   Phase 4 死亡循环部署 → Boss 1。P0 未完成时不要动工程线。
 - 工程线下一阶段是**角色重构 S0–S7**（前置已满足，等 P0 空档）；GF-4 等新场景、GF-5 留 Phase 8。
 - 交接提示：`开发文档/GF框架迁移与底座搭建计划.md` §11、`毕业设计/毕业设计方案.md` 顶部「P0 新会话交接提示」。
@@ -125,7 +125,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 | LightAttack | 鼠标左键 | `GetLightAttack` |
 | Fire | 鼠标左键（与 LightAttack 同键，各自独立 action） | `GetFireInput` |
 | Aim | 鼠标右键 | `GetAimInput` |
-| Block | 鼠标右键 / V | `GetBlockInput`（**体为空，P3 待接线**） |
+| Block | 鼠标右键 / V | `GetBlockInput`（T1 已接：按下开始格挡并起算弹反窗口，松开结束） |
 | LockEnemy | Q | `GetLockInput` |
 | OpenBackpack | `` ` ``（反引号） | `GetBackpackInput` |
 | GetPickup_ShopInput | **E** | `GetPickup_ShopInput`（有 NPC 优先开商店，否则拾取） |
@@ -166,8 +166,11 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - 耐力已接线：`PlayerCombat`（轻攻击）与 `PlayerDodge`（翻滚）都读 `Stamina` 表同一行后调 `PlayerStamina.TryConsume`；
   `heavy_attack_cost` / `parry_fail_cost` / `sprint_cost_per_second` / `block_cost_per_second` / `jump_cost` 仍无调用方。
   缺配置时 `PlayerStamina` / `PlayerCombat` / `PlayerDodge` 会报错并拒绝消耗，不回落默认值。
-- 弹反未实现：`ParrySystem.cs` 存在（数值已改读 `Parry` 表）但工程里没有该组件实例，`GetBlockInput` 内仍被注释
-  （`// P3：parrySystem?.SetBlocking(...)`）。`Parry` 表里的一行只是「未启用功能的开发初始值」。
+- 弹反 / 格挡 **T1 + T2 代码已接通（待 Play 验收）**：`ParrySystem` 挂在 `Male.prefab` 根节点，
+  实现 `IDamageInterceptor`，由 `DamageRouter.Apply/ApplyAmount` 在 `TakeDamage` 前询问；
+  弹反窗口 = `Parry.parry_window`(0.15s) 内且敌方招式 `Attack.parryable`（命中发生在 Impact，见 `MeleeFighter.IsInParryWindow` 注释）；
+  敌方硬直时长 = `Parry.enemy_stagger_duration`(1.5s)，由 `ParrySystem` 传给 `MeleeFighter.OnParried` → `EnemyController.Stagger` → `GettingHitState`。
+  **仍未做**：格挡持续耐力（`block_cost_per_second`，T3）、右键 `Aim`/`Block` 分流（T4，现在按右键会同时瞄准+格挡）、处决接通（T5）。
 - **弓的 weaponID 缺陷已修复（2026-10-28）**：`BowConfig.weaponID` = `Weapon` 表行 = **10004**，
   `Item 10004 Hunting Bow` 的 `weapon_type` 改回 **3(Bow)**，校验器里按 1111 判定的已知缺陷分支已删除。
   遗留：`BowConfig.animOverride` 指向基础控制器（类型不匹配，运行时为 null），弓没有专属动作覆盖。
@@ -181,7 +184,9 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - **只有一个玩家预制体**：`Assets/GameMain/Entities/Player/Male.prefab`（场景实例化 + `HUDPrefabBuilder`/`CameraRigBuilder`/`ConfigIdentityMigration` 都指向它）。旧的 `Player.prefab` 已删除，不要按记忆去改它。
 - 三个新界面的标题/按钮文本用的是 **Legacy Text（内置字体）**，与 `LotteryForm`/`ToastForm` 一致；中文靠系统字体回退显示。要换成 TMP 或项目字体，等做视觉时统一处理（工程里没有中文字体资产，只有 `LiberationSans`）。
 - GF Resource 处于 `EditorResourceMode`：路径必须是 `Assets/` 开头且含扩展名（见 `ScenePaths`、`UIPaths` 注释）。
-- 敌人**当前没有可用的命中盒**：`Enemy.prefab` 上只有 root 的 `CharacterController` 与 `VisionSensor` 的 trigger 球；招式资产是 `HitboxToUse = Weapon(4)`，而 `MeleeFighter.TryBindPreplacedWeapon()` 找的是名字**完全等于** `Sword` 且带 `BoxCollider` 的子物体（prefab 里叫 `Paladin_J_Nordstrom_Sword`，也没有 BoxCollider）→ `WeaponCollider` 恒为 null，敌人攻击不掉血。
+- 敌人命中盒**已接通**（2026-10-28 核对：`Enemy.prefab` 的 `mixamorig:Sword_joint` 上有 IsTrigger `BoxCollider`，
+  层 `Enemyhitbox(9)`、Tag `Hitbox`，且已挂进 `MeleeFighter.preplacedHitbox`）→ 敌人挥剑能打掉玩家血。
+  绑定优先级：Inspector `preplacedHitbox` > 骨骼名 `Sword_joint` > `Hitbox` 标签；排查入口是 `MeleeFighter.logHitboxBinding`（默认 false）。
 - 勿修改：`Assets/GameFramework/`、`Assets/ThirdParty/`、`Assets/Blink/`、`Assets/Starter Assets/`、`Assets/ARPGWarrior/`、`Assets/Fantasy knight/`、`Assets/Warrior maiden/`、`Assets/Sword_and_Shield_Anims/`、`Assets/TextMesh Pro/`。
 - **交付边界：默认提供代码文本 + 中文注释；用户明确要求"直接改 / 修复"时可直接写入项目文件**——写入后必须在回复中列出改动文件与 Play 验证步骤，C# 一律保持 UTF-8 无 BOM + CRLF；涉及伤害/致死通道的改动要遵守"致死只走 `DamageRouter` 唯一路径"（兜底出口见 `Health.ForceKill`）。
 - 依赖：URP 14.0.12、Cinemachine 2.10.6、Input System 1.14.2、AI Navigation 1.1.7、TMP 3.0.7、Test Framework 1.1.33（未使用）。

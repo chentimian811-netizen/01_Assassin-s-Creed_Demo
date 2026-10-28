@@ -115,7 +115,13 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     {
         get
         {
-            if (AttackState != E_AttackState.Windup) return false;
+            // 【为什么 Impact 也算在窗口内】
+            //   命中回调（MeleeFighter.OnTriggerEnter）只发生在 Impact —— 命中盒正是在这时才开。
+            //   若这里只认 Windup，弹反时攻击方永远"不在窗口内"，两端口径对不上，
+            //   弹反判定必然失败（实测症状：按了右键只掉一半血，敌人硬直从没出现过）。
+            //   保留 Windup 是为了让语义仍然成立：前摇内被打断（如以后加霸体破防）也算弹反窗口。
+            if (AttackState != E_AttackState.Windup && AttackState != E_AttackState.Impact) return false;
+
             var list = ActiveAttacks;
             if (list == null || list.Count == 0) return true;
             int idx = Mathf.Clamp(combocount, 0, list.Count - 1);
@@ -123,13 +129,79 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         }
     }
 
-    public void OnParried(GameObject parrier)
+    /// <summary>
+    /// 被弹反：打断当前招式，并按弹反方给出的时长进入硬直。
+    ///
+    /// 硬直时长来自 Parry.enemy_stagger_duration（1.5s），由 ParrySystem 传进来 ——
+    /// 数值属于"弹反方"，敌人只是执行者，免得每种敌人都在自己的表里再配一份。
+    /// </summary>
+    public void OnParried(GameObject parrier, float staggerDuration)
     {
+        // 打断招式：协程、攻击状态、连击、命中盒一起收（口径同 CancelActionByDodge）
         StopAllCoroutines();
         AttackState = E_AttackState.idle;
         inAction = false;
+        // 显式清掉"正在受击"：它本来是 HitReaction 协程收尾时才复位的，
+        // 而上面刚把所有协程停掉；不清会永久留在 true，
+        // OnTriggerEnter 的第一道闸就会把这只敌人之后的伤害全吞掉（打不死的僵尸态）
+        IsAttackingHit = false;
+        doCombo = false;
+        combocount = 0;
+        currentTarget = null;
         DisableAllHitxboxes();
-        // P3：进入硬直状态
+
+        // 硬直：敌人 FSM 切 GettingHit 并锁定时长（自己身上没有 EnemyController 就只做打断）
+        EnemyController enemy = GetComponent<EnemyController>();
+        if (enemy != null) enemy.Stagger(staggerDuration);
+
+        // 受击表现必须在这里主动播：弹反成功不结算伤害 → 不会有 OnUnitDamaged →
+        // 不播的话敌人会顶着被打断的挥剑姿势干站 1.5s，看起来像卡死
+        StartCoroutine(ParryStagger(parrier, staggerDuration));
+    }
+
+    /// <summary>
+    /// 弹反硬直的姿态：播受击动画并保持，结束后把覆盖层切回空状态。
+    /// 时长与 GettingHitState 用同一个值（由弹反方给出），两边同时结束。
+    /// </summary>
+    private IEnumerator ParryStagger(GameObject parrier, float duration)
+    {
+        inAction = true;    // 硬直期间不许再起手（ToTryAttack 会拦住）
+        try
+        {
+            // 转向弹反者：被弹反的敌人应该面朝打断它的玩家，否则硬直像个静态模型
+            if (parrier != null)
+            {
+                Vector3 toParrier = parrier.transform.position - transform.position;
+                toParrier.y = 0f;
+                if (toParrier != Vector3.zero) transform.rotation = Quaternion.LookRotation(toParrier);
+            }
+
+            string stateName = ResolveHitReactionState(out int layer);
+            if (stateName != null)
+            {
+                animator.CrossFade(stateName, 0.1f, layer);
+            }
+            else
+            {
+                Debug.LogWarning($"[MeleeFighter] {name} 的 Animator 里找不到受击状态，" +
+                                 "弹反硬直期间不会播动作（伤害链路不受影响）", this);
+            }
+
+            // 用缩放时间：硬直是玩法时长，暂停时应该一起停（与 i-Frame 那种实时窗口不同）
+            yield return new WaitForSeconds(Mathf.Max(0.15f, duration));
+        }
+        finally
+        {
+            inAction = false;
+
+            // 覆盖层（layer 1）不会自己复位，不切回 Empty 会一直保持受击姿势
+            // （同 ResetCombatPose 的原因）。死亡时不要切，否则会顶掉死亡动作。
+            if (animator != null && (health == null || !health.IsDead) &&
+                animator.HasState(CombatLayer, Animator.StringToHash("Empty")))
+            {
+                animator.CrossFade("Empty", 0.1f, CombatLayer);
+            }
+        }
     }
 
     /// <summary>

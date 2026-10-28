@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public PlayerAnimator playerAnimator;
     [HideInInspector] public PlayerDodge playerDodge;       // 翻滚组件（P2）
     [HideInInspector] public PlayerStamina playerStamina;   // 耐力组件（P1）
+    [HideInInspector] public ParrySystem parrySystem;       // 格挡/弹反组件（T1）
 
     public Transform PlayerTransform { get; private set; }
     public Animator Animator { get; private set; }
@@ -179,10 +180,13 @@ public class PlayerController : MonoBehaviour
         playerAnimator = GetComponent<PlayerAnimator>();
         playerDodge = GetComponent<PlayerDodge>();
         playerStamina = GetComponent<PlayerStamina>();
+        parrySystem = GetComponent<ParrySystem>();
         if (playerStamina == null)
             Debug.LogWarning("[PlayerController] 玩家未挂 PlayerStamina，攻击将不扣耐力", this);
         if (playerDodge == null)
             Debug.LogWarning("[PlayerController] 玩家未挂 PlayerDodge，翻滚不可用", this);
+        if (parrySystem == null)
+            Debug.LogWarning("[PlayerController] 玩家未挂 ParrySystem，右键格挡/弹反不可用", this);
 
         playerMovement.Init(CharacterController , Animator ,MeleeFighter , this);
         playerCombat.Init(MeleeFighter, playerLockOn, this, playerStamina);
@@ -214,8 +218,12 @@ public class PlayerController : MonoBehaviour
 
         // 失去 gameplay 焦点（Alt 松光标 / 背包 / 商店）时，右键的 canceled 回调会被
         // GetAimInput 开头的焦点判断挡掉，这里幂等取消，避免 UI 关掉后仍挂着右肩机位。
+        // 格挡同理：焦点丢了还留着格挡 = 白拿一份减伤（SetBlocking 幂等，重复调用无开销）
         if (!CursorManager.Instance.IsGameplayFocused)
+        {
             CancelAim();
+            parrySystem?.SetBlocking(false);
+        }
 
         // 商店这类模态界面打开时冻结角色输入（HUD 仍然显示）
         if (UIRouter.IsOpen(UIPaths.ShopForm))
@@ -440,13 +448,26 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// 格挡/弹反输入（阶段3实现）。按下=开始格挡，松开=结束。
+    /// 格挡/弹反输入（T1 已接通）。按下 = 开始格挡（弹反窗口从这一刻起算），松开 = 结束。
+    ///
+    /// 右键同时绑了 Aim 与 Block（T4 才按武器类型分流），所以按下右键会同时进入瞄准 + 格挡，
+    /// 这是 T1 结束时的已知状态，不是 bug。
     /// </summary>
     public void GetBlockInput(InputAction.CallbackContext context)
     {
-        // P3：parrySystem?.SetBlocking(context.performed);
-        // 当前仅占位，保证 PlayerInput 事件能绑上且不抛异常
-        _ = context;
+        if (parrySystem == null) return;
+
+        if (context.performed)
+        {
+            if (!CursorManager.Instance.IsGameplayFocused) return;
+            parrySystem.SetBlocking(true);
+        }
+        else if (context.canceled)
+        {
+            // 松开必须无条件生效：模态界面/Alt 松光标时焦点已丢，若这里也被拦掉，
+            // 关掉界面后格挡状态会一直挂着（与 GetAimInput 的 canceled 处理同理）
+            parrySystem.SetBlocking(false);
+        }
     }
 
     public void GetShowCursorInput(InputAction.CallbackContext context)
@@ -497,6 +518,8 @@ public class PlayerController : MonoBehaviour
         shiftHeld = false;
         sprintEngaged = false;
         playerMovement?.ClearInput();
+        // 死亡 / 进菜单 / 开商店都要收格挡：否则复活后没按右键也带着减伤
+        parrySystem?.SetBlocking(false);
     }
      #endregion
      

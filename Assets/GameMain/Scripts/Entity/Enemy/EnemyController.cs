@@ -158,6 +158,52 @@ public class EnemyController : MonoBehaviour
         ChangeState(E_EnemyState.GettingHit);
     }
 
+    /// <summary>
+    /// 外部指定的硬直时长，进 GettingHit 时由状态自己消费一次（0 = 用 Enemy 表 stun_time）。
+    /// 弹反用它把 Parry.enemy_stagger_duration（1.5s）带进来，普通受击不受影响。
+    /// </summary>
+    private float m_pendingStunDuration;
+
+    /// <summary>
+    /// 弹反硬直：立刻打断当前招式并进入 GettingHit，时长由弹反方给出。
+    ///
+    /// 【为什么不复用 HandleUnitDamaged 那条路】
+    ///   那条路只认"掉血事件"，而弹反成功是【零伤害】的 —— 没有 OnUnitDamaged，
+    ///   所以硬直必须由弹反方显式推一次，不能等事件。
+    ///
+    /// 【为什么先判 stateMachine】
+    ///   MeleeFighter 的 Start 与 EnemyController 的 Start 顺序不保证；
+    ///   状态机还没建好时调 ChangeState 就是空引用。
+    /// </summary>
+    public void Stagger(float duration)
+    {
+        if (Health != null && Health.IsDead) return;
+        if (m_inDeadState || m_inPerformance) return;   // 死亡终态 / 处决演出锁定时不打断
+        if (stateMachine == null) return;               // Start 还没跑完
+
+        duration = Mathf.Max(0f, duration);
+
+        // 已经在硬直里（理论上弹反时敌人还在出招，走不到这）：直接刷新计时。
+        // ChangeState 对同状态是空操作，靠它重启不了计时。
+        if (IsInState(E_EnemyState.GettingHit))
+        {
+            m_pendingStunDuration = 0f;
+            if (stateDict[E_EnemyState.GettingHit] is GettingHitState hitState) hitState.RefreshStagger(duration);
+            return;
+        }
+
+        m_pendingStunDuration = duration;
+        ChangeState(E_EnemyState.GettingHit);
+    }
+
+    /// <summary>取出并清空待用的硬直时长（GettingHitState.Enter 调用一次）</summary>
+    public float ConsumePendingStunDuration()
+    {
+        float duration = m_pendingStunDuration;
+        m_pendingStunDuration = 0f;
+        return duration;
+    }
+
     /// <summary>是否已进入死亡终态。不依赖 Health.IsDead —— 处决/剧情杀可能绕过血量置死</summary>
     private bool m_inDeadState;
 

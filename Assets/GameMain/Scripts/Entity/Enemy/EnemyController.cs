@@ -190,6 +190,37 @@ public class EnemyController : MonoBehaviour
     }
 
     /// <summary>
+    /// 清掉仇恨并回到待机（玩家复活 / 「返回主菜单 → 再开始」时调用）。
+    ///
+    /// 【为什么需要】
+    ///   敌人的 Target 是玩家 MeleeFighter 的对象引用；玩家死亡 → 回主菜单 → 再开始时，
+    ///   敌人仍然保持 CombatMovement/Attack，表现为「刚回到出生点就被围」。
+    ///   这里把目标、视野缓存、导航路径一次性清掉；回到 Idle 后下一帧会自己用
+    ///   FindTarget 重新搜（只有玩家真的进了视野才会再拉仇恨）。
+    /// </summary>
+    public void ResetAggro()
+    {
+        Target = null;
+        TargetsInRange.Clear();
+        CombatMovementTimer = 0f;
+
+        // 已经死了的敌人只清目标，不要把它从 Dead 状态拉回来
+        if (Health != null && Health.IsDead) return;
+
+        // 解除处决/演出锁，并清掉残留的攻击姿态（敌人同样用 Override Layer 播招式）
+        SetPerformanceLock(false);
+        Fighter?.ResetCombatPose();
+
+        if (NavAgent != null && NavAgent.enabled)
+        {
+            if (NavAgent.isOnNavMesh) NavAgent.ResetPath();
+            NavAgent.isStopped = false;
+        }
+
+        ChangeState(E_EnemyState.Idle);
+    }
+
+    /// <summary>
     /// 配对演出（处决/暗杀）锁定开关，由 MeleeFighter.PerformCounterAttack 开关。
     ///
     /// 为什么要锁：

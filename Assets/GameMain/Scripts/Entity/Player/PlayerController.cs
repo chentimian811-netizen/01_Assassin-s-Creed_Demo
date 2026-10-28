@@ -83,6 +83,11 @@ public class PlayerController : MonoBehaviour
         CancelAim();
         ClearInput();
         playerMovement.ResetVerticalVelocity();
+
+        // 4. 把战斗层从死亡动作切回 Empty。
+        //    死亡时 MeleeFighter 会 CrossFade 到 layer 1 的 Melee_FallBackDeath，
+        //    那一层不会自己复位；不切回去角色会一直保持倒地姿势（攻击一次才会被顶掉）。
+        MeleeFighter?.ResetCombatPose();
     }
 
     /// <summary>

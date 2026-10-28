@@ -115,6 +115,13 @@ public class ProcedureGame : ProcedureBase
             player.ResetForNewRun();
         }
 
+        // 敌人还记着上一局的仇恨（Target 指向玩家）：清目标、回待机，死亡/演出中的会自己跳过
+        EnemyController[] enemies = Object.FindObjectsOfType<EnemyController>(true);
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            if (enemies[i] != null) enemies[i].ResetAggro();
+        }
+
         // 激活游戏相机：优先新几何跟随 Rig；未配置新 Rig 时回退旧 FreeLook（见 CameraManager 兼容路由）
         CameraManager camManager = Object.FindObjectOfType<CameraManager>();
         if (camManager != null)

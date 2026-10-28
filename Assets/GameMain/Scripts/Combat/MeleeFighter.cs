@@ -1129,6 +1129,25 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     }
 
     /// <summary>
+    /// 把战斗层（Override Layer，index 1）切回空状态，并清掉攻击状态。
+    ///
+    /// 【为什么需要】
+    ///   死亡动作 `Melee_FallBackDeath` 和招式一样，都是一次性 CrossFade 到 layer 1；
+    ///   layer 1 是覆盖层，不会自己回到默认状态。所以复活 / 重开一局后如果不主动切回
+    ///   Empty，角色会一直保持倒地姿势，直到下一次攻击把这一层顶掉
+    ///   （实测症状：回到出生点后人物像还躺着，打一下才恢复正常）。
+    /// </summary>
+    public void ResetCombatPose()
+    {
+        ForceStopCombat();
+
+        if (animator != null)
+        {
+            animator.CrossFade("Empty", 0.1f, 1);
+        }
+    }
+
+    /// <summary>
     /// 取盾牌自身的命中盒（盾击用）。
     ///
     /// 【为什么盾要单独一条通道】WeaponManager 装盾时会把盾的碰撞体【关掉】

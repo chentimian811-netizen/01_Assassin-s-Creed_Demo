@@ -84,9 +84,9 @@ public sealed class ACCameraRigController : MonoBehaviour
     [SerializeField] private float m_ResetMinStep = 0.5f;
 
     [Header("右肩瞄准")]
-    [SerializeField] private float m_ShootSideDistance = 1f;
-    [SerializeField] private float m_ShootMinBackDistance = 0.25f;
-    [SerializeField] private float m_ShootMaxBackDistance = 0.5f;
+    [SerializeField] private float m_ShootSideDistance = 0.55f;
+    [SerializeField] private float m_ShootMinBackDistance = 1f;
+    [SerializeField] private float m_ShootMaxBackDistance = 1.4f;
     [Tooltip("右侧空间不足时向上抬升的最大距离")]
     [SerializeField] private float m_ShootLiftDistance = 1.1f;
     [SerializeField] private float m_ModeBlendTime = 0.2f;

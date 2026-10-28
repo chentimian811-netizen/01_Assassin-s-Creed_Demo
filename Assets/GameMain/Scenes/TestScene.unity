@@ -932,9 +932,9 @@ MonoBehaviour:
   m_LockPitchOffset: 15
   m_LockMinStep: 0.01
   m_ResetMinStep: 0.5
-  m_ShootSideDistance: 1
-  m_ShootMinBackDistance: 0.25
-  m_ShootMaxBackDistance: 0.5
+  m_ShootSideDistance: 0.55
+  m_ShootMinBackDistance: 1
+  m_ShootMaxBackDistance: 1.4
   m_ShootLiftDistance: 1.1
   m_ModeBlendTime: 0.2
   m_ActivePriority: 20

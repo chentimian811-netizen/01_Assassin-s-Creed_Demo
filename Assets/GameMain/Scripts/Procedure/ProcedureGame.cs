@@ -10,6 +10,12 @@ using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedure
 /// </summary>
 public class ProcedureGame : ProcedureBase
 {
+    // 菜单命令字面量。发出方：PauseForm / DeathForm（GF Event）、PlayerController.GetPauseInput。
+    // 集中成常量是因为「拼错命令名」的表现是「按了没反应」，在 Console 里完全看不出原因。
+    public const string CommandPause = "Pause";
+    public const string CommandResume = "Resume";
+    public const string CommandReturnToMainMenu = "ReturnToMainMenu";
+
     private int? m_HUDFormId = null;
     private int? m_EnemyBarsFormId = null;
     // 阶段3 启用：
@@ -25,9 +31,9 @@ public class ProcedureGame : ProcedureBase
         // 1. 初始化游戏系统（替代老 GameManager.StartGame()）
         SetupGameSystems();
 
-        // 1.5 UI 组自举：TestScene 的入口覆盖成 ProcedureGame，跳过了 ProcedureLaunch 的
-        //     AddUIGroup；同时 GameFramework.prefab 用的是不会建 Canvas 的默认 Helper。
-        //     不补齐的话 OpenUIForm 没有 Canvas 可挂，HUD 永远不可见。
+        // 1.5 UI 组自举：正常入口（ProcedureLaunch）已经补过，这里保留一次兜底 ——
+        //     直接以 ProcedureGame 为入口（调试、或以后关卡流程直接重入）时也不会缺 Canvas。
+        //     GameFramework.prefab 用的是不会建 Canvas 的默认 Helper，缺了界面就永远不可见。
         UIGroupBootstrap.EnsureAll();
 
         // 2. 打开常驻 HUD（HUD 组，depth=0）
@@ -113,23 +119,27 @@ public class ProcedureGame : ProcedureBase
 
         switch (args.Command)
         {
-            case "ReturnToMainMenu":
-                // 单场景开发期：重载 TestScene 相当于重开关卡。
-                // 之后自建 MainMenu 场景后，改回 TargetScene=ScenePaths.MainMenu / Next=ProcedureMainMenu
-                ProcedureLoading.TargetScene = ScenePaths.TestScene;
+            case CommandReturnToMainMenu:
+                // 切流程前先关掉模态界面：Pause/Death 都带「暂停 + 光标锁」，
+                // 留着它们会让下一局一开局就停住（OnLeave 里的 CloseAll 也会兜底）。
+                UIRouter.CloseAll();
+
+                // 单场景开发期：重载开发场景相当于重开关卡。
+                // GF-4 拆出真实场景后改成 TargetScene = ScenePaths.MainMenu / Next = ProcedureMainMenu。
+                ProcedureLoading.TargetScene = GameStartupConfig.Instance.DevScenePath;
                 ProcedureLoading.NextProcedureType = typeof(ProcedureGame).Name;
                 ChangeState<ProcedureLoading>(m_ProcedureOwner);
                 break;
 
-            case "Pause":
-                HitStopManager.EnsureExists();
-                HitStopManager.Instance?.Pause();
-                // 阶段3: GameEntry.UI.OpenUIForm(UIPaths.PauseForm, "Popup");
+            case CommandPause:
+                // 暂停不在这里写 timeScale：PauseForm 继承 GameUIForm，打开即
+                // UIPauseService.Push → HitStopManager.Pause（计数归零才恢复）。
+                UIRouter.Open(UIPaths.PauseForm, "Popup");
                 break;
 
-            case "Resume":
-                HitStopManager.Instance?.Resume();
-                // 阶段3: 关闭 PauseForm
+            case CommandResume:
+                // 关闭时 GameUIForm 反向 Pop：只有最后一个模态界面关掉才真正 Resume
+                UIRouter.Close(UIPaths.PauseForm);
                 break;
         }
     }

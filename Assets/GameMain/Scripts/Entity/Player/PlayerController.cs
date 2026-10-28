@@ -415,6 +415,32 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// 暂停/恢复输入（Esc）。绑定在 PlayerActions 的 Pause action 上。
+    ///
+    /// 【为什么不走 CursorManager.IsGameplayFocused 闸门】暂停时鼠标锁已经解除，
+    /// 若沿用「只有游戏聚焦才响应」，按 Esc 就永远恢复不了。
+    /// 【为什么不在这里直接开关界面】界面与流程的开关只经 ProcedureGame 一处；
+    /// 输入层只发菜单命令（GF Event），不持有 UI 状态。
+    /// </summary>
+    public void GetPauseInput(InputAction.CallbackContext context)
+    {
+        if (!context.performed) return;
+
+        // 已经暂停 → Esc 恢复。真正解除暂停在 PauseForm.OnClose（UIPauseService 计数归零）
+        if (UIRouter.IsOpen(UIPaths.PauseForm))
+        {
+            GameEntry.Event.Fire(this, MenuCommandEventArgs.Create(ProcedureGame.CommandResume));
+            return;
+        }
+
+        // 其它模态（背包/商店/死亡/抽卡）开着时不抢 Esc：
+        // 这些界面有自己的关闭路径，不要再叠一层暂停上去。
+        if (UIPauseService.IsPausedByUI) return;
+
+        GameEntry.Event.Fire(this, MenuCommandEventArgs.Create(ProcedureGame.CommandPause));
+    }
+
+    /// <summary>
     /// 清空所有输入状态
     /// </summary>
     void ClearInput()

@@ -30,6 +30,10 @@ public class MainHUDForm : UIFormLogic
 
         ForceFillParentCanvas();
 
+        // 死亡界面由常驻 HUD 触发：HUD 是游戏流程里唯一「一直活着」的界面，
+        // DeathForm 自己在打开之前实例还不存在，不可能自己订阅到死亡事件。
+        GameEvents.OnPlayerDeath += HandlePlayerDeath;
+
         if (packageBtn != null) packageBtn.onClick.AddListener(OnOpenPackage);
         if (lotteryBtn != null) lotteryBtn.onClick.AddListener(OnOpenLottery);
     }
@@ -58,10 +62,21 @@ public class MainHUDForm : UIFormLogic
 
     protected override void OnClose(bool isShutdown, object userData)
     {
+        GameEvents.OnPlayerDeath -= HandlePlayerDeath;
+
         if (packageBtn != null) packageBtn.onClick.RemoveListener(OnOpenPackage);
         if (lotteryBtn != null) lotteryBtn.onClick.RemoveListener(OnOpenLottery);
 
         base.OnClose(isShutdown, userData);
+    }
+
+    /// <summary>
+    /// 玩家死亡 → 打开死亡界面（Popup 组；模态的暂停 + 锁光标由 GameUIForm 统一处理）。
+    /// 连续触发（多段伤害同帧致死）由 UIRouter 的查重挡住，不会叠出第二个死亡界面。
+    /// </summary>
+    private void HandlePlayerDeath()
+    {
+        UIRouter.Open(UIPaths.DeathForm, "Popup");
     }
 
     /// <summary>

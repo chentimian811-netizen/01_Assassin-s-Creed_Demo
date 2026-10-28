@@ -168,7 +168,9 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
   缺配置时 `PlayerStamina` / `PlayerCombat` / `PlayerDodge` 会报错并拒绝消耗，不回落默认值。
 - 弹反 / 格挡 **T1 + T2 代码已接通（待 Play 验收）**：`ParrySystem` 挂在 `Male.prefab` 根节点，
   实现 `IDamageInterceptor`，由 `DamageRouter.Apply/ApplyAmount` 在 `TakeDamage` 前询问；
-  弹反窗口 = `Parry.parry_window`(0.15s) 内且敌方招式 `Attack.parryable`（命中发生在 Impact，见 `MeleeFighter.IsInParryWindow` 注释）；
+  弹反时机 = ① 按下后 `Parry.parry_window`(0.15s) 内被命中，**或** ② 格挡是在本次攻击进入前摇之后才按下的
+  （"看到起手才架刀"，读 `IParryTarget.WindupStartRealtime`）。命中发生在 Impact，见 `MeleeFighter.IsInParryWindow` 注释。
+  **提前一直按住 = 只有减伤，不算弹反** —— 只按 0.15s 窗口判定会让"看到抬刀才架刀"永远弹反不成立（实测踩过）；
   敌方硬直时长 = `Parry.enemy_stagger_duration`(1.5s)，由 `ParrySystem` 传给 `MeleeFighter.OnParried` → `EnemyController.Stagger` → `GettingHitState`。
   **仍未做**：格挡持续耐力（`block_cost_per_second`，T3）、右键 `Aim`/`Block` 分流（T4，现在按右键会同时瞄准+格挡）、处决接通（T5）。
 - **弓的 weaponID 缺陷已修复（2026-10-28）**：`BowConfig.weaponID` = `Weapon` 表行 = **10004**，

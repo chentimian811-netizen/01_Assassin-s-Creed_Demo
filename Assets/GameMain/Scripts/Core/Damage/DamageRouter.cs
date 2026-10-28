@@ -61,9 +61,12 @@ public static class DamageRouter
             string remain = victim != null
                 ? $"，剩余 {victim.CurrentHealth:0.#}/{victim.MaxHealth:0.#}" + (victim.IsDead ? "（致死）" : "")
                 : "";
+            // 打 info.Amount（结算后的真实伤害），不是拦截前的 amount：
+            // 否则格挡减伤生效时日志照样显示原伤害，"到底减没减"完全看不出来
+            string reduced = info.Amount < amount ? $"（原始 {amount:0.#}，被拦截）" : "";
             Debug.Log(
                 $"[Damage] {(attacker != null ? attacker.name : "环境")} 命中 {target.Transform.name}" +
-                $"（{(attack != null ? attack.name : "无招式")}）伤害 {amount:0.#}{remain}",
+                $"（{(attack != null ? attack.name : "无招式")}）伤害 {info.Amount:0.#}{reduced}{remain}",
                 victim != null ? victim.gameObject : null);
         }
 
@@ -103,9 +106,11 @@ public static class DamageRouter
         if (LogDamage && damageable.Transform != null)
         {
             Health victim = damageable.Transform.GetComponent<Health>();
+            // 同样打结算后的 info.Amount（投射物也会被格挡减伤）
+            string reduced = info.Amount < amount ? $"（原始 {amount:0.#}，被拦截）" : "";
             Debug.Log(
                 $"[Damage] {(attacker != null ? attacker.name : "环境")} 命中 {damageable.Transform.name}" +
-                $"（{attackId ?? sourceType.ToString()}）伤害 {amount:0.#}" +
+                $"（{attackId ?? sourceType.ToString()}）伤害 {info.Amount:0.#}{reduced}" +
                 (victim != null ? $"，剩余 {victim.CurrentHealth:0.#}/{victim.MaxHealth:0.#}" : ""),
                 victim != null ? victim.gameObject : null);
         }

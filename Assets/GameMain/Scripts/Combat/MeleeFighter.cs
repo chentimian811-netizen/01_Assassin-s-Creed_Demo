@@ -129,6 +129,15 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         }
     }
 
+    /// <summary>本次攻击进入前摇的真实时刻；没有招式在手上时是 float.MinValue</summary>
+    private float windupStartRealtime = float.MinValue;
+
+    /// <summary>
+    /// 本次攻击进入前摇的真实时刻（IParryTarget）。
+    /// 弹反方用它判断「玩家的格挡是不是在看到这次起手之后才按下的」。
+    /// </summary>
+    public float WindupStartRealtime => windupStartRealtime;
+
     /// <summary>
     /// 被弹反：打断当前招式，并按弹反方给出的时长进入硬直。
     ///
@@ -140,6 +149,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         // 打断招式：协程、攻击状态、连击、命中盒一起收（口径同 CancelActionByDodge）
         StopAllCoroutines();
         AttackState = E_AttackState.idle;
+        windupStartRealtime = float.MinValue;   // 招式被打断：起手时刻作废，免得残留时间戳被当成"还在前摇"
         inAction = false;
         // 显式清掉"正在受击"：它本来是 HitReaction 协程收尾时才复位的，
         // 而上面刚把所有协程停掉；不清会永久留在 true，
@@ -214,6 +224,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
 
         StopAllCoroutines();    // 停掉 Attack 协程（此时不可能在受击/处决，入口已拦）
         AttackState = E_AttackState.idle;
+        windupStartRealtime = float.MinValue;   // 招式被翻滚取消：起手时刻作废
         inAction = false;
         doCombo = false;
         combocount = 0;
@@ -822,6 +833,11 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         }
 
         if (combocount >= activeAttacks.Count) combocount = 0;
+
+        // 记下起手时刻（真实时间）：弹反方靠它判断"玩家的格挡是不是看到这一刀才按的"。
+        // 放在 CrossFade 之后而不是方法开头，是为了让上面两条中止分支不留下假时间戳。
+        windupStartRealtime = Time.unscaledTime;
+
         animator.CrossFade(activeAttacks[combocount].AnimName, 0.2f, 1);
 
         yield return null;
@@ -880,6 +896,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         combocount = 0;
         inAction = false;
         currentTarget = null;
+        windupStartRealtime = float.MinValue;   // 招式结束：起手时刻作废
     }
 
     /// <summary>
@@ -1191,6 +1208,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
         StopAllCoroutines();
 
         AttackState = E_AttackState.idle;
+        windupStartRealtime = float.MinValue;   // 强制收招：起手时刻作废
         inAction = false;
         inCounter = false;
         doCombo = false;

@@ -14,6 +14,13 @@ public interface IParryTarget
     bool IsInParryWindow { get; }
 
     /// <summary>
+    /// 当前这次攻击进入前摇的真实时刻（`Time.unscaledTime`）。
+    /// 用来判定「看到起手才架刀」：格挡是在这之后才按下的，才算这次攻击的弹反而非普通格挡。
+    /// 没有招式在手上时必须是 `float.MinValue`。
+    /// </summary>
+    float WindupStartRealtime { get; }
+
+    /// <summary>
     /// 弹反成功：打断当前招式并进入硬直。
     /// </summary>
     /// <param name="parrier">发起弹反的单位（玩家根对象）</param>

@@ -57,6 +57,16 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
         if (health == null) health = GetComponent<Health>();
 
         m_configRow = CharacterConfigIdentity.GetParryRow(this);
+
+        // 配置就绪日志（每个 Play 一次）：缺行时格挡/弹反会整体静默失效，
+        // 这两条是排查"按了没反应"的第一现场，由 LogParry 统一开关
+        if (LogParry)
+        {
+            Debug.Log(m_configRow != null
+                ? $"[Parry] 配置就绪：id={m_configRow.Id}，窗口 {m_configRow.ParryWindow}s / " +
+                  $"硬直 {m_configRow.EnemyStaggerDuration}s / 减伤 {m_configRow.BlockDamageReduction:0.##}"
+                : "[Parry] 【严重】读不到 Parry 配置行，格挡与弹反都不会生效", this);
+        }
     }
 
     private void Update()
@@ -89,7 +99,7 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
     /// 伤害拦截入口：DamageRouter 在扣血前调用。
     ///
     /// 顺序是「先试弹反，再退普通格挡」：两者共用同一个按键，
-    /// 精确操作没命中（按早了 / 这招不可弹反）时至少要拿到减伤，
+    /// 时机没踩中（按早了 / 这招不可弹反）时至少要拿到减伤，
     /// 否则按早了就是纯挨打，手感与可读性都很差。
     /// </summary>
     public bool TryIntercept(ref DamageInfo info)
@@ -99,11 +109,12 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
         // 处决 / 环境 / 背刺等不可弹反伤害：既不弹反也不减伤，保持原样
         if (!info.IsParryable) return false;
 
-        // ① 弹反：玩家在按下窗口内，且攻击方这一招此刻可被弹反
-        if (IsInParryWindow)
+        IParryTarget target = info.Source != null ? info.Source.GetComponent<IParryTarget>() : null;
+
+        // ① 弹反：时机成立 + 攻击方这一招此刻可被弹反
+        if (target != null && target.IsInParryWindow && IsParryTiming(target))
         {
-            IParryTarget target = info.Source != null ? info.Source.GetComponent<IParryTarget>() : null;
-            if (target != null && target.IsInParryWindow && TryParry(target))
+            if (TryParry(target))
             {
                 info.Amount = 0f;   // 弹反成功 = 本次伤害不结算（也不会触发受击/卡肉）
                 return true;
@@ -113,6 +124,31 @@ public class ParrySystem : MonoBehaviour, IDamageInterceptor
         // ② 普通格挡：按配置减伤，不硬直、不打断敌人
         info.Amount *= 1f - Mathf.Clamp01(m_configRow.BlockDamageReduction);
         return true;
+    }
+
+    /// <summary>
+    /// 弹反时机，两种打法都算，缺任何一条都会退化成「只能普通格挡」：
+    ///
+    ///   ① 精确弹反：按下格挡后 parry_window（0.15s）内被命中 —— 按在命中之前的那一瞬间。
+    ///   ② 见招拆招：格挡是在【本次攻击的前摇开始之后】才按下的，并一直按到命中。
+    ///
+    /// 为什么要 ②：敌人前摇通常 0.5–1s，而 ① 只有 0.15s ——
+    /// 照「看到抬刀就架格挡」这种最自然的打法，命中时距按下早过了窗口，
+    /// 结果是永远只算普通格挡、弹反永远不触发（实测症状：敌人从不硬直，`[Parry]` 一条都没有）。
+    /// 反过来，如果你在敌人出手【之前】就一直按着格挡，前摇开始时你已经在格挡了，
+    /// ② 不成立 —— 这种"提前架着"只给减伤，避免按住不放就白嫖弹反。
+    /// </summary>
+    private bool IsParryTiming(IParryTarget target)
+    {
+        return IsInParryWindow || IsGuardRaisedAfterWindup(target);
+    }
+
+    /// <summary>格挡是否是在对方这次攻击进入前摇之后才按下的（含"看到起手才架刀"）</summary>
+    private bool IsGuardRaisedAfterWindup(IParryTarget target)
+    {
+        return target != null
+               && target.WindupStartRealtime != float.MinValue
+               && blockStartTime >= target.WindupStartRealtime;
     }
 
     /// <summary>

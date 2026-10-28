@@ -190,13 +190,18 @@ public class EnemyController : MonoBehaviour
     }
 
     /// <summary>
-    /// 清掉仇恨并回到待机（玩家复活 / 「返回主菜单 → 再开始」时调用）。
+    /// 清掉仇恨并回到待机/巡逻（玩家复活 / 「返回主菜单 → 再开始」时调用）。
     ///
     /// 【为什么需要】
     ///   敌人的 Target 是玩家 MeleeFighter 的对象引用；玩家死亡 → 回主菜单 → 再开始时，
     ///   敌人仍然保持 CombatMovement/Attack，表现为「刚回到出生点就被围」。
-    ///   这里把目标、视野缓存、导航路径一次性清掉；回到 Idle 后下一帧会自己用
+    ///   这里把目标、视野缓存、导航路径一次性清掉；回到 Patrol/Idle 后下一帧会自己用
     ///   FindTarget 重新搜（只有玩家真的进了视野才会再拉仇恨）。
+    ///
+    /// 【只处理正在交战的敌人】
+    ///   开局复位时无脑 `ChangeState(Idle)` 会把 PatrolState 顶掉 —— 表现就是「敌人
+    ///   全都站在原地不巡逻了」。待机/巡逻的敌人保持原状态，只有正处在
+    ///   CombatMovement / Attack / Retreat / GettingHit 的才拉回来。
     /// </summary>
     public void ResetAggro()
     {
@@ -206,6 +211,18 @@ public class EnemyController : MonoBehaviour
 
         // 已经死了的敌人只清目标，不要把它从 Dead 状态拉回来
         if (Health != null && Health.IsDead) return;
+
+        // Start 还没跑完（stateMachine 未建）时不要动状态
+        if (stateMachine == null) return;
+
+        if (!IsInState(E_EnemyState.CombatMovement)
+            && !IsInState(E_EnemyState.Attack)
+            && !IsInState(E_EnemyState.RetreatAfterAttack)
+            && !IsInState(E_EnemyState.GettingHit))
+        {
+            // 本来就在 Idle / Patrol：不要动，否则会把巡逻顶成原地站着
+            return;
+        }
 
         // 解除处决/演出锁，并清掉残留的攻击姿态（敌人同样用 Override Layer 播招式）
         SetPerformanceLock(false);
@@ -217,7 +234,9 @@ public class EnemyController : MonoBehaviour
             NavAgent.isStopped = false;
         }
 
-        ChangeState(E_EnemyState.Idle);
+        // 有巡逻点的回巡逻，没有的回待机（PatrolState.Enter 自己也会在无路线时退到 Idle）
+        PatrolPoute route = GetComponent<PatrolPoute>();
+        ChangeState(route != null && route.HasPoints ? E_EnemyState.Patrol : E_EnemyState.Idle);
     }
 
     /// <summary>

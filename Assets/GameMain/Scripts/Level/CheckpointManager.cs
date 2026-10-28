@@ -79,7 +79,17 @@ public class CheckpointManager
         // 否则「死亡 → 篝火复活」会带着死亡瞬间的空耐力继续，和篝火休息的体感不一致
         player.playerStamina?.RestoreFull();
 
-        ResetEnemiesAggro();
+        // 敌人重生：死了再回来，关卡里的敌人也一起复位（魂系行为）。
+        // 不能只清仇恨 —— 那样跑回原处只剩一地空地（Phase 4 第 3 步）。
+        if (EnemyManager.i != null)
+        {
+            EnemyManager.i.RespawnAll();
+        }
+        else
+        {
+            // 没有 EnemyManager 的调试场景：至少清仇恨，别让敌人一路追到篝火
+            ResetEnemiesAggro();
+        }
 
         GameEvents.RaisePlayerRevive();
 
@@ -91,11 +101,11 @@ public class CheckpointManager
     }
 
     /// <summary>
-    /// 清掉所有敌人的仇恨。
+    /// 只清仇恨、不复位（没有 EnemyManager 时的兜底）。
     ///
-    /// 【为什么复活要清仇恨】杀死玩家的那只敌人 Target 仍指向玩家，
-    /// 复活后它会一路追到篝火（玩家还没走到就又被围）。只清仇恨、不复位敌人，
-    /// 敌人血量/位置的重置属于下一步（敌人重生）。
+    /// 正常路径已改成 <see cref="EnemyManager.RespawnAll"/>（连血量/位置一起复位），
+    /// 这里保留给「场景里没摆 EnemyManager」的调试场景：杀死玩家的那只敌人 Target 仍指向玩家，
+    /// 不清的话会一路追到篝火。
     /// </summary>
     private static void ResetEnemiesAggro()
     {

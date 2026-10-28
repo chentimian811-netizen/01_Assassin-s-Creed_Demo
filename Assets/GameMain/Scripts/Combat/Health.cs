@@ -198,4 +198,16 @@ public class Health : MonoBehaviour, IDamageable
             E_DamageSource.Scripted, false, "debug");
         TakeDamage(info);
     }
+
+    /// <summary>
+    /// 调试用：Inspector 右键直接致死（走与致命伤一致的 Die 流程，即 ForceKill 兜底出口）。
+    /// 存在意义是验收「死亡 → 回收 → 重生」：一刀一刀砍到死再去跑流程太慢，
+    /// 右键致死能把死亡链路单独跑一遍（当前 `Character.enemy_default.max_health` = 10，
+    /// 轻攻击一刀就死，但还是不如右键稳定可控）。
+    /// </summary>
+    [UnityEngine.ContextMenu("Debug/Force Kill")]
+    private void DebugForceKill()
+    {
+        ForceKill();
+    }
 }

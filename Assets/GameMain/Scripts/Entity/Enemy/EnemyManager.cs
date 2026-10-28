@@ -31,6 +31,64 @@ public class EnemyManager : MonoBehaviour
     float timer = 0f;
 
     /// <summary>
+    /// 场景里的**全部**敌人（不是交战列表）。敌人重生时按它全量复位。
+    /// 由 EnemyController.Start 登记 —— 本项目敌人是场景摆放，没有运行时生成。
+    /// </summary>
+    readonly List<EnemyController> m_AllEnemies = new List<EnemyController>();
+
+    /// <summary>登记一只敌人（EnemyController.Start 调用，幂等）</summary>
+    public void RegisterEnemy(EnemyController enemy)
+    {
+        if (enemy == null || m_AllEnemies.Contains(enemy)) return;
+        m_AllEnemies.Add(enemy);
+    }
+
+    /// <summary>注销（敌人被销毁或移出关卡时调用）</summary>
+    public void UnregisterEnemy(EnemyController enemy)
+    {
+        if (enemy == null) return;
+        m_AllEnemies.Remove(enemy);
+    }
+
+    /// <summary>
+    /// 全部敌人复位到初始落点并复活（篝火休息 / 玩家死亡回篝火时调用）。
+    ///
+    /// 【为什么要清空交战列表】
+    ///   被回收的敌人还留在 enemiesInRange 里，复位那一帧的 SelectEnemyForAttack /
+    ///   GetClosesEnemyToPlayerDir 会挑到「位置在旧处、血量已归零」的对象。
+    ///   清空后由各敌人的 VisionSensor 在玩家重新进入视野时自己登记回来。
+    ///
+    /// 【为什么要清玩家的目标】
+    ///   硬锁/软锁还指着旧目标时，相机与高亮会一直盯着一个刚隐藏的敌人；
+    ///   清掉后下一次周期刷新会重新挑最近的一个。
+    /// </summary>
+    public void RespawnAll()
+    {
+        enemiesInRange.Clear();
+
+        if (Player != null)
+        {
+            Player.TargetEnemy = null;
+            if (Player.IsLocking) Player.ForceUnlock();
+        }
+
+        int respawned = 0;
+        for (int i = 0; i < m_AllEnemies.Count; i++)
+        {
+            EnemyController enemy = m_AllEnemies[i];
+            if (enemy == null) continue;
+            enemy.ResetToSpawn();
+            respawned++;
+        }
+
+        // 出手调度重新起算：刚重生就排上一刀会显得很突兀
+        notAttackingTimer = m_configRow != null ? m_configRow.InitialAttackDelay : 0f;
+        timer = 0f;
+
+        Debug.Log($"[EnemyManager] 敌人已重生：{respawned} 只");
+    }
+
+    /// <summary>
     /// 将敌人加入攻击范围列表（去重）
     /// </summary>
     /// <param name="enemy"></param>

@@ -5,7 +5,8 @@ using UnityEngine;
 public class DeadState : State<EnemyController>
 {
 
-    // 销毁延迟来自 Enemy 表 destroy_delay（真实时间，不受 timeScale 影响）
+    // 回收延迟来自 Enemy 表 destroy_delay（真实时间，不受 timeScale 影响）；
+    // 到点只把物体隐藏，不销毁 —— 等 EnemyManager.RespawnAll 再打开（Phase 4 第 3 步：敌人重生）
 
 
     public override void Enter(EnemyController owner)
@@ -54,23 +55,39 @@ public class DeadState : State<EnemyController>
         }
         finally
         {
-            // 改用真实时间销毁：Destroy(go, t) 与 Invoke 一样走【缩放时间】，
+            // 改用真实时间回收：Destroy(go, t) 与 Invoke 一样走【缩放时间】，
             // 一旦 Time.timeScale 被卡肉/暂停压到 0，延迟会被无限拉长，
             // 表现就是"敌人明明死了却一直躺在地上不消失"。
-            StartCoroutine(CoDestroyAfterRealtime(owner.gameObject, owner.Config != null ? owner.Config.DestroyDelay : 0f));
+            StartCoroutine(CoRecycleAfterRealtime(owner, owner.Config != null ? owner.Config.DestroyDelay : 0f));
         }
     }
 
     /// <summary>
-    /// 真实时间延迟销毁。宿主是本组件：死亡时只有 EnemyController/MeleeFighter 被禁用，
-    /// DeadState 自身仍启用、root 也保持 active，协程一定能跑完。
+    /// 真实时间延迟**回收**（不销毁）：到点把整个敌人物体 SetActive(false)，
+    /// 等 <see cref="EnemyManager.RespawnAll"/> → <see cref="EnemyController.ResetToSpawn"/> 再打开。
+    ///
+    /// 【为什么从 Destroy 改成回收】
+    ///   Phase 4 要做「篝火休息 / 玩家死亡 → 敌人重生」。单场景阶段不能重载场景，
+    ///   Destroy 掉就只剩「重新 Instantiate」一条路，而重新实例化会丢巡逻点引用、
+    ///   血条绑定（EnemyHealthBarsForm 是开局一次性建表）与 EnemyManager 的注册关系。
+    ///
+    /// 【为什么要判 IsInDeadState】
+    ///   延迟期内玩家可能已经点篝火（或死亡回篝火）把这只敌人复活了；
+    ///   不判的话回收协程到点会把刚复活的敌人重新关掉（表现：复活后立刻消失）。
+    ///   宿主是本组件：死亡时只有 EnemyController/MeleeFighter 被禁用，
+    ///   DeadState 自身仍启用、root 也保持 active，协程一定能跑完。
     /// </summary>
-    private IEnumerator CoDestroyAfterRealtime(GameObject go, float delay)
+    private IEnumerator CoRecycleAfterRealtime(EnemyController owner, float delay)
     {
-        Debug.Log($"[DeadState] {go.name} 进入死亡终态，{delay:0.##}s 后销毁", this);
+        if (owner == null) yield break;
+
+        Debug.Log($"[DeadState] {owner.name} 进入死亡终态，{delay:0.##}s 后回收（等待重生）", owner);
 
         yield return new WaitForSecondsRealtime(delay);
 
-        if (go != null) Destroy(go);
+        if (owner == null) yield break;
+        if (!owner.IsInDeadState) yield break;   // 这段延迟里已经被复活了
+
+        owner.gameObject.SetActive(false);
     }
 }

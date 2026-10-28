@@ -63,6 +63,23 @@ public class EnemyController : MonoBehaviour
     // 分离推力强度
     private float separationForce => m_configRow != null ? m_configRow.SeparationForce : 0f;
 
+    // ==================== 初始落点快照（Phase 4 第 3 步：敌人重生） ====================
+
+    /// <summary>场景里的初始位置（Start 抓一次）。复活回这里，等价于「重载关卡」</summary>
+    private Vector3 m_SpawnPosition;
+
+    /// <summary>场景里的初始朝向</summary>
+    private Quaternion m_SpawnRotation;
+
+    /// <summary>
+    /// 是否处于死亡终态。
+    /// DeadState 的延迟回收靠它判断「这段延迟里有没有被复活」——
+    /// 不加这道闸，玩家在尸体消失前点了篝火，1 秒后刚复活的敌人会被回收协程重新关掉。
+    /// </summary>
+    public bool IsInDeadState => m_inDeadState;
+
+    public Vector3 SpawnPosition => m_SpawnPosition;
+
     private void Awake()
     {
         // 必须在 Start 建状态机之前解析：PatrolState.Enter 等会在 Start 里立刻读数值
@@ -101,6 +118,11 @@ public class EnemyController : MonoBehaviour
 
         stateMachine = new StateMachine<EnemyController>(this);
 
+        // 记初始落点：单场景阶段不能用「重载场景」做敌人重生（GF 的 LoadScene 是 additive
+        // 且不卸载当前场景，重载会多出一整套玩家/敌人/框架实例），所以复位靠这份快照
+        m_SpawnPosition = transform.position;
+        m_SpawnRotation = transform.rotation;
+
         if(GetComponent<PatrolPoute>() != null && GetComponent<PatrolPoute>().HasPoints)
         {
             ChangeState(E_EnemyState.Patrol);
@@ -109,6 +131,9 @@ public class EnemyController : MonoBehaviour
         {
             ChangeState(E_EnemyState.Idle);
         }
+
+        // 登记进 EnemyManager 的全量列表：篝火休息 / 死亡回篝火时按它统一重生
+        if (EnemyManager.i != null) EnemyManager.i.RegisterEnemy(this);
     }
 
     private void OnEnable()
@@ -283,6 +308,90 @@ public class EnemyController : MonoBehaviour
         // 有巡逻点的回巡逻，没有的回待机（PatrolState.Enter 自己也会在无路线时退到 Idle）
         PatrolPoute route = GetComponent<PatrolPoute>();
         ChangeState(route != null && route.HasPoints ? E_EnemyState.Patrol : E_EnemyState.Idle);
+    }
+
+    /// <summary>
+    /// 复位到初始落点并复活（篝火休息 / 玩家死亡回篝火时由 <see cref="EnemyManager.RespawnAll"/> 统一调用）。
+    ///
+    /// 【为什么是「就地复位」而不是「重新实例化」】
+    ///   单场景阶段不能用重载场景刷新关卡；而重新 Instantiate 会丢掉场景里配好的巡逻点引用、
+    ///   血条绑定（EnemyHealthBarsForm 是开局一次性建表）与 EnemyManager 的注册关系。
+    ///   就地复用一个已经存在的敌人最省事，也最不容易出现「复活了但没血条/不巡逻」。
+    ///
+    /// 【顺序不能乱，每一步都有可观测的坏结果】
+    ///   1. 先清 m_inDeadState：ChangeState 开头有「死亡终态一律早退」的闸门，
+    ///      不解除的话下面任何一次状态切换都会被吞掉（表现：复活了但站在原地不动）；
+    ///   2. 再 SetActive(true)：死亡回收会把整个物体关掉，不先打开就开不了协程/Animator；
+    ///   3. 挪位置必须在开 CharacterController / NavMeshAgent **之前**：
+    ///      两者开着时直接改 transform 会被顶回去、或被代理拽回原处，Agent 还要额外 Warp；
+    ///   4. 最后才 ChangeState：PatrolState.Enter 会读当前位置与导航状态。
+    /// </summary>
+    public void ResetToSpawn()
+    {
+        if (stateMachine == null) return;   // Start 还没跑完（理论上不会）
+
+        // 1) 解除死亡终态与处决演出锁
+        m_inDeadState = false;
+        m_inPerformance = false;
+        m_pendingStunDuration = 0f;
+
+        // 2) 物体先活过来（死亡延迟回收会 SetActive(false)）
+        if (!gameObject.activeSelf) gameObject.SetActive(true);
+
+        // 3) 血量：isDead 只有 Health 能清，绕过它会出现「满血但打不了」的僵尸态
+        if (Health != null) Health.ResetToFull();
+
+        // 4) 落点：先关碰撞/代理再挪，挪完再开
+        if (character != null) character.enabled = false;
+        if (NavAgent != null) NavAgent.enabled = false;
+
+        transform.SetPositionAndRotation(m_SpawnPosition, m_SpawnRotation);
+
+        if (character != null) character.enabled = true;
+
+        if (NavAgent != null)
+        {
+            NavAgent.enabled = true;
+            NavAgent.Warp(m_SpawnPosition);
+            if (NavAgent.isOnNavMesh)
+            {
+                NavAgent.ResetPath();
+                NavAgent.isStopped = false;
+            }
+            else
+            {
+                Debug.LogWarning($"[Enemy] {name} 复位后不在 NavMesh 上（落点 {m_SpawnPosition}），寻路可能失效", this);
+            }
+        }
+
+        // 5) 死亡时被关掉的组件，按「先传感器、再战斗、最后控制器」顺序恢复
+        if (VisionSensor != null && !VisionSensor.gameObject.activeSelf)
+            VisionSensor.gameObject.SetActive(true);
+
+        if (Fighter != null)
+        {
+            Fighter.enabled = true;         // 重新订阅 OnEnemyKilled / OnUnitDamaged（OnEnable 配对）
+            Fighter.ResetCombatPose();      // 覆盖层(1) 的死亡姿态切回 Empty，否则会一直躺着
+        }
+
+        enabled = true;                     // 死亡时关了 EnemyController.Update
+
+        // 6) 清仇恨与临时状态，回巡逻或待机
+        Target = null;
+        TargetsInRange.Clear();
+        CombatMovementTimer = 0f;
+
+        // 停掉各 State 的残留协程：敌人可能是「活着被篝火复位」的，
+        // 那时 GettingHitState / AttackStates 的协程还在跑，复活后会把状态机又拽回战斗。
+        foreach (var state in GetComponents<State<EnemyController>>())
+        {
+            if (state != null) state.StopAllCoroutines();
+        }
+
+        PatrolPoute route = GetComponent<PatrolPoute>();
+        ChangeState(route != null && route.HasPoints ? E_EnemyState.Patrol : E_EnemyState.Idle);
+
+        Debug.Log($"[Enemy] {name} 已复位到出生点 {m_SpawnPosition}（血量 {Health?.CurrentHealth}/{Health?.MaxHealth}）", this);
     }
 
     /// <summary>

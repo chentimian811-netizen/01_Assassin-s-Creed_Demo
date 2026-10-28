@@ -77,18 +77,23 @@ public class Bonfire : MonoBehaviour, IInteractable
         // 2. 登记重生点：死亡出口（DeathForm → ProcedureGame）读它决定复活落点
         CheckpointManager.Instance.SetCheckpoint(bonfireId, RespawnPosition, RespawnRotation);
 
-        // 3. 点亮表现 + 状态
+        // 3. 敌人重生（C1）：单场景阶段不能重载场景，靠 EnemyManager 全量复位
+        //    （记初始落点 + 就地复活，不重新实例化，见 EnemyController.ResetToSpawn）
+        if (EnemyManager.i != null) EnemyManager.i.RespawnAll();
+        else Debug.LogWarning("[Bonfire] 场景里没有 EnemyManager，敌人不会重生", this);
+
+        // 4. 点亮表现 + 状态
         bool firstLight = !m_IsLit;
         m_IsLit = true;
         if (bonfireLight != null) bonfireLight.enabled = true;
 
-        // 4. 事件与日志。
+        // 5. 事件与日志。
         //    OnBonfireLit 目前没有订阅方（HUD 还没做篝火提示），先留着给音效/任务用。
         GameEvents.RaiseBonfireLit(bonfireId);
 
         string message = firstLight
-            ? $"篝火已点燃：{bonfireId}（重生点已登记）"
-            : $"已休息：{bonfireId}（血量与耐力回满）";
+            ? $"篝火已点燃：{bonfireId}（重生点已登记，敌人已重生）"
+            : $"已休息：{bonfireId}（血量与耐力回满，敌人已重生）";
         ToastService.Show(message);
         Debug.Log($"[Bonfire] {message}，落点 {RespawnPosition}");
     }

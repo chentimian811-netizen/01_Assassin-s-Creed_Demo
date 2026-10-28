@@ -160,13 +160,11 @@ Packages/com.code-philosophy.luban/   # Luban 运行时（内嵌包，版本 v1.
 
 ## 5. 已知缺陷（本次不修，已记录）
 
-1. **弓的 `weaponID = 1111` 在 Item 表里不存在。**
-   `BowConfig.asset` 用的是 1111，而真正对应的 `Item 10004 Hunting Bow` 类型又标成 `Dagger(1)`。
-   这会让弓的伤害走 `DamageRouter` 的兜底值、装备类型路由也不对。
-   本次按用户决定**只迁移数值、不改 ID**，`Weapon` 表里保留 `1111` 一行；
-   `ConfigReferenceValidator` 会把这条作为 **【已知缺陷】** 单独列出（不计入校验失败）。
-   修的方式是独立任务：`BowConfig.weaponID` 改 10004 + `Item 10004` 的 `weapon_type` 改成 `Bow(3)`，
-   然后删掉校验器里按 `1111` 判定的那段已知缺陷分支。
+1. ~~弓的 `weaponID = 1111` 在 Item 表里不存在~~ **已修复（2026-10-28）**：
+   `BowConfig.weaponID` 与 `Weapon` 表行都改为 **10004**，`Item 10004 Hunting Bow` 的 `weapon_type` 改为 **3(Bow)**，
+   校验器里按 `1111` 判定的已知缺陷分支已删除；背包里现在可以正常装备弓。
+   遗留：`BowConfig.animOverride` 指向的是玩家的基础控制器 `PlayerMove.controller`（类型不匹配，运行时为 null），
+   弓没有专属动作覆盖 —— 要做持弓姿态需要单独建一个 AnimatorOverrideController。
 2. **弹反没有启用**：`Parry` 表只有开发初始值，工程里没有 `ParrySystem` 实例，
    `GetBlockInput` 仍未接线。表里有值 ≠ 玩法已实现。
 3. **Boss 没有实例**：`BossPhase` 表故意为空，只验证了结构与读取链路，Boss Play 未覆盖。

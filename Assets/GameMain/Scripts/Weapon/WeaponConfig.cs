@@ -16,7 +16,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName ="Weapon/WeaponConfig")]
 public class WeaponConfig : ScriptableObject
 {
-    /// <summary>武器 ID。正常应对应 Item.id；弓的 1111 是既有数据缺陷（见 Config/README.md）</summary>
+    /// <summary>武器 ID：必须等于 Item.id，同时也是 Weapon 表的行键（装备查找与数值取用都靠它）</summary>
     public int weaponID;
 
     /// <summary>武器名（主要用于识别与日志）</summary>

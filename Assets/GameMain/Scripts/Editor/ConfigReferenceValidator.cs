@@ -40,7 +40,7 @@ public static class ConfigReferenceValidator
 
         /// <summary>
         /// 已知缺陷：有明确决策记录、本次不修的问题。只提示，不计入失败。
-        /// 目前只用于"弓的 weaponID=1111 与 Item 表不一致"这一条既有数据缺陷（计划 §2.7-1）。
+        /// 目前没有登记项（弓的 weaponID 缺陷已于 2026-10-28 修复）；保留机制给将来"确认暂不修"的问题用。
         /// </summary>
         public bool IsKnownIssue;
 
@@ -333,7 +333,6 @@ public static class ConfigReferenceValidator
     /// <summary>
     /// 武器引用：每个 WeaponConfig 的 weaponID 非空、不重复、在 Weapon 表里有行，
     /// 且 Weapon.weapon_id 应能对应到 Item.id。
-    /// 弓的 1111 是既有数据缺陷（计划 §2.7-1），用户已决定本次不修，因此按"已知缺陷"提示。
     /// </summary>
     private static void CheckWeaponReferences(List<Problem> problems)
     {
@@ -366,14 +365,7 @@ public static class ConfigReferenceValidator
 
             if (itemTable != null && !itemTable.ContainsKey(config.weaponID))
             {
-                // 1111：BowConfig 与 Item 10004 Hunting Bow 不一致，属于计划里已经记录、
-                // 由用户决定"本次不修"的既有缺陷，只提示不计失败。
-                problems.Add(new Problem
-                {
-                    Where = path,
-                    Message = $"weaponID={config.weaponID} 在 Item 表里不存在（弓的既有缺陷，待单独修复）",
-                    IsKnownIssue = config.weaponID == 1111,
-                });
+                problems.Add(Make(path, $"weaponID={config.weaponID} 在 Item 表里不存在"));
             }
         }
 

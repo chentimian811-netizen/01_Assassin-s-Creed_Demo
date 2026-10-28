@@ -150,9 +150,9 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
   缺配置时 `PlayerStamina` / `PlayerCombat` / `PlayerDodge` 会报错并拒绝消耗，不回落默认值。
 - 弹反未实现：`ParrySystem.cs` 存在（数值已改读 `Parry` 表）但工程里没有该组件实例，`GetBlockInput` 内仍被注释
   （`// P3：parrySystem?.SetBlocking(...)`）。`Parry` 表里的一行只是「未启用功能的开发初始值」。
-- **弓的 weaponID 数据缺陷**：`BowConfig.weaponID = 1111` 在 `Item` 表不存在（对应物品是 10004 Hunting Bow，
-  其 `weapon_type` 又被标成 Dagger）。本次迁移按用户决定**不改 ID**，`Weapon` 表保留 1111 一行，
-  `ConfigReferenceValidator` 会把它作为【已知缺陷】单列（不计失败）。修复需独立任务。
+- **弓的 weaponID 缺陷已修复（2026-10-28）**：`BowConfig.weaponID` = `Weapon` 表行 = **10004**，
+  `Item 10004 Hunting Bow` 的 `weapon_type` 改回 **3(Bow)**，校验器里按 1111 判定的已知缺陷分支已删除。
+  遗留：`BowConfig.animOverride` 指向基础控制器（类型不匹配，运行时为 null），弓没有专属动作覆盖。
 - Boss 无实例：`BossPhase` 表故意为空，只验证了表结构、分组排序与事件链路，**Boss Play 未覆盖**。
 - `PackageTypeFood = 2` 仅定义常量，食物系统未实现。
 - `CombatController.cs` 为空壳 WIP：仅 `Awake` 缓存 `MeleeFighter`，`Update` 为空。

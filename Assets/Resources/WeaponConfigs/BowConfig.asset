@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05c76ee6f7ca9104a8a44d83a69f74a1, type: 3}
   m_Name: BowConfig
   m_EditorClassIdentifier: 
-  weaponID: 1111
+  weaponID: 10004
   weaponName: Hunting Bow
   weaponPrefab: {fileID: 7037937364688556453, guid: 2a0335e280af7cf4a8fe28b49a3ac4e3,
     type: 3}

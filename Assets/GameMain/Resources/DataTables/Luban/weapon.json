@@ -27,7 +27,7 @@
     "hip_fire_spread_angle": 8
   },
   {
-    "weapon_id": 1111,
+    "weapon_id": 10004,
     "attack_range": 5,
     "max_ammo": 30,
     "fire_cooldown": 0.5,

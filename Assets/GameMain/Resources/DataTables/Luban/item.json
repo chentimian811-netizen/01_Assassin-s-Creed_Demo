@@ -41,7 +41,7 @@
   {
     "id": 10004,
     "type": 1,
-    "weapon_type": 1,
+    "weapon_type": 3,
     "base_damage": 10,
     "crit_rate": 0.15,
     "star": 3,

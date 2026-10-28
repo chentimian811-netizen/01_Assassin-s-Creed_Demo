@@ -52,12 +52,28 @@ public class ProcedureMainMenu : ProcedureBase
 
     protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
+        m_ProcedureOwner = null;
+
+        // 停机时 EventManager / UIManager 可能已经被 GF 先关掉，退订和关界面都会抛异常
+        // （见 ProcedureGame.OnLeave 的说明）。停机不需要清理，直接交给基类。
+        if (isShutdown)
+        {
+            base.OnLeave(procedureOwner, isShutdown);
+            return;
+        }
+
         GameEntry.Event.Unsubscribe(LoginSuccessEventArgs.EventId, OnLoginSuccess);
 
         if (m_MainMenuFormId.HasValue)
         {
-            GameEntry.UI.CloseUIForm(m_MainMenuFormId.Value);
+            int formId = m_MainMenuFormId.Value;
             m_MainMenuFormId = null;
+
+            // 界面可能已被 UIRouter / 其它路径关掉，直接关会抛 "Can not find UI form"
+            if (GameEntry.UI != null && GameEntry.UI.HasUIForm(formId))
+            {
+                GameEntry.UI.CloseUIForm(formId);
+            }
         }
 
         // 有主菜单相机实例时做一次过渡；当前场景没有实例，这里是空操作。
@@ -67,7 +83,6 @@ public class ProcedureMainMenu : ProcedureBase
             menuCamera.TransitionToGameplay();
         }
 
-        m_ProcedureOwner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 

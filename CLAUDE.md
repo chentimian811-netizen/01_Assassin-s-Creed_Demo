@@ -65,6 +65,8 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 - 死亡：`Health.Die` → `GameEvents.RaisePlayerDeath` → **常驻 HUD `MainHUDForm`** 订阅到后 `UIRouter.Open(UIPaths.DeathForm, "Popup")`（DeathForm 自己订阅不到「我还没打开就死了」）。`VictoryForm` 目前是空壳，等 Boss 有实例再接 `OnBossKilled`。
 - 界面参数用 `UI/Core/UIFormArgs.cs` 里的类型（如 `ShopFormArgs { KeeperId }`）装进 `UIRouter.Open` 的 `userData`，界面在 `OnOpenForm` 里自己取；不要再走「先拿到面板实例再调 OpenWithConfig」两步。
 - **只有一套 UI 生命周期**：所有界面继承 `GameUIForm`（或 HUD 的 `UIFormLogic`），由 `UIRouter` 打开/关闭。旧 `BasePanel`/`UIManager` 体系已在 GF-1.6 彻底删除，不要再引入第二套。
+- **HUD 不走 UIRouter 打开，但会被登记进去**：`UIRouter` 订阅了 GF 的「打开成功」事件，Procedure 直接 `OpenUIForm` 的 HUD / 敌人血条也会记进路由。所以切流程时顺序必须是「先按 formId 关 HUD，再 `UIRouter.CloseAll()` 清弹窗」——反过来会让 CloseAll 先关掉 HUD，随后旧 formId 再关一次抛 `Can not find UI form`（异常还会打断 OnLeave，把 HUD 留在场上）。`ProcedureGame.CloseFormIfOpen` 里有 `HasUIForm` 兜底。
+- **OnLeave 里 `isShutdown` 要提前返回**：停 Play 时 GF 按「事件 → 流程 → UI」销毁，`EventManager` 已关，再 `Unsubscribe` 会抛 `Event '...' not exists specified handler`；界面同理。停机不需要清理。
 - 拿不到界面实例时（池化 + 异步打开）用「静态下单 + 界面轮询版本号」：见 `ToastService`（覆盖策略）与 `PickupForm.ShowPrompt/HidePrompt`（换内容/淡出），不要写「先拿实例再调方法」那套。
 - 提示统一用 `ToastService.Show(...)`；旧入口 `ToastMessage.Show(...)` 是它的静态门面（等价，调用点不必改）。
 

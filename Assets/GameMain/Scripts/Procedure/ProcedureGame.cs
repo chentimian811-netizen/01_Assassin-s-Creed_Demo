@@ -63,6 +63,18 @@ public class ProcedureGame : ProcedureBase
 
     protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
     {
+        m_ProcedureOwner = null;
+
+        // 停机时 GF 按「事件 → 流程 → UI」逐层销毁（BaseComponent.OnDestroy →
+        // GameFrameworkEntry.Shutdown → ProcedureManager.Shutdown → 这里），此时 EventManager /
+        // UIManager 可能已经先关掉了：再退订会抛 "Event '...' not exists specified handler"，
+        // 再关界面会抛 "Can not find UI form"。停机本来就不需要清理，直接交给基类。
+        if (isShutdown)
+        {
+            base.OnLeave(procedureOwner, isShutdown);
+            return;
+        }
+
         GameEntry.Event.Unsubscribe(MenuCommandEventArgs.EventId, OnMenuCommand);
         GameEntry.Event.Unsubscribe(OpenPanelEventArgs.EventId, OnOpenPanel);
 
@@ -76,7 +88,6 @@ public class ProcedureGame : ProcedureBase
         // 若留着模态界面（暂停 + 锁光标），下一局一开始就停住。
         UIRouter.CloseAll();
 
-        m_ProcedureOwner = null;
         base.OnLeave(procedureOwner, isShutdown);
     }
 
@@ -131,10 +142,11 @@ public class ProcedureGame : ProcedureBase
         switch (args.Command)
         {
             case CommandReturnToMainMenu:
-                // 切流程前先关掉模态界面：Pause/Death 都带「暂停 + 光标锁」，
-                // 留着它们会让主菜单一打开就停住（OnLeave 里的 CloseAll 也会兜底）。
-                UIRouter.CloseAll();
-
+                // 不在这里 CloseAll：OnLeave 里先按 formId 关 HUD、再 CloseAll 清弹窗。
+                // 反过来先 CloseAll 的话，HUD / 敌人血条虽然由 Procedure 直接打开，但 GF 的
+                // 「打开成功」事件会把它们登记进 UIRouter，于是会被一起关掉；随后 OnLeave
+                // 再按旧 formId 关一次就抛 "Can not find UI form"。
+                //
                 // 单场景阶段不重载场景：GF 的 LoadScene 是 additive 加载，对当前场景再加载
                 // 一次会多出一整套框架/玩家/敌人实例。直接回菜单流程，玩家状态由
                 // ProcedureGame.SetupGameSystems → ResetForNewRun 在下次开始时复位。
@@ -168,12 +180,23 @@ public class ProcedureGame : ProcedureBase
 
     // ==================== 工具方法 ====================
 
+    /// <summary>
+    /// 关闭 Procedure 自己开的界面（HUD / 敌人血条）。
+    ///
+    /// 这类界面虽然不走 UIRouter 打开，但 GF 的「打开成功」事件会把它们登记进路由，
+    /// 所以 UIRouter.CloseAll() 可能已经关过它们；此时直接 CloseUIForm 会抛
+    /// "Can not find UI form"。关之前先确认界面还在。
+    /// </summary>
     private void CloseFormIfOpen(ref int? formId)
     {
-        if (formId.HasValue)
+        if (!formId.HasValue) return;
+
+        int id = formId.Value;
+        formId = null;
+
+        if (GameEntry.UI != null && GameEntry.UI.HasUIForm(id))
         {
-            GameEntry.UI.CloseUIForm(formId.Value);
-            formId = null;
+            GameEntry.UI.CloseUIForm(id);
         }
     }
 }

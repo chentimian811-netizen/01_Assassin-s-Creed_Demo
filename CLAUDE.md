@@ -7,8 +7,8 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
 
 - **工程线已收口**：GF-0 ~ GF-3 + GF-3.5（主菜单 / 暂停 / 死亡）完成并 Play 验收通过；
   分支 `feature/gf-procedure`，GF 收口 commit `629368c`（以 `git log -1` 为准），工作区干净。
-- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：**T1 + T2 弹反闭环**（已落地，待 Play 验收）→
-  Phase 4 死亡循环部署 → Boss 1。P0 未完成时不要动工程线。
+- **当前优先做 P0**（`毕业设计/毕业设计方案.md` §0.4 / §0.5）：**T1 + T2 弹反闭环已完成并 Play 验收通过（2026-10-28）** →
+  **下一步 = Phase 4 死亡循环部署**（T3 格挡耗耐 / T4 右键分流 / T5 处决都很小，可并行）→ Boss 1。P0 未完成时不要动工程线。
 - 工程线下一阶段是**角色重构 S0–S7**（前置已满足，等 P0 空档）；GF-4 等新场景、GF-5 留 Phase 8。
 - 交接提示：`开发文档/GF框架迁移与底座搭建计划.md` §11、`毕业设计/毕业设计方案.md` 顶部「P0 新会话交接提示」。
 
@@ -166,7 +166,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - 耐力已接线：`PlayerCombat`（轻攻击）与 `PlayerDodge`（翻滚）都读 `Stamina` 表同一行后调 `PlayerStamina.TryConsume`；
   `heavy_attack_cost` / `parry_fail_cost` / `sprint_cost_per_second` / `block_cost_per_second` / `jump_cost` 仍无调用方。
   缺配置时 `PlayerStamina` / `PlayerCombat` / `PlayerDodge` 会报错并拒绝消耗，不回落默认值。
-- 弹反 / 格挡 **T1 + T2 代码已接通（待 Play 验收）**：`ParrySystem` 挂在 `Male.prefab` 根节点，
+- 弹反 / 格挡 **T1 + T2 已接通并 Play 验收通过（2026-10-28）**：`ParrySystem` 挂在 `Male.prefab` 根节点，
   实现 `IDamageInterceptor`，由 `DamageRouter.Apply/ApplyAmount` 在 `TakeDamage` 前询问；
   弹反时机 = ① 按下后 `Parry.parry_window`(0.15s) 内被命中，**或** ② 格挡是在本次攻击进入前摇之后才按下的
   （"看到起手才架刀"，读 `IParryTarget.WindupStartRealtime`）。命中发生在 Impact，见 `MeleeFighter.IsInParryWindow` 注释。

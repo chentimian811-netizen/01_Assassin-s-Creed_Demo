@@ -189,6 +189,8 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - **近战 / 远程模式**由 `WeaponSwitcher` 管：数字键 `1`/`2` 切换，`EquipWeapon` 装弓时自动切远程。
   它**不再禁用 `MeleeFighter`** —— 玩家的受击回调（`OnTriggerEnter` / `HandleUnitDamaged`）挂在它身上，
   一禁用就是「拿弓时敌人打不掉我血、也不播受击」；远程模式不出近战攻击由 `PlayerCombat` 的 `IsUsingRanged` 闸门负责。
+  槽位/弹药与 ER 的差距（2 槽、弓顶掉剑、箭矢不在物品系统）与分档方案见
+  `毕业设计/开发文档/武器槽与弹药槽设计.md`（**只记录、未排期**）。
 - **只有一个玩家预制体**：`Assets/GameMain/Entities/Player/Male.prefab`（场景实例化 + `HUDPrefabBuilder`/`CameraRigBuilder`/`ConfigIdentityMigration` 都指向它）。旧的 `Player.prefab` 已删除，不要按记忆去改它。
 - 三个新界面的标题/按钮文本用的是 **Legacy Text（内置字体）**，与 `LotteryForm`/`ToastForm` 一致；中文靠系统字体回退显示。要换成 TMP 或项目字体，等做视觉时统一处理（工程里没有中文字体资产，只有 `LiberationSans`）。
 - GF Resource 处于 `EditorResourceMode`：路径必须是 `Assets/` 开头且含扩展名（见 `ScenePaths`、`UIPaths` 注释）。

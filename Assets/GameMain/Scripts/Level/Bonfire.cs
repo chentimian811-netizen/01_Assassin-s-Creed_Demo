@@ -87,6 +87,9 @@ public class Bonfire : MonoBehaviour, IInteractable
         m_IsLit = true;
         if (bonfireLight != null) bonfireLight.enabled = true;
 
+        // 点亮状态写盘（第 5 步）：退出 Play 再进，这堆火应该还是亮的
+        if (firstLight) LevelPersistence.MarkBonfireLit(bonfireId);
+
         // 5. 事件与日志。
         //    OnBonfireLit 目前没有订阅方（HUD 还没做篝火提示），先留着给音效/任务用。
         GameEvents.RaiseBonfireLit(bonfireId);
@@ -102,6 +105,17 @@ public class Bonfire : MonoBehaviour, IInteractable
     {
         // 部署出来的点光初始是关着的（未点燃），所以必须连未激活的一起找
         if (bonfireLight == null) bonfireLight = GetComponentInChildren<Light>(true);
+
+        // 恢复点亮状态（第 5 步持久化）：点亮过的篝火再进 Play 应该还是亮的，
+        // 提示语也直接是「在篝火休息」而不是「点燃篝火」。
+        // 注意这里【不】重设重生点 —— 重生点由 CheckpointManager 自己读盘，
+        // 免得「路过一个点过的篝火」就把重生点顶掉。
+        if (LevelPersistence.IsBonfireLit(bonfireId))
+        {
+            m_IsLit = true;
+            if (bonfireLight != null) bonfireLight.enabled = true;
+            Debug.Log($"[Bonfire] {bonfireId} 已点亮（读自存档）", this);
+        }
     }
 
     private void OnDrawGizmosSelected()

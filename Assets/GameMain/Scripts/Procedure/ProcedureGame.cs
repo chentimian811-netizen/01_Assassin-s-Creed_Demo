@@ -114,8 +114,10 @@ public class ProcedureGame : ProcedureBase
             PlayerInput playerInput = player.GetComponent<PlayerInput>();
             if (playerInput != null) playerInput.enabled = true;
 
-            // 死亡 → 回主菜单 → 再开始：复活 + 回出生点（见 PlayerController.ResetForNewRun）
-            player.ResetForNewRun();
+            // 死亡 → 回主菜单 → 再开始：复活 + 落点。
+            // 第 5 步之后落点读存档：点亮过篝火就从篝火开始，否则回出生点
+            // （落点逻辑仍然只有 PlayerController.ResetForNewRun 一份）。
+            CheckpointManager.Instance.PlacePlayerAtCheckpoint(player);
         }
 
         // 敌人还记着上一局的仇恨（Target 指向玩家）：清目标、回待机，死亡/演出中的会自己跳过

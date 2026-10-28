@@ -45,6 +45,16 @@ public static class Phase4DeployMenu
         TryDeployPhase4Props();
     }
 
+    /// <summary>
+    /// 清除 Phase 4 的关卡存档（篝火点亮 + 重生点），恢复到「什么都没点亮」。
+    /// 想从零验一遍 C1/C2/C3 时用；不影响背包/金币（那两个各有自己的 key）。
+    /// </summary>
+    [MenuItem("ACDemo/Level/Clear Phase 4 Save", priority = 201)]
+    public static void ClearPhase4Save()
+    {
+        LevelPersistence.ClearAll();
+    }
+
     /// <summary>部署 Phase 4 的两个场景物件并保存场景。返回 false 表示前置条件不满足</summary>
     private static bool TryDeployPhase4Props()
     {

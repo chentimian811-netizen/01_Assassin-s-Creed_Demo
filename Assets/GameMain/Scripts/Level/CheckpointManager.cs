@@ -38,9 +38,23 @@ public class CheckpointManager
     public Vector3 RespawnPosition => m_Position;
     public Quaternion RespawnRotation => m_Rotation;
 
-    private CheckpointManager() { }
+    /// <summary>
+    /// 构造时读一次盘（懒加载单例，第一次访问时执行）。
+    /// 读不到就保持「没有重生点」——回出生点，与第 2 步之前的行完全一致。
+    /// </summary>
+    private CheckpointManager()
+    {
+        if (LevelPersistence.TryLoadCheckpoint(out string bonfireId, out Vector3 position, out Quaternion rotation))
+        {
+            m_BonfireId = bonfireId;
+            m_Position = position;
+            m_Rotation = rotation;
+            m_HasCheckpoint = true;
+            Debug.Log($"[Checkpoint] 已从存档恢复重生点：{bonfireId} @ {position}");
+        }
+    }
 
-    /// <summary>登记重生点。由 Bonfire.Interact 调用（点燃/休息都算一次登记）</summary>
+    /// <summary>登记重生点。由 Bonfire.Interact 调用（点燃/休息都算一次登记），并立刻写盘</summary>
     public void SetCheckpoint(string bonfireId, Vector3 position, Quaternion rotation)
     {
         m_BonfireId = bonfireId;
@@ -48,7 +62,32 @@ public class CheckpointManager
         m_Rotation = rotation;
         m_HasCheckpoint = true;
 
-        Debug.Log($"[Checkpoint] 重生点已登记：{bonfireId} @ {position}");
+        LevelPersistence.SaveCheckpoint(bonfireId, position, rotation);
+
+        Debug.Log($"[Checkpoint] 重生点已登记并写盘：{bonfireId} @ {position}");
+    }
+
+    /// <summary>
+    /// 「新开一局」（主菜单 → 开始游戏）时把玩家放到重生点；没有存档就回出生点。
+    ///
+    /// 【为什么单独一个方法，而不是复用 RespawnPlayer】
+    ///   RespawnPlayer 是死亡出口，它还要复活敌人、发 OnPlayerRevive、关死亡界面；
+    ///   开局只需要「落点」这一件事（敌人由 ProcedureGame 自己 ResetAggro）。
+    ///   两者共用 PlayerController.ResetForNewRun，落点逻辑只有一份。
+    /// </summary>
+    public void PlacePlayerAtCheckpoint(PlayerController player)
+    {
+        if (player == null) return;
+
+        if (m_HasCheckpoint)
+        {
+            player.ResetForNewRun(m_Position, m_Rotation);
+            Debug.Log($"[Checkpoint] 新局从篝火开始：{m_BonfireId} @ {m_Position}");
+        }
+        else
+        {
+            player.ResetForNewRun();
+        }
     }
 
     /// <summary>

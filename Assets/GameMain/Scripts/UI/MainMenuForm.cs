@@ -35,6 +35,10 @@ public class MainMenuForm : UIFormLogic
     {
         base.OnOpen(userData);
 
+        // GF 的 DefaultUIFormHelper 用 SetParent 挂实例，根节点在「无父级」状态下 rect 是 0×0，
+        // 实测会停在 0×0，于是居中的标题/按钮全部挤到同一点。这里显式铺满父 Canvas。
+        ForceFillParentCanvas();
+
         // 绑定按钮事件
         if (startGameBtn != null) startGameBtn.onClick.AddListener(OnStartGame);
         if (settingsBtn != null) settingsBtn.onClick.AddListener(OnSettings);
@@ -49,12 +53,32 @@ public class MainMenuForm : UIFormLogic
 
     protected override void OnClose(bool isShutdown, object userData)
     {
+        // GF 关界面只是把实例挂起/复用，协程不会自己停；不停的话淡入会在关闭后继续改 alpha，
+        // 下次打开就从一半的透明度开始。
+        StopAllCoroutines();
+
         // 清理按钮监听，防止内存泄漏
         if (startGameBtn != null) startGameBtn.onClick.RemoveListener(OnStartGame);
         if (settingsBtn != null) settingsBtn.onClick.RemoveListener(OnSettings);
         if (quitGameBtn != null) quitGameBtn.onClick.RemoveListener(OnQuitGame);
 
         base.OnClose(isShutdown, userData);
+    }
+
+    /// <summary>
+    /// 把根节点拉伸到父 Canvas（等价于锚点四向对齐 + 偏移全 0）。
+    /// </summary>
+    private void ForceFillParentCanvas()
+    {
+        RectTransform rect = transform as RectTransform;
+        if (rect == null) return;
+
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.localScale = Vector3.one;
     }
 
     // ==================== 动画 ====================
@@ -64,6 +88,13 @@ public class MainMenuForm : UIFormLogic
     /// </summary>
     private IEnumerator FadeInAnimation()
     {
+        // 预制体上没挂 CanvasGroup 时直接放开按钮，不要让整屏卡在不可交互状态。
+        if (canvasGroup == null)
+        {
+            SetButtonsInteractable(true);
+            yield break;
+        }
+
         canvasGroup.alpha = 0f;
 
         // 等一帧确保 Canvas 就绪（UIGroupHelper 需要一帧初始化）
@@ -116,12 +147,11 @@ public class MainMenuForm : UIFormLogic
     }
 
     /// <summary>
-    /// 打开设置（阶段3 实现 SettingsForm）。
+    /// 打开设置 — SettingsForm 还没建，先用 Toast 明确告知，避免点了像坏掉。
     /// </summary>
     private void OnSettings()
     {
-        // TODO 阶段3: GameEntry.UI.OpenUIForm(UIPaths.SettingsForm, "Popup");
-        Debug.Log("[MainMenuForm] 设置功能暂未实现");
+        ToastService.Show("设置功能还没做");
     }
 
     /// <summary>

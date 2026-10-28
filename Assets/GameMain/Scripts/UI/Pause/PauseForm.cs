@@ -27,8 +27,10 @@ public class PauseForm : GameUIForm
     [Header("按钮")]
     [Tooltip("继续游戏（恢复输入 + 解除暂停）")]
     [SerializeField] private Button m_ResumeBtn;
-    [Tooltip("返回主菜单（开发期等价于重开关卡）")]
+    [Tooltip("返回主菜单（重载开发场景后回 ProcedureMainMenu）")]
     [SerializeField] private Button m_MainMenuBtn;
+    [Tooltip("退出游戏（编辑器里停止 Play，打包后 Application.Quit）")]
+    [SerializeField] private Button m_QuitBtn;
 
     /// <summary>
     /// 只跑一次：绑监听。GF 会池化界面实例，所以不能在 OnOpenForm 里重复 AddListener
@@ -38,6 +40,7 @@ public class PauseForm : GameUIForm
     {
         if (m_ResumeBtn != null) m_ResumeBtn.onClick.AddListener(OnClickResume);
         if (m_MainMenuBtn != null) m_MainMenuBtn.onClick.AddListener(OnClickMainMenu);
+        if (m_QuitBtn != null) m_QuitBtn.onClick.AddListener(OnClickQuit);
     }
 
     /// <summary>
@@ -57,5 +60,18 @@ public class PauseForm : GameUIForm
     private void OnClickMainMenu()
     {
         GameEntry.Event.Fire(this, MenuCommandEventArgs.Create(ProcedureGame.CommandReturnToMainMenu));
+    }
+
+    /// <summary>
+    /// 退出游戏。这里不经过流程 —— 退出是进程级操作，没有「流程状态」需要维护。
+    /// 编辑器里用 isPlaying = false，和 MainMenuForm 的退出按钮保持一致。
+    /// </summary>
+    private void OnClickQuit()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 }

@@ -30,7 +30,6 @@ public static class HUDPrefabBuilder
     private const string SpriteDir = "Assets/UI/Resources/Sprites/UI/HUD";
 
     private const string PlayerPrefabPath = "Assets/GameMain/Entities/Player/Male.prefab";
-    private const string PlayerLegacyPrefabPath = "Assets/GameMain/Entities/Player/Player.prefab";
 
     // 布局常量：与样张一致（1920x1080 参考分辨率）
     private const float MarginX = 44f;
@@ -92,7 +91,6 @@ public static class HUDPrefabBuilder
     public static void RebuildAll()
     {
         EnsurePlayerMana(PlayerPrefabPath);
-        EnsurePlayerMana(PlayerLegacyPrefabPath);
 
         BuildPlayerHud(true);
         BuildEnemyBars(true);

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc364e7ae41ca3eda903364e89716f05, type: 3}
   m_Name: GameStartupConfig
   m_EditorClassIdentifier: 
-  m_SkipMainMenu: 1
+  m_SkipMainMenu: 0
   m_DevScenePath: Assets/GameMain/Scenes/TestScene.unity

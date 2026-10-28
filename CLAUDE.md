@@ -118,6 +118,13 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - **Shift 双功能**：短按 → 翻滚 `PlayerDodge.TryDodge()`；长按超阈值 → 疾跑。不再占用独立 Dodge 键。
 - 键位定义在 `Player.prefab` 的 `PlayerInput` 组件上，事件按方法名绑定 PlayerController 的回调。
 
+## 动画（Animator / 混合树）
+
+- 玩家控制器 `Assets/GameMain/Scripts/Entity/Player/Animations/PlayerMove.controller`；locomotion 只有一个 `MoveController` 状态，里面是 2D 混合树 **`StandState`：X = TurnSpeed（弧度，−π~π）、Y = MoveSpeed 档位**（待机 0 / 走 2 / 跑 5，**不是 m/s**）。加/挪节点必须同步改 `PlayerAnimator` 的 `idleMoveTier` / `walkMoveTier` / `runMoveTier`。
+- 方向约定：X=0 正前、+X 向右、**±π 都是正后**。后退节点必须**同时放在 +3.14 与 −3.14**：`atan2` 在 ±π 之间抖动，只放一侧时另一侧会钳到凸包外的最近边、混进前向剪辑（实测症状：按 S 却播 `Walk_Forward_Right`，人绕着敌人转圈）。
+- 位移 100% 来自 root motion（`PlayerMovement.BuildGroundDelta`），因此**只能用 `*_Rootmotion` 剪辑**；`*_IPC` 是原地版，只有蹲下这种特例才走代码位移。
+- 剪辑有两套：`Assets/ARPGWarrior/Animations/Humanoid/`（原始导入，**156 个全部 Loop=0**）与 `Assets/GameMain/Scripts/Entity/Player/Animations/ARPG_Set/`（工程正式使用，循环剪辑 Loop=1）。**混合树只允许引用 `ARPG_Set`**。新增动画 = 从原件复制一份到 `ARPG_Set`、勾上 **Loop Time**、`.anim` 与 `.meta` 一起提交；直接引用原件会出现「播一个循环就停」。
+
 ## Layers & Tags
 
 - Layers：Player(6)、Enemy(7)、**Playehitbox(8)**、**Enemyhitbox(9)**（原文拼写如此，勿改）、VisionSensor(10)、Obstacles(11)、Minimap(12)。

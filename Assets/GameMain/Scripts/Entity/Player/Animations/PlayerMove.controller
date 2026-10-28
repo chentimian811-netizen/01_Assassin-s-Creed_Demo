@@ -1295,6 +1295,54 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: PlayerState
     m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: 7400000, guid: 64185d4353a14bed894d2391ff54728c, type: 2}
+    m_Threshold: 1
+    m_Position: {x: 3.14, y: 2}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: PlayerState
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: 7400000, guid: 64185d4353a14bed894d2391ff54728c, type: 2}
+    m_Threshold: 1
+    m_Position: {x: -3.14, y: 2}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: PlayerState
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: 7400000, guid: 57b500d7d9b52f6e5a37638cef76d1b5, type: 2}
+    m_Threshold: 1
+    m_Position: {x: 3.14, y: 5}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: PlayerState
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: 7400000, guid: 57b500d7d9b52f6e5a37638cef76d1b5, type: 2}
+    m_Threshold: 1
+    m_Position: {x: -3.14, y: 5}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: PlayerState
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: 7400000, guid: 91379f688b1a4a40b14bac07de262192, type: 2}
+    m_Threshold: 1
+    m_Position: {x: -2.318538, y: 2}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: PlayerState
+    m_Mirror: 0
+  - serializedVersion: 2
+    m_Motion: {fileID: 7400000, guid: e49a804abdb543b5bdc2ab982c6eb705, type: 2}
+    m_Threshold: 1
+    m_Position: {x: 2.318538, y: 2}
+    m_TimeScale: 1
+    m_CycleOffset: 0
+    m_DirectBlendParameter: PlayerState
+    m_Mirror: 0
   m_BlendParameter: TurnSpeed
   m_BlendParameterY: MoveSpeed
   m_MinThreshold: 0

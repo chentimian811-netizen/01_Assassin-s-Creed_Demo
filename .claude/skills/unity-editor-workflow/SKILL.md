@@ -21,12 +21,12 @@ description: 在 Unity 2022.3.62f2c1 Editor 中运行与验证本项目改动。
 ## 步骤
 
 1. 打开工程 → 打开 `TestScene.unity` → 确认 Console 无编译错误（有红字先清零，否则 Play 无意义）。
-2. Play。入口链路：`ProcedureLaunch` → 注册 UIGroup(HUD/Page/Popup/Top/Loading) → 直接 `ChangeState<ProcedureGame>`（**跳过主菜单与 Loading**）→ 打开 `MainHUDForm` → 激活玩家、FreeLook 相机、锁定光标。
+2. Play。入口链路（GF-3 后）：`ProcedureLaunch` → `UIGroupBootstrap.EnsureAll()` 补 5 个 UI 组 + Canvas → 读 `GameStartupConfig.skipMainMenu`（默认 true）→ `ProcedureGame` → 打开 `MainHUDForm` / `EnemyHealthBarsForm` → 激活玩家、相机、锁定光标。把开关改成 false 则走 `ProcedureMainMenu → ProcedureLoading → ProcedureGame`。
 3. 造数据（Editor 菜单 `GmCmd/`，仅 `UNITY_EDITOR` 编译）：
    - `GmCmd/读取表格` — 打印 `ItemTable` 全量
    - `GmCmd/创建背包测试数据` — 写入 3 条假背包数据并保存到 PlayerPrefs
    - `GmCmd/读取背包测试数据` — 打印当前背包
-   - `GmCmd/打开背包主界面` — `UIManager.OpenPanel(UIconst.PackagePanel)`
+   - `GmCmd/打开背包主界面` — `UIRouter.Open(UIPaths.PackageForm, "Popup")`
 4. 清档：删除 PlayerPrefs 键 `PackageLocalData` 与 `PlayerGold`。旧存档会掩盖改动，验证前先清。
 
 ## 验证方式

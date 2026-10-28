@@ -22,6 +22,10 @@ public class PlayerAnimator : MonoBehaviour
     float standThreshold = 1f;          //站立状态阈值
     float midAirThreshold = 2.2f;       //滞空状态阈值
 
+    // TurnSpeed 的环形平滑状态（弧度，归一在 [-π, π]）
+    private float m_TurnSpeed;
+    private bool m_TurnSpeedInitialized;
+
     /// <summary>玩家手感配置行（Player 表），Init 时解析一次</summary>
     private Player m_configRow;
 
@@ -30,6 +34,9 @@ public class PlayerAnimator : MonoBehaviour
 
     [Tooltip("非锁定转身增益：每弧度误差每秒转多少度。200 ≈ 0.3s 收敛，调大更跟手")]
     [SerializeField] private float turnGainDegPerRad = 200f;
+
+    [Tooltip("TurnSpeed 写入前的环形平滑时间（秒）。必须按最短弧插值，否则左右后斜切换会从正前方绕过去")]
+    [SerializeField] private float turnSpeedDamp = 0.1f;
 
     #region MoveSpeed 档位（必须与 PlayerMove.controller / StandState 树里各行的 Y 坐标一致）
     // StandState 是一棵 FreeformCartesian2D 树：X = TurnSpeed（弧度）Y = MoveSpeed。
@@ -56,6 +63,7 @@ public class PlayerAnimator : MonoBehaviour
         playerController = pc;
         playerMovement = pm;
         m_configRow = CharacterConfigIdentity.GetPlayerRow(this);
+        m_TurnSpeedInitialized = false;
 
         //缓存ainimator 参数Hash
         postrueHash = Animator.StringToHash("PlayerState");
@@ -137,7 +145,7 @@ public class PlayerAnimator : MonoBehaviour
 
             // turnSpeed 设为移动方向角度，供 Blend Tree 混合 strafe 动画
             float rad = Mathf.Atan2(movement.x, movement.z);
-            animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
+            SetTurnSpeed(rad);
         }
         else if (arm == PlayerController.E_ArmState.Normal || arm == PlayerController.E_ArmState.Aim)
         {
@@ -146,7 +154,7 @@ public class PlayerAnimator : MonoBehaviour
             // 那是相机计划 §8.5 引入 ArmState.Aim 后才会暴露的回归。
             // 正常模式：跟随移动方向旋转
             float rad = Mathf.Atan2(movement.x, movement.z);
-            animator.SetFloat(turnSpeedHash, rad, 0.1f, Time.deltaTime);
+            SetTurnSpeed(rad);
 
             if (!playerController.MeleeFighter.inAction)
             {
@@ -156,6 +164,40 @@ public class PlayerAnimator : MonoBehaviour
                 transform.Rotate(0, rad * turnGainDegPerRad * Time.deltaTime, 0f);
             }
         }
+    }
+
+    /// <summary>
+    /// 写入 TurnSpeed 参数：角度必须按「最短弧」平滑，并且归一在 [-π, π]。
+    ///
+    /// 【为什么不能用 Animator 自带的 SetFloat 阻尼】
+    ///   左后斜走 TurnSpeed ≈ -2.36，右后斜走 ≈ +2.36。数值阻尼会把参数从 -2.36 沿数轴拉到 +2.36，
+    ///   中途经过 0（= 正前方），于是几百毫秒内混进前向走路剪辑 → 脚出现抽搐。
+    ///   正确路径是经过 ±π（正后方），树在 +3.14 / -3.14 两端都放了倒退剪辑，权重几乎相同，跨过端点无跳变。
+    /// </summary>
+    private void SetTurnSpeed(float targetRadians)
+    {
+        if (!m_TurnSpeedInitialized)
+        {
+            m_TurnSpeed = WrapRadians(targetRadians);
+            m_TurnSpeedInitialized = true;
+        }
+        else
+        {
+            // DeltaAngle 返回 (-180,180] 的最短差角，避免绕远路
+            float deltaDegrees = Mathf.DeltaAngle(m_TurnSpeed * Mathf.Rad2Deg, targetRadians * Mathf.Rad2Deg);
+            float ratio = turnSpeedDamp > 0.0001f
+                ? Mathf.Clamp01(Time.deltaTime / turnSpeedDamp)
+                : 1f;
+            m_TurnSpeed = WrapRadians(m_TurnSpeed + deltaDegrees * Mathf.Deg2Rad * ratio);
+        }
+
+        animator.SetFloat(turnSpeedHash, m_TurnSpeed);
+    }
+
+    /// <summary>把弧度归一进 [-π, π)：树的 X 轴只在这个区间里定义，超出会被钳到凸包外。</summary>
+    private static float WrapRadians(float radians)
+    {
+        return Mathf.Repeat(radians + Mathf.PI, Mathf.PI * 2f) - Mathf.PI;
     }
 
     /// <summary>

@@ -121,7 +121,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 | Dodge | **空（无绑定）** | `GetDodgeInput`（保留空壳） |
 
 - **Shift 双功能**：短按 → 翻滚 `PlayerDodge.TryDodge()`；长按超阈值 → 疾跑。不再占用独立 Dodge 键。
-- 键位定义在 `Player.prefab` 的 `PlayerInput` 组件上，事件按方法名绑定 PlayerController 的回调。
+- 键位事件绑在**场景实际实例化的玩家预制体** `Assets/GameMain/Entities/Player/Male.prefab` 的 `PlayerInput` 上，按方法名绑定 PlayerController / PlayerMovement 的回调。同目录的 `Player.prefab` **没有被任何场景引用**（2026-10-28 相机重构把场景换成 Male 后遗留），改输入绑定必须改 Male.prefab，改 Player.prefab 不会生效。
 
 ## 动画（Animator / 混合树）
 
@@ -163,7 +163,7 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
 - `CombatController.cs` 为空壳 WIP：仅 `Awake` 缓存 `MeleeFighter`，`Update` 为空。
 - 旧 `BasePanel`/`UIManager`/`UIconst`/`HUDBtn` 已删除；场景 `Canvas` 只剩 `MinimapPanel`，`Canvas/BackPack`、`Canvas/Lottery` 两个旧入口按钮已移除。
 - `MainMenuForm.prefab` 之前挂的是旧 `MainMenuPanel` 脚本、从未挂过 `MainMenuForm`（GF-1.6 已换上，字段沿用原引用）。GF-3 起入口是 `ProcedureLaunch`，`skipMainMenu=false` 可走主菜单；但场景里**没有 `MainMenuCamera` 实例**，主菜单只是盖在关卡场景上的全屏界面，真正的「主菜单场景」要到 GF-4。
-- GF-3 已接线的三个界面里：`PauseForm` 只有「继续 / 返回主菜单」两个按钮（无「设置」，`SettingsForm` 未建）；`DeathForm` 的出口是「返回主菜单」＝开发期重载 `devScenePath`，篝火复活/掉魂属于 Phase 4；`VictoryForm` 是空壳（Boss 无实例，`OnBossKilled` 无人发布），只保证预制体与生命周期就绪。
+- **两个玩家预制体，只有一个活着**：`TestScene` 实例化的是 `Assets/GameMain/Entities/Player/Male.prefab`（相机重构 `1627b87` 起）；同目录 `Player.prefab` 仍是完整的一份（含 PlayerController/PlayerInput），但**没有任何场景/预制体引用**。两边输入事件已经分叉（Male 绑 `PlayerMovement.HandleJumpInput` / `GetPickup_ShopInput` / `GetShowCursorInput`，Player 绑 `GetJumpInInput` / `GetPickupInput`）。清理或合并前，一切输入/相机相关的改动都只认 Male.prefab。
 - 三个新界面的标题/按钮文本用的是 **Legacy Text（内置字体）**，与 `LotteryForm`/`ToastForm` 一致；中文靠系统字体回退显示。要换成 TMP 或项目字体，等做视觉时统一处理（工程里没有中文字体资产，只有 `LiberationSans`）。
 - GF Resource 处于 `EditorResourceMode`：路径必须是 `Assets/` 开头且含扩展名（见 `ScenePaths`、`UIPaths` 注释）。
 - 敌人**当前没有可用的命中盒**：`Enemy.prefab` 上只有 root 的 `CharacterController` 与 `VisionSensor` 的 trigger 球；招式资产是 `HitboxToUse = Weapon(4)`，而 `MeleeFighter.TryBindPreplacedWeapon()` 找的是名字**完全等于** `Sword` 且带 `BoxCollider` 的子物体（prefab 里叫 `Paladin_J_Nordstrom_Sword`，也没有 BoxCollider）→ `WeaponCollider` 恒为 null，敌人攻击不掉血。

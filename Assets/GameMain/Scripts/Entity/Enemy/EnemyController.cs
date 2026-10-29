@@ -78,6 +78,38 @@ public class EnemyController : MonoBehaviour
     /// </summary>
     public bool IsInDeadState => m_inDeadState;
 
+    // ==================== 死亡表现去重（处决/暗杀演出自带倒地） ====================
+
+    /// <summary>Override Layer：战斗/演出动作都在这层（与 MeleeFighter 里的 layer 1 一致）</summary>
+    private const int PresentationLayer = 1;
+
+    /// <summary>处决受害动作的状态名（EnemyController.controller 的 Override Layer）</summary>
+    private const string CounterVictimState = "Melee_CounterVictim";
+
+    /// <summary>死亡表现是否已由配对演出播过（演出方在结算致死伤害前打标记）</summary>
+    private bool m_deathPosePlayed;
+
+    /// <summary>
+    /// 画面上是否已经有一具「被演出放倒」的尸体。两个条件都要满足：
+    ///   ① 演出方结算致死伤害前调过 MarkDeathPosePlayed；
+    ///   ② Override Layer 上确实还停在 victim 动画上。
+    /// 只判标记不判动画的话，演出中途被别的东西顶掉就会留下一具不播倒地动作的站尸。
+    /// </summary>
+    public bool HasDeathPoseOnScreen
+    {
+        get
+        {
+            if (!m_deathPosePlayed || Animator == null) return false;
+            return Animator.GetCurrentAnimatorStateInfo(PresentationLayer).IsName(CounterVictimState);
+        }
+    }
+
+    /// <summary>
+    /// 声明「死亡表现已经由配对演出播完」。必须在结算致死伤害【之前】调用：
+    /// DeadState.Enter 是同步跑在 DamageRouter.ApplyAmount 里面的，晚一步就赶不上这次死亡。
+    /// </summary>
+    public void MarkDeathPosePlayed() => m_deathPosePlayed = true;
+
     public Vector3 SpawnPosition => m_SpawnPosition;
 
     private void Awake()
@@ -332,6 +364,7 @@ public class EnemyController : MonoBehaviour
 
         // 1) 解除死亡终态与处决演出锁
         m_inDeadState = false;
+        m_deathPosePlayed = false;   // 上一次可能是被处决放倒的；不清的话下次死亡不会播倒地动作
         m_inPerformance = false;
         m_pendingStunDuration = 0f;
 

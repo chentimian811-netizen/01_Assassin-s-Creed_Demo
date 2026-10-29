@@ -79,7 +79,9 @@ Unity 2022.3.62f2c1 — 第三人称类魂动作游戏 Demo（刺客信条风格
   **复位顺序不能乱**：清 `m_inDeadState` → `SetActive(true)` → `Health.ResetToFull` → 关 CC/NavAgent 挪位置再开 +
   `NavAgent.Warp` → 恢复 VisionSensor / `MeleeFighter.enabled` → `ResetCombatPose` → **最后** `ChangeState(Patrol/Idle)`。
   `EnemyHealthBarsForm` 是开局一次性建表，所以敌人**不能 Destroy 后再重建**，只能回收复用。
-  调试：`Health` 组件 Inspector 右键 `Debug/Force Kill`（把「死亡 → 回收 → 重生」链路单独跑一遍，比一刀刀砍到死可控）。
+  调试：**不要**用 `Health` 右键 `Debug/Force Kill` 验「死亡 → 回收 → 重生」—— 它只走 `ForceKill → Die → OnEnemyKilled`，
+  **不发** `OnUnitDamaged`，`EnemyController` 因此不会进 `DeadState`（动画播完但尸体不回收、不复位）。
+  要单独跑死亡链路请调 `EnemyController.ForceDeath()`（`ForceKill` + `ChangeState(Dead)`）。
 - 掉魂 / 拾魂（C3）：`Level/SoulsDropSystem`（场景物体）订阅 `GameEvents.OnPlayerDeath` → 把玩家**当前全部金币**留在死亡位置、
   金币归零、`CurrencyManager.SetGold(0)`；同一时刻只保留一份魂，再死先销毁旧魂（未拾回 = 全损）。
   掉落物是 `Entities/Level/SoulsPickup.prefab`，运行时 `Instantiate`；`SoulsPickup.Collect()` 负责 `CurrencyManager.Earn` + 事件 + Toast + 销毁自己。
@@ -219,6 +221,12 @@ Unity Input System，单文件 `Assets/InputActions/PlayerActions.inputactions`�
   **T3/T4/T5 已接并 Play 验收通过（2026-10-28）**：格挡按 6/s 耗耐、扣不动即**破防收盾**；右键按模式分流（拿弓=瞄准、近战=格挡）；
   弹反后 2s（`Parry.riposte_window`）内贴身按左键 → 处决演出；举盾有动作（`Block_Start` → `Block_Loop`，收盾淡回 `Empty`）。
   仍未做：`parry_fail_cost`、破防专属表现（`ARPG_Warrior_Guard_Break` 未接）、处决提示 UI。
+  **处决不再补播死亡动作（2026-10-29 修复）**：`MeleeFighter.PerformCounterAttack` 在 `DamageRouter.ApplyAmount` **之前**
+  调 `EnemyController.MarkDeathPosePlayed()`；`DeadState.Enter` 里 `HasDeathPoseOnScreen`（标记 + Override Layer 仍停在
+  `Melee_CounterVictim` 双校验）成立就不切 `Melee_FallBackDeath`，直接保持 victim 末帧当尸体。
+  不加这道闸的症状：处决动画演完 → 敌人被扶起来 → 又倒一次（victim 127 帧比玩家 `Melee_CounterAttack` 97 帧长，
+  致死又在玩家剪辑结束时结算，所以那一下正好切在敌人还在往下倒的时候）。
+  `ResetToSpawn` **必须**清 `m_deathPosePlayed`，否则这只敌人下次真死时会站着不播倒地动作。
 - **弓的 weaponID 缺陷已修复（2026-10-28）**：`BowConfig.weaponID` = `Weapon` 表行 = **10004**，
   `Item 10004 Hunting Bow` 的 `weapon_type` 改回 **3(Bow)**，校验器里按 1111 判定的已知缺陷分支已删除。
   遗留：`BowConfig.animOverride` 指向基础控制器（类型不匹配，运行时为 null），弓没有专属动作覆盖。

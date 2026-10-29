@@ -47,7 +47,15 @@ public class DeadState : State<EnemyController>
                 owner.Animator.SetFloat("strafeSpeed", 0f);
                 // 战斗状态在 Override Layer(1)。默认 CrossFade 打在 layer0 会找不到状态，
                 // 死亡姿态播不出来，看起来像「倒地失败又站起来」。
-                owner.Animator.CrossFade("Melee_FallBackDeath", 0.15f, 1);
+                //
+                // ⚠️ 例外：处决/暗杀的 victim 动画本身就是一段「被杀 → 倒地」的完整死亡演出，
+                //    末帧就是尸体。这时再切站姿的 Melee_FallBackDeath，就是把尸体扶起来再死一遍
+                //    （实测症状：处决动画播完 → 敌人站起来 → 又倒一次）。
+                //    victim 状态没有出边、剪辑 loopTime=0，什么都不做它就会停在末帧当尸体。
+                if (!owner.HasDeathPoseOnScreen)
+                {
+                    owner.Animator.CrossFade("Melee_FallBackDeath", 0.15f, 1);
+                }
             }
 
             // 关掉 EnemyController.Update：死后不再 Execute 状态机、不再刷速度参数

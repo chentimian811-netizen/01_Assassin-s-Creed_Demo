@@ -1074,8 +1074,15 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
     {
         if (health == null || killedUnitId != health.UnitId) return;
         StopAllCoroutines();
-        // 死亡/受击/攻击状态都在 Override Layer(1)
-        animator.CrossFade("Melee_FallBackDeath", 0.2f, 1);
+        // 死亡/受击/攻击状态都在 Override Layer(1)。
+        // 演出（处决/暗杀）已经把这具身体放倒时不要再补一遍站姿死亡动作 ——
+        // 当前这条路径通常赶不上（DeadState.Enter 会先禁用本组件、退订事件），
+        // 留着是给「先发死亡事件、后进 DeadState」的未来演出兜底（背刺/暗杀）。
+        var enemy = GetComponent<EnemyController>();
+        if (enemy == null || !enemy.HasDeathPoseOnScreen)
+        {
+            animator.CrossFade("Melee_FallBackDeath", 0.2f, 1);
+        }
         DisableAllHitxboxes();
     }
 
@@ -1165,7 +1172,12 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
             // ① 结算前先解除受害者无敌：否则下面的致死伤害会被 Health.TakeDamage 直接 return 掉
             victimHealth.SetInvulnerable(InvulnReasons.Counter, false);
 
-            // ② 致死只走伤害唯一路径，不再直接 ChangeState(Dead)
+            // ② 再声明「这具尸体已经由演出放倒」。顺序不能反：
+            //    DeadState.Enter 同步跑在 DamageRouter.ApplyAmount 里面，
+            //    等伤害结算完再置位就赶不上这次死亡，收尾时仍会补播一遍站姿死亡动作。
+            opponet.MarkDeathPosePlayed();
+
+            // ③ 致死只走伤害唯一路径，不再直接 ChangeState(Dead)
             var enemyCol = opponet.GetComponent<Collider>();
             if (enemyCol != null)
             {
@@ -1174,7 +1186,7 @@ public class MeleeFighter : MonoBehaviour, IAttackSource, IParryTarget
                     9999f, E_DamageSource.Player, parryable: false, attackId: "counter_execute");
             }
 
-            // ③ 兜底：若还有别的无敌来源挡下（霸体/剧情保护等），也必须进死亡终态，
+            // ④ 兜底：若还有别的无敌来源挡下（霸体/剧情保护等），也必须进死亡终态，
             //    绝不允许"处决完敌人还站着、还能打你"
             if (!victimHealth.IsDead)
             {

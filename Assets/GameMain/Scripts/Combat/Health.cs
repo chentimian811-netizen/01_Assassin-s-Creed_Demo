@@ -187,6 +187,11 @@ public class Health : MonoBehaviour, IDamageable
         lastPublishedHealth = currentHealth;
 
         if (isPlayer) GameEvents.RaisePlayerHealthChanged(currentHealth, maxHealth);
+
+        // 所有单位都发：敌人血条 / 将来的 Boss 血条靠它刷新。
+        // 只发玩家事件的话，「篝火复活回满」这条路径对敌人 UI 完全不可见
+        // （症状：敌人复活了，头顶血条还停在 0）。
+        GameEvents.RaiseUnitHealthChanged(unitId, currentHealth, maxHealth);
     }
 
     /// <summary>调试用：Inspector 右键可直接扣血验证</summary>

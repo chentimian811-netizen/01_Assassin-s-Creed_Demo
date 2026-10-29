@@ -1,10 +1,10 @@
 [
   {
     "id": "player_main",
-    "max_health": 100
+    "max_health": 1000
   },
   {
     "id": "enemy_default",
-    "max_health": 10
+    "max_health": 100
   }
 ]

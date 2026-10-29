@@ -70,6 +70,7 @@ public class EnemyHealthBarsForm : UIFormLogic
         BuildEntries();
 
         GameEvents.OnUnitDamaged += HandleUnitDamaged;
+        GameEvents.OnUnitHealthChanged += HandleUnitHealthChanged;
         GameEvents.OnEnemyKilled += HandleEnemyKilled;
         m_subscribed = true;
     }
@@ -92,6 +93,7 @@ public class EnemyHealthBarsForm : UIFormLogic
         if (m_subscribed)
         {
             GameEvents.OnUnitDamaged -= HandleUnitDamaged;
+            GameEvents.OnUnitHealthChanged -= HandleUnitHealthChanged;
             GameEvents.OnEnemyKilled -= HandleEnemyKilled;
             m_subscribed = false;
         }
@@ -234,6 +236,23 @@ public class EnemyHealthBarsForm : UIFormLogic
             entry.LastDamagedTime = Time.time;
             entry.Widget.SetValue(entry.Health.CurrentHealth, entry.Health.MaxHealth);
             entry.Widget.ShowImmediate();
+            return;
+        }
+    }
+
+    /// <summary>
+    /// 血量变化刷新（含「没有伤害」的回满：篝火复活 / 治疗 / ForceKill）。
+    /// 只做数值，不碰可见性与 LastDamagedTime —— 那是 HandleUnitDamaged 的职责，
+    /// 免得上一次受击的显示计时被回血事件续命。
+    /// </summary>
+    private void HandleUnitHealthChanged(string unitId, float current, float max)
+    {
+        for (int i = 0; i < m_entries.Count; i++)
+        {
+            Entry entry = m_entries[i];
+            if (entry.Health == null || entry.Health.UnitId != unitId) continue;
+
+            entry.Widget.SetValue(current, max);
             return;
         }
     }
